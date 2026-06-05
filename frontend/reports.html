@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Reports - ScamDetect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <div class="logo-icon">🛡️</div>
+            <span>ScamDetect</span>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="checker.html">Scam Checker</a>
+            <a href="community.html">Community</a>
+            <a href="reports.html" class="active">Reports</a>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+        <div class="nav-right"></div>
+    </nav>
+
+    <div class="page-hero">
+        <h1>📢 Scam <span class="gradient-text">Reports</span></h1>
+        <p>View and submit scam reports to protect the community</p>
+    </div>
+
+    <div class="page-content">
+        <div class="grid-2" style="grid-template-columns: 1fr 1.5fr;">
+            <!-- Submit Report Form -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">🚨 Submit a Scam Report</h3>
+                <form id="report-form">
+                    <div class="form-group">
+                        <label class="form-label">Company Name *</label>
+                        <input type="text" id="report-company" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job Title</label>
+                        <input type="text" id="report-job-title" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job URL</label>
+                        <input type="url" id="report-url" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Scam Type *</label>
+                        <select id="report-type" class="form-control" required>
+                            <option value="">Select type...</option>
+                            <option value="fee_fraud">💰 Fee Fraud (Registration/Training Fee)</option>
+                            <option value="phishing">🎣 Phishing (Personal Data Theft)</option>
+                            <option value="fake_company">🏭 Fake Company</option>
+                            <option value="impersonation">🎭 Brand Impersonation</option>
+                            <option value="fake_offer">📄 Fake Job Offer</option>
+                            <option value="other">❓ Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description of Scam *</label>
+                        <textarea id="report-description" class="form-control" rows="4" required placeholder="Describe what happened..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Evidence (Screenshot URL)</label>
+                        <input type="url" id="report-evidence" class="form-control" placeholder="https://imgur.com/your-screenshot">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Severity</label>
+                        <select id="report-severity" class="form-control">
+                            <option value="1">Low - Minor inconvenience</option>
+                            <option value="2" selected>Medium - Lost time/data</option>
+                            <option value="3">High - Lost money</option>
+                            <option value="4">Critical - Significant financial loss</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-lg" style="width: 100%;">Submit Report</button>
+                </form>
+            </div>
+            
+            <!-- Recent Reports List -->
+            <div>
+                <div class="card" style="margin-bottom: 1rem;">
+                    <h3>📋 Recent Scam Reports</h3>
+                    <div id="reports-list">
+                        <div style="text-align: center; padding: 2rem;">Loading reports...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 ScamDetect - Protecting Job Seekers Worldwide</p>
+    </div>
+
+    <div class="chatbot-bubble">🤖</div>
+    <div class="chatbot-panel">
+        <div class="chatbot-header">
+            <div class="chatbot-avatar">🛡️</div>
+            <div style="flex:1;"><strong>ScamGuard AI</strong><br><small style="font-size:0.7rem;">Online</small></div>
+            <button class="chatbot-close" style="background:none;border:none;color:white;font-size:1.2rem;">✕</button>
+        </div>
+        <div class="chatbot-msgs"></div>
+        <div class="chatbot-input-row">
+            <input class="chatbot-input" placeholder="Ask me anything...">
+            <button class="chatbot-send">➤</button>
+        </div>
+    </div>
+
+    <script src="js/chatbot.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        async function loadReports() {
+            try {
+                const reports = await ApiService.getReports();
+                const container = document.getElementById('reports-list');
+                
+                if (!reports || reports.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted);">No scam reports yet. Be the first to report!</div>';
+                    return;
+                }
+                
+                container.innerHTML = reports.map(report => `
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 0.5rem;">
+                            <div>
+                                <div style="font-weight: 600;">${escapeHtml(report.company_name)}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(report.job_title || 'No job title')}</div>
+                            </div>
+                            <span class="risk-badge risk-high">${getSeverityLabel(report.severity)}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                            ${escapeHtml(report.description || '').substring(0, 150)}${report.description?.length > 150 ? '...' : ''}
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+                            Reported by ${escapeHtml(report.reporter_name || 'Anonymous')} • ${formatTime(report.created_at)}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('reports-list').innerHTML = '<div style="text-align: center; padding: 2rem;">Failed to load reports. Please try again.</div>';
+            }
+        }
+        
+        document.getElementById('report-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!AuthService.isAuthenticated()) {
+                showToast('Please login to submit a report', 'warning');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            const data = {
+                company_name: document.getElementById('report-company').value,
+                job_title: document.getElementById('report-job-title').value || null,
+                job_url: document.getElementById('report-url').value || null,
+                scam_type: document.getElementById('report-type').value,
+                description: document.getElementById('report-description').value,
+                evidence_url: document.getElementById('report-evidence').value || null,
+                severity: parseInt(document.getElementById('report-severity').value)
+            };
+            
+            try {
+                await ApiService.submitReport(data);
+                showToast('Report submitted successfully! Thank you for helping the community.', 'success');
+                document.getElementById('report-form').reset();
+                loadReports();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+        
+        function getSeverityLabel(severity) {
+            const labels = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Critical' };
+            return labels[severity] || 'Medium';
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 3600000) {
+                const mins = Math.floor(diff / 60000);
+                return `${mins} minute${mins !== 1 ? 's' : ''} ago`;
+            } else if (diff < 86400000) {
+                const hours = Math.floor(diff / 3600000);
+                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            } else {
+                return date.toLocaleDateString();
+            }
+        }
+        
+        loadReports();
+    </script>
+</body>
+</html>

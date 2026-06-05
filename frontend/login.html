@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ScamDetect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <div class="logo-icon">🛡️</div>
+            <span>ScamDetect</span>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="checker.html">Scam Checker</a>
+            <a href="community.html">Community</a>
+            <a href="reports.html">Reports</a>
+        </div>
+        <div class="nav-right"></div>
+    </nav>
+
+    <div class="page-hero">
+        <h1>Welcome <span class="gradient-text">Back</span></h1>
+        <p>Login to access your dashboard and scam detection tools</p>
+    </div>
+
+    <div class="page-content" style="max-width: 500px; margin: 0 auto;">
+        <div class="card">
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="email" class="form-control" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Login</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem;">
+                Don't have an account? <a href="register.html" style="color: var(--accent-blue);">Sign up here</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 ScamDetect - Protecting Job Seekers Worldwide</p>
+    </div>
+
+    <div class="chatbot-bubble">🤖</div>
+    <div class="chatbot-panel">
+        <div class="chatbot-header">
+            <div class="chatbot-avatar">🛡️</div>
+            <div style="flex:1;"><strong>ScamGuard AI</strong><br><small style="font-size:0.7rem;">Online</small></div>
+            <button class="chatbot-close" style="background:none;border:none;color:white;font-size:1.2rem;">✕</button>
+        </div>
+        <div class="chatbot-msgs"></div>
+        <div class="chatbot-input-row">
+            <input class="chatbot-input" placeholder="Ask me anything...">
+            <button class="chatbot-send">➤</button>
+        </div>
+    </div>
+
+    <script src="js/chatbot.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                await AuthService.login(email, password);
+                showToast('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = AuthService.isAdmin() ? '/admin.html' : '/profile.html';
+                }, 1000);
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

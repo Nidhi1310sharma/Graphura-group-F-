@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Checker - ScamDetect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <div class="logo-icon">🛡️</div>
+            <span>ScamDetect</span>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="checker.html" class="active">Scam Checker</a>
+            <a href="community.html">Community</a>
+            <a href="reports.html">Reports</a>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+        <div class="nav-right"></div>
+    </nav>
+
+    <div class="page-hero">
+        <h1>🔍 AI Scam <span class="gradient-text">Checker</span></h1>
+        <p>Analyze job postings using multiple methods - description, screenshot, link, or offer letter</p>
+    </div>
+
+    <div class="page-content">
+        <div class="grid-2">
+            <!-- Input Section -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">📋 Job Posting Details</h3>
+                
+                <!-- Evidence Method Tabs -->
+                <div class="evidence-methods">
+                    <div class="evidence-btn active" data-method="description">
+                        📝 Description
+                    </div>
+                    <div class="evidence-btn" data-method="screenshot">
+                        📸 Screenshot
+                    </div>
+                    <div class="evidence-btn" data-method="link">
+                        🔗 Job Link
+                    </div>
+                    <div class="evidence-btn" data-method="offer">
+                        📄 Offer Letter
+                    </div>
+                </div>
+                
+                <!-- Description Panel -->
+                <div class="evidence-panel active" id="panel-description">
+                    <div class="form-group">
+                        <label class="form-label">Job Description</label>
+                        <textarea id="description" class="form-control" rows="6" placeholder="Paste the complete job description here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job Title (optional)</label>
+                        <input type="text" id="job-title" class="form-control" placeholder="e.g., Data Entry Intern">
+                    </div>
+                </div>
+                
+                <!-- Screenshot Panel -->
+                <div class="evidence-panel" id="panel-screenshot">
+                    <div class="form-group">
+                        <label class="form-label">Upload Screenshot</label>
+                        <div class="file-upload" style="border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 2rem; text-align: center; cursor: pointer;">
+                            📸 Click to upload or drag & drop
+                            <input type="file" id="screenshot-file" accept="image/*" style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+                        </div>
+                        <div id="screenshot-name" class="file-name"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea id="screenshot-notes" class="form-control" rows="3" placeholder="Any additional context about this screenshot..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Link Panel -->
+                <div class="evidence-panel" id="panel-link">
+                    <div class="form-group">
+                        <label class="form-label">Job Posting URL</label>
+                        <input type="url" id="job-url" class="form-control" placeholder="https://example.com/job/123">
+                    </div>
+                </div>
+                
+                <!-- Offer Letter Panel -->
+                <div class="evidence-panel" id="panel-offer">
+                    <div class="form-group">
+                        <label class="form-label">Upload Offer Letter</label>
+                        <div class="file-upload" style="border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 2rem; text-align: center; cursor: pointer;">
+                            📄 Upload PDF or DOCX file
+                            <input type="file" id="offer-file" accept=".pdf,.docx" style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+                        </div>
+                        <div id="offer-name" class="file-name"></div>
+                    </div>
+                </div>
+                
+                <!-- Common Fields -->
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" id="company-name" class="form-control" placeholder="Company name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Salary Offered</label>
+                        <input type="text" id="salary" class="form-control" placeholder="e.g., ₹50,000/month">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Recruiter Email</label>
+                    <input type="email" id="recruiter-email" class="form-control" placeholder="hr@company.com">
+                </div>
+                
+                <button class="btn btn-danger btn-lg" id="analyze-btn" style="width: 100%; margin-top: 1rem;">
+                    🔍 Analyze for Scam Signals
+                </button>
+            </div>
+            
+            <!-- Results Section -->
+            <div>
+                <div class="card" id="result-panel">
+                    <div id="result-placeholder" style="text-align: center; padding: 3rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🛡️</div>
+                        <p style="color: var(--text-secondary);">Enter job details and click Analyze to see results</p>
+                    </div>
+                    <div id="result-content" style="display: none;">
+                        <div class="score-section" style="text-align: center;">
+                            <div id="score-display"></div>
+                            <div id="risk-badge" style="margin-top: 1rem;"></div>
+                        </div>
+                        
+                        <div class="grid-2" style="margin: 1rem 0;">
+                            <div class="card" style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700;" id="keyword-score">-</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">Keyword Risk</div>
+                            </div>
+                            <div class="card" style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700;" id="domain-score">-</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">Domain Risk</div>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-bar" style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+                            <button class="tab-btn active" data-tab="signals">🚨 Fraud Signals</button>
+                            <button class="tab-btn" data-tab="keywords">🔑 Suspicious Keywords</button>
+                            <button class="tab-btn" data-tab="details">ℹ️ Details</button>
+                        </div>
+                        
+                        <div id="tab-signals" class="tab-content active"></div>
+                        <div id="tab-keywords" class="tab-content"></div>
+                        <div id="tab-details" class="tab-content"></div>
+                        
+                        <div id="recommendation" class="alert alert-info" style="margin-top: 1rem;"></div>
+                        
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                            <button class="btn btn-outline" onclick="submitReportFromResult()">🚨 Report as Scam</button>
+                            <button class="btn btn-outline" onclick="resetForm()">🔄 Check Another</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 ScamDetect - Protecting Job Seekers Worldwide</p>
+    </div>
+
+    <div class="chatbot-bubble">🤖</div>
+    <div class="chatbot-panel">
+        <div class="chatbot-header">
+            <div class="chatbot-avatar">🛡️</div>
+            <div style="flex:1;"><strong>ScamGuard AI</strong><br><small style="font-size:0.7rem;">Online</small></div>
+            <button class="chatbot-close" style="background:none;border:none;color:white;font-size:1.2rem;">✕</button>
+        </div>
+        <div class="chatbot-msgs"></div>
+        <div class="chatbot-input-row">
+            <input class="chatbot-input" placeholder="Ask me anything...">
+            <button class="chatbot-send">➤</button>
+        </div>
+    </div>
+
+    <script src="js/chatbot.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        let currentMethod = 'description';
+        let lastAnalysisResult = null;
+        
+        // Evidence method switching
+        document.querySelectorAll('.evidence-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.evidence-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMethod = btn.dataset.method;
+                
+                document.querySelectorAll('.evidence-panel').forEach(panel => panel.classList.remove('active'));
+                document.getElementById(`panel-${currentMethod}`).classList.add('active');
+            });
+        });
+        
+        // File upload handlers
+        document.getElementById('screenshot-file')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('screenshot-name').textContent = `Selected: ${file.name}`;
+            }
+        });
+        
+        document.getElementById('offer-file')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('offer-name').textContent = `Selected: ${file.name}`;
+            }
+        });
+        
+        async function analyzeJob() {
+            const btn = document.getElementById('analyze-btn');
+            btn.disabled = true;
+            btn.textContent = 'Analyzing...';
+            
+            let data = {
+                method: currentMethod,
+                job_title: document.getElementById('job-title').value,
+                company_name: document.getElementById('company-name').value,
+                salary: document.getElementById('salary').value,
+                recruiter_email: document.getElementById('recruiter-email').value
+            };
+            
+            // Add evidence based on method
+            if (currentMethod === 'description') {
+                data.description = document.getElementById('description').value;
+                if (!data.description) {
+                    showToast('Please enter a job description', 'warning');
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Analyze for Scam Signals';
+                    return;
+                }
+            } else if (currentMethod === 'link') {
+                data.url = document.getElementById('job-url').value;
+                if (!data.url) {
+                    showToast('Please enter a job URL', 'warning');
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Analyze for Scam Signals';
+                    return;
+                }
+            } else if (currentMethod === 'screenshot') {
+                const file = document.getElementById('screenshot-file').files[0];
+                if (!file) {
+                    showToast('Please upload a screenshot', 'warning');
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Analyze for Scam Signals';
+                    return;
+                }
+                data.screenshot_notes = document.getElementById('screenshot-notes').value;
+                // In production, send file via FormData
+                showToast('Screenshot analysis feature - OCR processing would happen here', 'info');
+            } else if (currentMethod === 'offer') {
+                const file = document.getElementById('offer-file').files[0];
+                if (!file) {
+                    showToast('Please upload an offer letter', 'warning');
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Analyze for Scam Signals';
+                    return;
+                }
+                // In production, extract text from PDF/DOCX
+                showToast('Offer letter analysis feature - text extraction would happen here', 'info');
+            }
+            
+            try {
+                const result = await ApiService.analyzeJob(data);
+                lastAnalysisResult = result;
+                displayResults(result);
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Analyze for Scam Signals';
+            }
+        }
+        
+        function displayResults(result) {
+            document.getElementById('result-placeholder').style.display = 'none';
+            document.getElementById('result-content').style.display = 'block';
+            
+            const score = result.scam_score || 0;
+            const riskLevel = result.risk_level || 'MEDIUM';
+            const riskColor = riskLevel === 'LOW' ? '#22c55e' : riskLevel === 'MEDIUM' ? '#f97316' : '#ef4444';
+            
+            document.getElementById('score-display').innerHTML = `
+                <div style="font-size: 3rem; font-weight: 700; color: ${riskColor};">${Math.round(score)}<span style="font-size: 1.2rem;">/100</span></div>
+                <div class="score-bar-wrap" style="margin-top: 0.5rem;"><div class="score-bar" style="width: ${score}%; background: ${riskColor};"></div></div>
+            `;
+            
+            document.getElementById('risk-badge').innerHTML = `<span class="risk-badge risk-${riskLevel.toLowerCase()}">${getRiskLabel(riskLevel)}</span>`;
+            document.getElementById('keyword-score').textContent = Math.round(result.keyword_score || 0);
+            document.getElementById('domain-score').textContent = Math.round(result.domain_score || 0);
+            
+            // Fraud signals
+            const signals = result.fraud_signals || [];
+            document.getElementById('tab-signals').innerHTML = signals.length ? 
+                signals.map(s => `
+                    <div class="alert alert-warning" style="margin-bottom: 0.5rem; padding: 0.75rem;">
+                        <strong>⚠️ ${s.description}</strong><br>
+                        <small style="color: var(--text-muted);">+${Math.round(s.score_contribution || 0)} points</small>
+                    </div>
+                `).join('') : '<p class="text-muted">No significant fraud signals detected.</p>';
+            
+            // Suspicious keywords
+            const keywords = result.suspicious_keywords || [];
+            document.getElementById('tab-keywords').innerHTML = keywords.length ?
+                `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">${keywords.map(k => `<span class="risk-badge risk-high">${k}</span>`).join('')}</div>` :
+                '<p class="text-muted">No suspicious keywords found.</p>';
+            
+            // Details
+            document.getElementById('tab-details').innerHTML = `
+                <div style="display: grid; gap: 0.75rem;">
+                    <div><strong>Domain:</strong> ${result.domain || 'N/A'}</div>
+                    <div><strong>SSL Valid:</strong> ${result.ssl_valid === true ? '✅ Yes' : result.ssl_valid === false ? '❌ No' : 'N/A'}</div>
+                    <div><strong>Domain Age:</strong> ${result.domain_age_days ? `${result.domain_age_days} days` : 'N/A'}</div>
+                    <div><strong>Blacklisted:</strong> ${result.domain_blacklisted ? '⚠️ Yes' : '✅ No'}</div>
+                    <div><strong>Salary Anomaly:</strong> ${result.salary_anomaly ? '⚠️ Detected' : '✅ Normal'}</div>
+                </div>
+            `;
+            
+            const recommendation = result.recommendation || (score >= 60 ? 'High risk detected. DO NOT apply or pay any fees.' : 
+                score >= 30 ? 'Medium risk. Verify the company independently before proceeding.' : 
+                'Low risk, but always verify independently.');
+            document.getElementById('recommendation').innerHTML = `<strong>💡 Recommendation:</strong> ${recommendation}`;
+        }
+        
+        function getRiskLabel(level) {
+            const labels = { 'LOW': '✅ Low Risk', 'MEDIUM': '⚠️ Medium Risk', 'HIGH': '❌ High Risk', 'CONFIRMED_SCAM': '🚫 Confirmed Scam' };
+            return labels[level] || 'Unknown';
+        }
+        
+        function submitReportFromResult() {
+            if (!lastAnalysisResult) return;
+            sessionStorage.setItem('report_data', JSON.stringify({
+                company: document.getElementById('company-name').value,
+                job_title: document.getElementById('job-title').value,
+                scam_score: lastAnalysisResult.scam_score
+            }));
+            window.location.href = '/reports.html';
+        }
+        
+        function resetForm() {
+            document.getElementById('result-placeholder').style.display = 'flex';
+            document.getElementById('result-content').style.display = 'none';
+            document.getElementById('description').value = '';
+            document.getElementById('job-title').value = '';
+            document.getElementById('company-name').value = '';
+            document.getElementById('salary').value = '';
+            document.getElementById('recruiter-email').value = '';
+            document.getElementById('job-url').value = '';
+            document.getElementById('screenshot-name').innerHTML = '';
+            document.getElementById('offer-name').innerHTML = '';
+            lastAnalysisResult = null;
+        }
+        
+        document.getElementById('analyze-btn').addEventListener('click', analyzeJob);
+        
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`tab-${tab}`).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

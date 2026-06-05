@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - ScamDetect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <div class="logo-icon">🛡️</div>
+            <span>ScamDetect</span>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="checker.html">Scam Checker</a>
+            <a href="community.html">Community</a>
+            <a href="reports.html">Reports</a>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+        <div class="nav-right"></div>
+    </nav>
+
+    <div class="page-hero">
+        <h1>My <span class="gradient-text">Profile</span></h1>
+        <p>Manage your personal information and track your scam detection activities</p>
+    </div>
+
+    <div class="page-content">
+        <div class="grid-2">
+            <!-- Profile Info -->
+            <div class="card">
+                <div class="profile-upload" style="text-align: center;">
+                    <img id="profile-image" class="profile-image" src="/assets/default-avatar.png" alt="Profile">
+                    <label class="profile-upload-btn" id="upload-btn">
+                        📷
+                        <input type="file" id="profile-upload" accept="image/*" style="display: none;">
+                    </label>
+                </div>
+                
+                <form id="profile-form">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="full_name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="email" class="form-control" readonly>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" id="phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Location</label>
+                            <input type="text" id="location" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Skills</label>
+                        <input type="text" id="skills" class="form-control" placeholder="Python, JavaScript, SQL">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Education</label>
+                            <input type="text" id="education" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Experience (Years)</label>
+                            <input type="number" id="experience" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bio</label>
+                        <textarea id="bio" class="form-control" rows="3" placeholder="Tell us about yourself..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+            
+            <!-- Activity & Stats -->
+            <div>
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">📊 My Stats</h3>
+                    <div class="grid-2">
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-input); border-radius: var(--radius-sm);">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--accent-blue);" id="jobs_checked">0</div>
+                            <div style="font-size: 0.75rem;">Jobs Checked</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-input); border-radius: var(--radius-sm);">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--accent-red);" id="reports_submitted">0</div>
+                            <div style="font-size: 0.75rem;">Scam Reports</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">📋 Recent Activities</h3>
+                    <div id="activities-list">
+                        <p class="text-muted" style="text-align: center; padding: 2rem;">Loading activities...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 ScamDetect - Protecting Job Seekers Worldwide</p>
+    </div>
+
+    <div class="chatbot-bubble">🤖</div>
+    <div class="chatbot-panel">
+        <div class="chatbot-header">
+            <div class="chatbot-avatar">🛡️</div>
+            <div style="flex:1;"><strong>ScamGuard AI</strong><br><small style="font-size:0.7rem;">Online</small></div>
+            <button class="chatbot-close" style="background:none;border:none;color:white;font-size:1.2rem;">✕</button>
+        </div>
+        <div class="chatbot-msgs"></div>
+        <div class="chatbot-input-row">
+            <input class="chatbot-input" placeholder="Ask me anything...">
+            <button class="chatbot-send">➤</button>
+        </div>
+    </div>
+
+    <script src="js/chatbot.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        let currentUser = null;
+        
+        async function loadProfile() {
+            if (!AuthService.isAuthenticated()) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            try {
+                const user = await ApiService.getProfile();
+                currentUser = user;
+                
+                document.getElementById('full_name').value = user.full_name || '';
+                document.getElementById('email').value = user.email || '';
+                document.getElementById('phone').value = user.phone_number || '';
+                document.getElementById('location').value = user.location || '';
+                document.getElementById('skills').value = user.skills ? user.skills.join(', ') : '';
+                document.getElementById('education').value = user.education || '';
+                document.getElementById('experience').value = user.experience_years || 0;
+                document.getElementById('bio').value = user.bio || '';
+                
+                if (user.profile_image) {
+                    document.getElementById('profile-image').src = user.profile_image;
+                }
+                
+                // Load stats
+                document.getElementById('jobs_checked').textContent = user.stats?.jobs_checked || 0;
+                document.getElementById('reports_submitted').textContent = user.stats?.reports_submitted || 0;
+                
+                // Load activities
+                loadActivities();
+                
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+        
+        async function loadActivities() {
+            try {
+                const activities = await ApiService.get('/users/activities');
+                const container = document.getElementById('activities-list');
+                
+                if (!activities || activities.length === 0) {
+                    container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 2rem;">No activities yet. Start by checking some jobs!</p>';
+                    return;
+                }
+                
+                container.innerHTML = activities.map(activity => `
+                    <div style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>${activity.icon || '📌'}</span>
+                            <div style="flex: 1;">
+                                <div style="font-size: 0.85rem;">${activity.description}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">${new Date(activity.created_at).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        
+        // Profile image upload
+        document.getElementById('upload-btn').addEventListener('click', () => {
+            document.getElementById('profile-upload').click();
+        });
+        
+        document.getElementById('profile-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            try {
+                const result = await ApiService.uploadImage(file);
+                document.getElementById('profile-image').src = result.image_url;
+                showToast('Profile image updated!', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+        
+        // Profile form submit
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const skills = document.getElementById('skills').value.split(',').map(s => s.trim()).filter(s => s);
+            
+            const data = {
+                full_name: document.getElementById('full_name').value,
+                phone_number: document.getElementById('phone').value || null,
+                location: document.getElementById('location').value || null,
+                skills: skills,
+                education: document.getElementById('education').value || null,
+                experience_years: parseInt(document.getElementById('experience').value) || 0,
+                bio: document.getElementById('bio').value || null
+            };
+            
+            try {
+                await ApiService.updateProfile(data);
+                showToast('Profile updated successfully!', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+        
+        loadProfile();
+    </script>
+</body>
+</html>
