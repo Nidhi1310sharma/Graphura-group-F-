@@ -17,45 +17,50 @@ A web-based platform developed to help users identify fake job and internship op
 
 ```text
 scam-detector/
+├── backend/
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── analyze.py
+│   │   ├── community.py
+│   │   ├── jobs.py
+│   │   ├── reports.py
+│   │   ├── users.py
+│   │   └── usersold.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   └── auth.py
+│   ├── .env.example
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── main.py
+│   ├── supabase_client.py
+│   ├── test.py
+│   ├── test_pwd.py
+│   └── test_supabse_client.py
 ├── frontend/
-│   ├── index.html
-│   ├── login.html
-│   ├── register.html
-│   ├── profile.html
-│   ├── admin.html
-│   ├── checker.html
-│   ├── community.html
-│   ├── reports.html
-│   ├── dashboard.html
 │   ├── css/
 │   │   └── style.css
 │   ├── js/
-│   │   ├── main.js
 │   │   ├── api.js
-│   │   └── chatbot.js
-│   └── assets/
-│       └── default-avatar.png
-│
-├── backend/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── auth.py
-│   ├── database.py
-│   ├── models.py
-│   ├── requirements.txt
-│   ├── .env
-│   └── routes/
-│       ├── __init__.py
-│       ├── users.py
-│       ├── jobs.py
-│       ├── reports.py
-│       ├── community.py
-│       └── analyze.py
-│
-├── uploads/
-│
-└── database/
-    └── schema.sql
+│   │   ├── auth.js
+│   │   ├── chatbot.js
+│   │   └── main.js
+│   ├── admin.html
+│   ├── checker.html
+│   ├── community.html
+│   ├── dashboard.html
+│   ├── index.html
+│   ├── login.html
+│   ├── profile.html
+│   ├── register.html
+│   └── reports.html
+├── .gitignore
+├── architechture.txt
+├── generate_hash.py
+├── README.md
+└── requirements.txt
+
+ 
 ```
 
 ## 🛠️ Technologies Used
@@ -80,10 +85,23 @@ scam-detector/
 
 ### Backend
 
+Backend Setup
+
+1. Copy backend/.env.example to backend/.env
+
+2. Fill in:
+   SUPABASE_URL
+   SUPABASE_SERVICE_KEY
+   SECRET_KEY
+
+3. Install requirements:
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
+   pip install -r requirements.txt
+```
+
+4. Run:
+```bash
+   python -m uvicorn backend.main:app --reload
 ```
 
 ### Frontend
