@@ -1,0 +1,12 @@
+Public User
+ ├── Analyze Job
+ ├── Submit Report
+ ├── View Community
+ └── View Reports
+
+Admin
+ ├── Login
+ ├── Moderate Reports
+ ├── Verify Companies
+ ├── Blacklist Companies
+ └── View Dashboard
