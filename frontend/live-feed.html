@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Scam Feed – ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .feed-header-bar { display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+    .live-badge { display:flex; align-items:center; gap:5px; background:rgba(248,81,73,0.12); border:1px solid rgba(248,81,73,0.25); color:var(--accent-red); font-size:11px; font-weight:700; padding:4px 10px; border-radius:99px; }
+    .live-dot { width:7px;height:7px;border-radius:50%;background:var(--accent-red);animation:pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(0.8)} }
+    .feed-full-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow:hidden; transition:var(--transition); }
+    .feed-full-card:hover { border-color:var(--border-hover); }
+    .feed-card-top { display:flex; align-items:center; gap:12px; padding:14px 16px; }
+    .feed-risk-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+    .feed-risk-dot.high { background:var(--accent-red); box-shadow:0 0 8px var(--accent-red); }
+    .feed-risk-dot.medium { background:var(--accent-orange); }
+    .feed-risk-dot.low { background:var(--accent-green); }
+    .feed-card-info { flex:1; }
+    .feed-card-job { font-weight:700; font-size:14px; }
+    .feed-card-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+    .feed-card-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px; }
+    .feed-card-badge.high { background:rgba(248,81,73,.12); color:var(--accent-red); border:1px solid rgba(248,81,73,.2); }
+    .feed-card-badge.medium { background:rgba(227,112,42,.12); color:var(--accent-orange); border:1px solid rgba(227,112,42,.2); }
+    .feed-card-badge.low { background:rgba(63,185,80,.12); color:var(--accent-green); border:1px solid rgba(63,185,80,.2); }
+    .feed-card-score { font-family:var(--font-mono); font-size:20px; font-weight:800; min-width:42px; text-align:center; }
+    .feed-card-score.high { color:var(--accent-red); }
+    .feed-card-score.medium { color:var(--accent-orange); }
+    .feed-card-score.low { color:var(--accent-green); }
+    .feed-signals { padding:0 16px 14px; display:flex; flex-wrap:wrap; gap:6px; }
+    .signal-chip { font-size:11px; padding:3px 8px; border-radius:99px; }
+    .signal-chip.bad { background:rgba(248,81,73,.08); color:var(--accent-red); border:1px solid rgba(248,81,73,.15); }
+    .signal-chip.warn { background:rgba(210,153,34,.08); color:var(--accent-yellow); border:1px solid rgba(210,153,34,.15); }
+    .signal-chip.ok { background:rgba(63,185,80,.08); color:var(--accent-green); border:1px solid rgba(63,185,80,.15); }
+    .filter-strip { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .filter-pill { padding:5px 14px; border-radius:99px; background:var(--bg-input); border:1px solid var(--border); font-size:12.5px; color:var(--text-secondary); cursor:pointer; transition:var(--transition); }
+    .filter-pill:hover,.filter-pill.active { border-color:var(--accent-blue); color:var(--accent-blue); background:rgba(88,166,255,.08); }
+    .new-entry { animation: slideIn 0.4s ease; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:none} }
+  </style>
+</head>
+<body>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+      <div class="feed-header-bar">
+        <h1 style="margin:0">📡 Live Scam Feed</h1>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <span style="font-size:13px;color:var(--text-muted)">Auto-updates every 30s · <span id="feed-count">10</span> entries · Hover to pause</span>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="pauseFeed(this)">⏸ Pause</button>
+          <button class="btn btn-outline btn-sm" onclick="exportFeed()">⬇ Export</button>
+        </div>
+      </div>
+
+      <div class="filter-strip">
+        <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-pill" onclick="setFilter('high',this)">🔴 High Risk</button>
+        <button class="filter-pill" onclick="setFilter('medium',this)">🟠 Suspicious</button>
+        <button class="filter-pill" onclick="setFilter('low',this)">🟢 Safe</button>
+        <button class="filter-pill" onclick="setFilter('fee',this)">💸 Fee Demand</button>
+        <button class="filter-pill" onclick="setFilter('impersonation',this)">🎭 Impersonation</button>
+      </div>
+
+      <div id="feed-list"></div>
+    </div>
+  </div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+const ALL_ENTRIES = [
+  { job:'Data Entry Intern', company:'XYZ Solutions', domain:'xyz-careers.in', city:'Pune', time:'2m ago', risk:'high', score:87, type:'fee', signals:['Fee demand ₹5000','Gmail recruiter','Domain 12 days old'] },
+  { job:'WFH Customer Care Executive', company:'DigiWork India', domain:'digiwork-india.net', city:'Mumbai', time:'5m ago', risk:'high', score:79, type:'fee', signals:['Registration fee','No SSL cert','WhatsApp only'] },
+  { job:'Digital Marketing Executive', company:'GlobalWork', domain:'globalwork.xyz', city:'Delhi', time:'11m ago', risk:'medium', score:61, type:'suspicious', signals:['Salary 6x market rate','Free email domain'] },
+  { job:'HR Recruiter WFH', company:'CareerBoost Pvt', domain:'careerboost-hr.com', city:'Bangalore', time:'18m ago', risk:'high', score:74, type:'impersonation', signals:['Impersonating Infosys','Fake letterhead','Urgent joining'] },
+  { job:'Remote Data Analyst', company:'TechGrow India', domain:'techgrow-in.xyz', city:'Chennai', time:'22m ago', risk:'medium', score:58, type:'suspicious', signals:['Vague job description','Domain 34 days old'] },
+  { job:'Content Writer Work From Home', company:'WritePro Hub', domain:'writepro-hub.com', city:'Hyderabad', time:'29m ago', risk:'medium', score:52, type:'suspicious', signals:['Unrealistic salary','No company info'] },
+  { job:'Python Developer', company:'Tata Consultancy Services', domain:'tcs.com', city:'Pune', time:'34m ago', risk:'low', score:6, type:'verified', signals:['Official domain','Corporate email','SSL valid'] },
+  { job:'Sales Executive', company:'Zomato', domain:'zomato.com', city:'Gurgaon', time:'41m ago', risk:'low', score:4, type:'verified', signals:['Domain 11 years old','Verified company','Official process'] },
+  { job:'BPO Executive (Night Shift)', company:'QuickEarnings Ltd', domain:'quickearnings-jobs.in', city:'Jaipur', time:'47m ago', risk:'high', score:83, type:'fee', signals:['Advance salary request','No office address','MLM structure'] },
+  { job:'Typing Operator WFH', company:'NetJob India', domain:'netjob-india.xyz', city:'Noida', time:'55m ago', risk:'high', score:91, type:'fee', signals:['Security deposit ₹3000','Domain 8 days old','Telegram only'] },
+];
+
+let currentFilter = 'all';
+let paused = false;
+let addInterval;
+
+function renderEntries(entries) {
+  const list = document.getElementById('feed-list');
+  list.innerHTML = '';
+  entries.forEach((e, i) => {
+    list.innerHTML += `
+    <div class="feed-full-card" data-type="${e.type}" data-risk="${e.risk}">
+      <div class="feed-card-top">
+        <div class="feed-risk-dot ${e.risk}"></div>
+        <div class="feed-card-info">
+          <div class="feed-card-job">${e.job}</div>
+          <div class="feed-card-meta">🏢 ${e.company} · 🌐 ${e.domain} · 📍 ${e.city} · 🕐 ${e.time}</div>
+        </div>
+        <div class="feed-card-score ${e.risk}">${e.score}</div>
+        <span class="feed-card-badge ${e.risk}">${e.risk === 'high' ? 'HIGH RISK' : e.risk === 'medium' ? 'SUSPICIOUS' : 'SAFE'}</span>
+        <a href="checker.html" class="btn btn-outline btn-sm" style="margin-left:6px">Analyze</a>
+      </div>
+      <div class="feed-signals">
+        ${e.signals.map(s => `<span class="signal-chip ${e.risk === 'low' ? 'ok' : e.risk === 'high' ? 'bad' : 'warn'}">⚡ ${s}</span>`).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('feed-count').textContent = entries.length;
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = f === 'all' ? ALL_ENTRIES : ALL_ENTRIES.filter(e => e.risk === f || e.type === f);
+  renderEntries(filtered);
+}
+
+function pauseFeed(btn) {
+  paused = !paused;
+  btn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+  if (paused) clearInterval(addInterval); else startAutoAdd();
+}
+
+function startAutoAdd() {
+  addInterval = setInterval(() => {
+    if (paused) return;
+    const newEntry = { job:'New Alert: WFH Typing Job', company:'EarnAtHome Co', domain:'earnhome-jobs.xyz', city:'Indore', time:'just now', risk:'high', score:88, type:'fee', signals:['Fee ₹2000 upfront','No SSL','Domain 5 days'] };
+    ALL_ENTRIES.unshift(newEntry);
+    const filtered = currentFilter === 'all' ? ALL_ENTRIES : ALL_ENTRIES.filter(e => e.risk === currentFilter || e.type === currentFilter);
+    renderEntries(filtered);
+    const firstCard = document.querySelector('.feed-full-card');
+    if (firstCard) firstCard.classList.add('new-entry');
+  }, 30000);
+}
+
+function exportFeed() {
+  const csv = ['Job,Company,Domain,City,Risk,Score,Time'].concat(ALL_ENTRIES.map(e => `"${e.job}","${e.company}","${e.domain}","${e.city}","${e.risk}","${e.score}","${e.time}"`)).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'scamshield-feed.csv';
+  a.click();
+  showToast('Feed exported as CSV', 'success');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderSidebar('live-feed.html');
+  document.getElementById('page-title').textContent = 'Live Scam Feed';
+  renderEntries(ALL_ENTRIES);
+  startAutoAdd();
+});
+</script>
+</body></html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScamShield – Detect Fake Jobs</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Hero ── */
+    .hero-section {
+      background: linear-gradient(135deg, rgba(88,166,255,0.06) 0%, rgba(188,140,255,0.06) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px 28px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-section::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(88,166,255,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-title { font-size: 26px; font-weight: 800; line-height: 1.25; margin-bottom: 8px; }
+    .hero-title span { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub { color: var(--text-secondary); font-size: 14px; max-width: 520px; }
+    .hero-stats { display: flex; gap: 28px; margin-top: 20px; flex-wrap: wrap; }
+    .hero-stat { display: flex; flex-direction: column; }
+    .hero-stat-val { font-size: 22px; font-weight: 800; color: var(--text-primary); font-family: var(--font-mono); }
+    .hero-stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+
+    /* ── Combined Input Panel ── */
+    .unified-checker { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .input-mode-bar {
+      display: flex;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 4px;
+      gap: 2px;
+    }
+    .mode-btn {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 6px;
+      border: none; border-radius: 7px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px; font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .mode-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+    .mode-btn.active { background: var(--accent-blue); color: #fff; }
+    .mode-btn .mode-icon { font-size: 14px; }
+    .checker-body { padding: 20px; }
+    .mode-panel { display: none; animation: fadeIn 0.2s ease; }
+    .mode-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform:none; } }
+
+    /* ── File drop areas ── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--bg-input);
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent-blue); background: rgba(88,166,255,0.04); }
+    .drop-zone-icon { font-size: 2rem; margin-bottom: 8px; }
+    .drop-zone-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .drop-zone-hint { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Live Feed ── */
+    .live-feed-wrapper { overflow: hidden; position: relative; border-radius: var(--radius); }
+    .live-feed-track { display: flex; flex-direction: column; gap: 0; transition: none; }
+    .feed-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+      transition: background 0.2s;
+    }
+    .feed-item:hover { background: var(--bg-card-hover); }
+    .feed-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .feed-dot.red { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
+    .feed-dot.amber { background: var(--accent-orange); }
+    .feed-dot.green { background: var(--accent-green); }
+    .feed-job { font-weight: 600; color: var(--text-primary); flex: 1; }
+    .feed-company { color: var(--text-secondary); min-width: 120px; }
+    .feed-city { color: var(--text-muted); min-width: 90px; }
+    .feed-time { color: var(--text-muted); font-size: 11px; min-width: 60px; text-align: right; }
+    .feed-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; flex-shrink: 0; }
+    .feed-badge.high { background: rgba(248,81,73,0.15); color: var(--accent-red); border: 1px solid rgba(248,81,73,0.2); }
+    .feed-badge.medium { background: rgba(227,112,42,0.15); color: var(--accent-orange); border: 1px solid rgba(227,112,42,0.2); }
+    .feed-badge.low { background: rgba(63,185,80,0.15); color: var(--accent-green); border: 1px solid rgba(63,185,80,0.2); }
+    .feed-scroll-container { max-height: 280px; overflow: hidden; position: relative; }
+
+    /* ── Trust Card Preview ── */
+    .trust-card {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(88,166,255,0.04) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+    .score-ring-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .score-ring { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .score-ring-num { font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: var(--accent-red); }
+    .score-ring-lbl { font-size: 8px; text-transform: uppercase; color: var(--text-muted); }
+    .dim-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .dim-bar-label { font-size: 11px; color: var(--text-muted); width: 70px; flex-shrink: 0; }
+    .dim-bar-track { flex: 1; height: 5px; background: var(--bg-input); border-radius: 3px; overflow: hidden; }
+    .dim-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+    .dim-bar-val { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); width: 28px; text-align: right; }
+    .trust-flags { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .trust-flag { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .trust-flag.bad { color: var(--accent-red); }
+    .trust-flag.ok { color: var(--accent-green); }
+    .trust-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+    /* ── Quick stats row ── */
+    .quick-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 900px) { .quick-stats { grid-template-columns: repeat(2, 1fr); } }
+    .q-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .q-stat-val { font-size: 20px; font-weight: 800; font-family: var(--font-mono); }
+    .q-stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Home layout ── */
+    .home-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+    @media (max-width: 1100px) { .home-layout { grid-template-columns: 1fr; } }
+    .home-right { display: flex; flex-direction: column; gap: 16px; }
+  </style>
+</head>
+<body>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+
+      <!-- Hero -->
+      <div class="hero-section">
+        <div class="hero-title">Protect yourself from<br><span>fake job scams</span></div>
+        <p class="hero-sub">India's first AI-powered job scam detector. Analyze job postings, compare listings, verify recruiters — before you apply.</p>
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="hero-stat-val">1,842</span><span class="hero-stat-lbl">Jobs Analyzed</span></div>
+          <div class="hero-stat"><span class="hero-stat-val">347</span><span class="hero-stat-lbl">Scams Flagged</span></div>
+          <div class="hero-stat"><span class="hero-stat-val">89</span><span class="hero-stat-lbl">Blacklisted Domains</span></div>
+          <div class="hero-stat"><span class="hero-stat-val">214</span><span class="hero-stat-lbl">Reports by Community</span></div>
+        </div>
+      </div>
+
+      <div class="home-layout">
+        <!-- LEFT: Unified Checker + Live Feed -->
+        <div>
+          <!-- Unified Input Panel -->
+          <div class="unified-checker mb-4">
+            <div class="input-mode-bar" id="mode-bar">
+              <button class="mode-btn active" onclick="setMode('url')"><span class="mode-icon">🔗</span> Link</button>
+              <button class="mode-btn" onclick="setMode('screenshot')"><span class="mode-icon">📷</span> Screenshot</button>
+              <button class="mode-btn" onclick="setMode('email')"><span class="mode-icon">📧</span> Email</button>
+              <button class="mode-btn" onclick="setMode('offer')"><span class="mode-icon">📄</span> Offer Letter</button>
+              <button class="mode-btn" onclick="setMode('text')"><span class="mode-icon">📝</span> Paste Text</button>
+            </div>
+
+            <div class="checker-body">
+              <!-- URL Mode -->
+              <div class="mode-panel active" id="mode-url">
+                <div class="form-group">
+                  <label class="form-label">Job posting or company link</label>
+                  <div style="display:flex;gap:8px">
+                    <input type="url" id="url-input" class="form-control" placeholder="https://naukri.com/job/... or suspicious-site.xyz" style="flex:1">
+                    <button class="btn btn-primary" onclick="analyzeFromHome()">Analyze</button>
+                  </div>
+                </div>
+                <p class="text-xs text-muted mt-1">Paste the job URL — we'll check domain age, SSL, recruiter email, and more.</p>
+              </div>
+
+              <!-- Screenshot Mode -->
+              <div class="mode-panel" id="mode-screenshot">
+                <div class="drop-zone" id="drop-screenshot" onclick="document.getElementById('file-ss').click()" ondragover="ev(event,'drag-over','drop-screenshot')" ondragleave="ev(event,'','drop-screenshot')" ondrop="handleDrop(event,'ss')">
+                  <div class="drop-zone-icon">📷</div>
+                  <div class="drop-zone-label">Drop screenshot here or click to upload</div>
+                  <div class="drop-zone-hint">PNG, JPG, WEBP · Naukri, LinkedIn, WhatsApp — any screenshot works</div>
+                </div>
+                <input type="file" id="file-ss" accept="image/*" style="display:none" onchange="previewFile(this,'prev-ss')">
+                <div id="prev-ss" class="mt-2"></div>
+                <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Screenshot</button>
+              </div>
+
+              <!-- Email Mode -->
+              <div class="mode-panel" id="mode-email">
+                <div class="form-group">
+                  <label class="form-label">Sender email address</label>
+                  <input type="email" id="email-sender" class="form-control" placeholder="recruiter@fake-company.xyz">
+                </div>
+                <div class="drop-zone mt-2" onclick="document.getElementById('file-email').click()">
+                  <div class="drop-zone-icon">📧</div>
+                  <div class="drop-zone-label">Upload email screenshot (optional)</div>
+                  <div class="drop-zone-hint">PNG, JPG or .eml — max 5MB</div>
+                </div>
+                <input type="file" id="file-email" accept="image/*,.eml" style="display:none" onchange="previewFile(this,'prev-email')">
+                <div id="prev-email" class="mt-2"></div>
+                <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Email</button>
+              </div>
+
+              <!-- Offer Letter Mode -->
+              <div class="mode-panel" id="mode-offer">
+                <div class="drop-zone" onclick="document.getElementById('file-offer').click()">
+                  <div class="drop-zone-icon">📄</div>
+                  <div class="drop-zone-label">Upload offer letter — PDF or DOCX</div>
+                  <div class="drop-zone-hint">We'll scan for registration fee demands, vague clauses, fake company signals</div>
+                </div>
+                <input type="file" id="file-offer" accept=".pdf,.docx,application/pdf" style="display:none" onchange="previewFile(this,'prev-offer')">
+                <div id="prev-offer" class="mt-2"></div>
+                <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Offer Letter</button>
+              </div>
+
+              <!-- Paste Text Mode -->
+              <div class="mode-panel" id="mode-text">
+                <div class="form-group">
+                  <label class="form-label">Paste job description or email content</label>
+                  <textarea id="text-input" class="form-control" rows="5" placeholder="Paste the full job description, email, or any text you received from the recruiter…"></textarea>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="analyzeFromHome()">Analyze Text</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Scam Feed -->
+          <div class="card">
+            <div class="card-title flex-between">
+              <span>📡 Live Scam Feed <span class="nav-badge" style="background:var(--accent-red);margin-left:8px;vertical-align:middle">LIVE</span></span>
+              <a href="live-feed.html" class="btn btn-outline btn-sm">View All</a>
+            </div>
+            <div class="feed-scroll-container" id="live-feed-container">
+              <div id="live-feed-track"></div>
+            </div>
+            <p class="text-xs text-muted mt-2" style="padding:0 2px">Updated every 30s · Scroll auto-pauses on hover · <a href="live-feed.html" class="link">Full feed →</a></p>
+          </div>
+        </div>
+
+        <!-- RIGHT: Trust Card preview + Quick Actions -->
+        <div class="home-right">
+          <!-- Sample Trust Card -->
+          <div class="trust-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:700">📋 Sample Trust Card</div>
+              <span class="badge badge-red" style="font-size:10px">HIGH RISK</span>
+            </div>
+            <div class="score-ring-wrap">
+              <div class="score-ring">
+                <svg width="70" height="70" viewBox="0 0 70 70">
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="var(--border)" stroke-width="7"/>
+                  <circle cx="35" cy="35" r="28" fill="none" stroke="var(--accent-red)" stroke-width="7"
+                    stroke-dasharray="175.93" stroke-dashoffset="31.67" stroke-linecap="round"/>
+                </svg>
+                <div class="score-ring-text">
+                  <span class="score-ring-num">82</span>
+                  <span class="score-ring-lbl">/100</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700">Data Entry Executive</div>
+                <div style="font-size:11px;color:var(--text-muted)">XYZ Consulting · tcs-careers-hiring.xyz</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Report ID: SS-2026-48291</div>
+              </div>
+            </div>
+            <div>
+              <div class="dim-bar-row"><span class="dim-bar-label">Domain</span><div class="dim-bar-track"><div class="dim-bar-fill" style="width:92%;background:var(--accent-red)"></div></div><span class="dim-bar-val">92</span></div>
+              <div class="dim-bar-row"><span class="dim-bar-label">Recruiter</span><div class="dim-bar-track"><div class="dim-bar-fill" style="width:85%;background:var(--accent-red)"></div></div><span class="dim-bar-val">85</span></div>
+              <div class="dim-bar-row"><span class="dim-bar-label">Salary</span><div class="dim-bar-track"><div class="dim-bar-fill" style="width:78%;background:var(--accent-orange)"></div></div><span class="dim-bar-val">78</span></div>
+              <div class="dim-bar-row"><span class="dim-bar-label">Language</span><div class="dim-bar-track"><div class="dim-bar-fill" style="width:60%;background:var(--accent-yellow)"></div></div><span class="dim-bar-val">60</span></div>
+              <div class="dim-bar-row"><span class="dim-bar-label">Structure</span><div class="dim-bar-track"><div class="dim-bar-fill" style="width:45%;background:var(--accent-yellow)"></div></div><span class="dim-bar-val">45</span></div>
+            </div>
+            <div class="trust-flags">
+              <div class="trust-flag bad">⊗ Registration fee ₹5,000 mentioned</div>
+              <div class="trust-flag bad">⊗ Recruiter using Gmail account</div>
+              <div class="trust-flag bad">⊗ Domain age only 12 days</div>
+              <div class="trust-flag ok">✓ Job description found (brief)</div>
+            </div>
+            <div class="trust-actions">
+              <button class="btn btn-outline btn-sm" style="flex:1" onclick="showToast('Download feature works with real analysis','info')">⬇ Save</button>
+              <button class="btn btn-outline btn-sm" style="flex:1" onclick="showToast('Share link copied!','success')">⇪ Share</button>
+              <button class="btn btn-danger btn-sm" style="flex:1" onclick="window.location.href='report.html'">⚑ Report</button>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card">
+            <div class="card-title">⚡ Quick Actions</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <a href="compare.html" class="btn btn-outline btn-full" style="justify-content:flex-start;gap:10px">⚖️ Compare two job URLs side by side</a>
+              <a href="recruiter.html" class="btn btn-outline btn-full" style="justify-content:flex-start;gap:10px">👤 Verify recruiter email or LinkedIn</a>
+              <a href="domain-scanner.html" class="btn btn-outline btn-full" style="justify-content:flex-start;gap:10px">🌐 Deep-scan a suspicious domain</a>
+              <a href="report.html" class="btn btn-danger btn-full" style="justify-content:flex-start;gap:10px">🚨 Report a scam job posting</a>
+            </div>
+          </div>
+
+          <!-- Safety Tips Card -->
+          <div class="card">
+            <div class="card-title">💡 Today's Safety Tip</div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.7" id="daily-tip">
+              Loading tip…
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+// ── Mode switcher ──
+function setMode(mode) {
+  document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + mode).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+function ev(e, cls, id) {
+  e.preventDefault();
+  const el = document.getElementById(id);
+  cls ? el.classList.add(cls) : el.classList.remove('drag-over');
+}
+function handleDrop(e, id) {
+  e.preventDefault();
+  document.getElementById('drop-' + id).classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) previewFile({ files: [f] }, 'prev-' + id);
+}
+function previewFile(input, previewId) {
+  const file = input.files ? input.files[0] : input;
+  if (!file) return;
+  const el = document.getElementById(previewId);
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => { el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-input);border-radius:6px;font-size:12px;margin-top:6px"><span>🖼️</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${file.name}</span><span style="color:var(--accent-green)">✓ Ready</span></div>`; };
+    reader.readAsDataURL(file);
+  } else {
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-input);border-radius:6px;font-size:12px;margin-top:6px"><span>📄</span><span style="flex:1">${file.name}</span><span style="color:var(--accent-green)">✓ Ready</span></div>`;
+  }
+}
+
+function analyzeFromHome() {
+  showToast('Redirecting to full analyzer…', 'info');
+  setTimeout(() => window.location.href = 'checker.html', 500);
+}
+
+// ── Live Feed ──
+const FEED_DATA = [
+  { job: 'Data Entry Intern', company: 'XYZ Solutions', city: 'Pune', time: '2m ago', risk: 'high' },
+  { job: 'WFH Customer Care', company: 'DigiWork India', city: 'Mumbai', time: '5m ago', risk: 'high' },
+  { job: 'Digital Marketing Exec', company: 'GlobalWork', city: 'Delhi', time: '11m ago', risk: 'medium' },
+  { job: 'HR Recruiter WFH', company: 'CareerBoost Pvt', city: 'Bangalore', time: '18m ago', risk: 'high' },
+  { job: 'Remote Data Analyst', company: 'TechGrow India', city: 'Chennai', time: '22m ago', risk: 'medium' },
+  { job: 'Content Writer (Home)', company: 'WritePro Hub', city: 'Hyderabad', time: '29m ago', risk: 'medium' },
+  { job: 'Python Developer', company: 'TCS (Official)', city: 'Pune', time: '34m ago', risk: 'low' },
+  { job: 'Sales Executive', company: 'Zomato Careers', city: 'Gurgaon', time: '41m ago', risk: 'low' },
+  { job: 'BPO Executive', company: 'QuickEarnings Ltd', city: 'Jaipur', time: '47m ago', risk: 'high' },
+  { job: 'Typing Operator', company: 'NetJob India', city: 'Noida', time: '55m ago', risk: 'high' },
+];
+
+function renderFeed() {
+  const track = document.getElementById('live-feed-track');
+  if (!track) return;
+  track.innerHTML = '';
+  FEED_DATA.forEach(item => {
+    const dotClass = item.risk === 'high' ? 'red' : item.risk === 'medium' ? 'amber' : 'green';
+    const badgeClass = item.risk;
+    const badgeText = item.risk === 'high' ? 'HIGH RISK' : item.risk === 'medium' ? 'SUSPICIOUS' : 'SAFE';
+    track.innerHTML += `
+    <div class="feed-item">
+      <div class="feed-dot ${dotClass}"></div>
+      <div class="feed-job">${item.job}</div>
+      <div class="feed-company">${item.company}</div>
+      <div class="feed-city">📍 ${item.city}</div>
+      <span class="feed-badge ${item.risk}">${badgeText}</span>
+      <div class="feed-time">${item.time}</div>
+    </div>`;
+  });
+}
+
+// Auto-scroll live feed, pause on hover
+let scrollInterval;
+function startScroll() {
+  const container = document.getElementById('live-feed-container');
+  if (!container) return;
+  scrollInterval = setInterval(() => {
+    if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+      container.scrollTop = 0;
+    } else {
+      container.scrollTop += 1;
+    }
+  }, 40);
+}
+function stopScroll() { clearInterval(scrollInterval); }
+
+// Safety tips rotation
+const TIPS = [
+  '🚨 <strong>Any job that asks for a registration/security deposit fee is a scam</strong> — no exceptions. Legitimate employers never charge candidates.',
+  '🔍 Before applying, check the company domain age on <strong>whois.domaintools.com</strong> — scam sites are usually less than 3 months old.',
+  '📧 Real recruiters from TCS, Infosys, Wipro use <strong>@tcs.com, @infosys.com, @wipro.com</strong> — if the email is @gmail.com, it\'s fake.',
+  '💰 A fresher data entry role offering ₹40,000/month with "no experience needed" is almost always fake. Check realistic salaries on <strong>AmbitionBox</strong>.',
+  '📞 Scam recruiters often insist on <strong>WhatsApp-only communication</strong> and avoid phone/video calls — legitimate companies have proper HR processes.',
+];
+document.getElementById('daily-tip').innerHTML = TIPS[new Date().getDay() % TIPS.length];
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderSidebar('index.html');
+  document.getElementById('page-title').textContent = 'Home';
+  renderFeed();
+  const container = document.getElementById('live-feed-container');
+  if (container) {
+    container.addEventListener('mouseenter', stopScroll);
+    container.addEventListener('mouseleave', startScroll);
+  }
+  setTimeout(startScroll, 1000);
+});
+</script>
+</body></html>

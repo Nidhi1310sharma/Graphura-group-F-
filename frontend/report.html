@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scam Reports – ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .report-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .report-layout { grid-template-columns: 1fr; } }
+    .report-list-item { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; transition: var(--transition); }
+    .report-list-item:hover { border-color: var(--border-hover); }
+    .report-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; flex-shrink: 0; }
+    .dot-red { background: var(--accent-red); }
+    .dot-orange { background: var(--accent-orange); }
+    .dot-yellow { background: var(--accent-yellow); }
+  </style>
+</head>
+<body>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+      <div class="page-header">
+        <h1>🚩 Scam Reports</h1>
+        <p>Submit a report or browse recent community scam reports</p>
+      </div>
+
+      <div class="report-layout">
+        <!-- REPORT FORM -->
+        <div>
+          <div class="card">
+            <div class="card-title">📝 Report a Scam Job</div>
+            <div class="alert alert-info mb-2">
+              <span class="alert-icon">ℹ️</span>
+              <span>Companies reported 3+ times are automatically blacklisted. Your details remain private.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Job URL or Company Name <span style="color:var(--accent-red)">*</span></label>
+              <input type="text" id="r-company" class="form-control" placeholder="Job URL or company name">
+            </div>
+            <div class="two-col">
+              <div class="form-group">
+                <label class="form-label">Job Title</label>
+                <input type="text" id="r-job-title" class="form-control" placeholder="e.g. Data Entry Intern">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Scam Type <span style="color:var(--accent-red)">*</span></label>
+                <select id="r-scam-type" class="form-control">
+                  <option value="">Select type...</option>
+                  <option value="fee_demand">Fee Demand</option>
+                  <option value="phishing">Phishing</option>
+                  <option value="fake_company">Fake Company</option>
+                  <option value="data_theft">Data Theft</option>
+                  <option value="fake_offer">Fake Job Offer</option>
+                  <option value="impersonation">Brand Impersonation</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Describe the Scam <span style="color:var(--accent-red)">*</span></label>
+              <textarea id="r-reason" class="form-control" rows="4" placeholder="What happened? e.g. They asked for ₹5000 security deposit after selection..."></textarea>
+            </div>
+
+            <!-- Proof Attachments -->
+            <div style="margin-bottom:12px">
+              <label class="form-label">Attach Proof</label>
+              <div class="proof-btns">
+                <button class="proof-btn" id="rbtn-screenshot" onclick="toggleReportProof('screenshot')">📷 Screenshot</button>
+                <button class="proof-btn" id="rbtn-email" onclick="toggleReportProof('email')">📧 Email Proof</button>
+                <button class="proof-btn" id="rbtn-offer" onclick="toggleReportProof('offer')">📄 Offer PDF</button>
+              </div>
+              <div class="proof-panel" id="rproof-screenshot" style="margin-top:10px">
+                <div class="file-upload-area" onclick="document.getElementById('r-file-screenshot').click()">
+                  <div class="upload-icon">📷</div>
+                  <div class="upload-text">Upload screenshot</div>
+                  <div class="upload-hint">PNG, JPG — max 5MB</div>
+                </div>
+                <input type="file" id="r-file-screenshot" accept="image/*" style="display:none" onchange="handleReportFile(this,'screenshot')">
+                <div id="rpreview-screenshot"></div>
+              </div>
+              <div class="proof-panel" id="rproof-email" style="margin-top:10px">
+                <div class="file-upload-area" onclick="document.getElementById('r-file-email').click()">
+                  <div class="upload-icon">📧</div><div class="upload-text">Upload email screenshot</div>
+                  <div class="upload-hint">PNG, JPG — max 5MB</div>
+                </div>
+                <input type="file" id="r-file-email" accept="image/*" style="display:none" onchange="handleReportFile(this,'email')">
+                <div id="rpreview-email"></div>
+              </div>
+              <div class="proof-panel" id="rproof-offer" style="margin-top:10px">
+                <div class="file-upload-area" onclick="document.getElementById('r-file-offer').click()">
+                  <div class="upload-icon">📄</div><div class="upload-text">Upload offer letter (PDF/DOCX)</div>
+                  <div class="upload-hint">PDF, DOCX — max 10MB</div>
+                </div>
+                <input type="file" id="r-file-offer" accept=".pdf,.docx" style="display:none" onchange="handleReportFile(this,'offer')">
+                <div id="rpreview-offer"></div>
+              </div>
+            </div>
+
+            <div class="two-col">
+              <div class="form-group">
+                <label class="form-label">Your Name <span class="text-muted">(optional)</span></label>
+                <input type="text" id="r-name" class="form-control" placeholder="e.g. Rahul S.">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Your Email <span class="text-muted">(optional)</span></label>
+                <input type="email" id="r-email" class="form-control" placeholder="you@email.com">
+              </div>
+            </div>
+            <button class="btn btn-danger btn-full btn-lg" id="submit-report-btn" onclick="submitReport()">
+              🚨 Submit Report
+            </button>
+          </div>
+        </div>
+
+        <!-- RECENT REPORTS LIST -->
+        <div>
+          <div class="card">
+            <div class="card-title flex-between">
+              <span>📋 Recent Community Reports</span>
+              <span class="text-xs text-muted" id="report-count">Loading...</span>
+            </div>
+            <div id="recent-reports-list">
+              <div class="report-list-item">
+                <div class="flex-between mb-2">
+                  <strong style="font-size:13.5px">🔴 Fake Google job — asked ₹5000 security deposit</strong>
+                  <span class="badge badge-red">Scam</span>
+                </div>
+                <div class="text-xs text-secondary">Reported by Rahul S. · 7 days ago · 14 upvotes</div>
+              </div>
+              <div class="report-list-item">
+                <div class="flex-between mb-2">
+                  <strong style="font-size:13.5px">🟠 WFH data entry — no payment received</strong>
+                  <span class="badge badge-orange">Suspicious</span>
+                </div>
+                <div class="text-xs text-secondary">Reported by Priya M. · 3 days ago · 8 upvotes</div>
+              </div>
+              <div class="report-list-item">
+                <div class="flex-between mb-2">
+                  <strong style="font-size:13.5px">🟡 Suspicious TCS impersonation recruiter</strong>
+                  <span class="badge badge-yellow">Pending</span>
+                </div>
+                <div class="text-xs text-secondary">Reported by Ankit R. · 1 day ago · 3 upvotes</div>
+              </div>
+            </div>
+            <a href="community.html" class="btn btn-outline btn-full mt-3">View All in Community →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  renderSidebar('report.html');
+  document.getElementById('page-title').textContent = 'Scam Reports';
+});
+
+function toggleReportProof(type) {
+  const panel = document.getElementById('rproof-' + type);
+  const btn = document.getElementById('rbtn-' + type);
+  const isActive = panel.classList.contains('active');
+  document.querySelectorAll('#app-shell .proof-panel').forEach(p => { if (p.id.startsWith('rproof-')) p.classList.remove('active'); });
+  document.querySelectorAll('[id^="rbtn-"]').forEach(b => b.classList.remove('active'));
+  if (!isActive) { panel.classList.add('active'); btn.classList.add('active'); }
+}
+
+function handleReportFile(input, type) {
+  const file = input.files[0]; if (!file) return;
+  const preview = document.getElementById('rpreview-' + type);
+  preview.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;color:var(--text-secondary);margin-top:8px"><span>📎</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${file.name}</span></div>`;
+  showToast(`${file.name} attached`, 'success');
+}
+
+async function submitReport() {
+  const company = document.getElementById('r-company').value.trim();
+  const scamType = document.getElementById('r-scam-type').value;
+  const reason = document.getElementById('r-reason').value.trim();
+  if (!company || !scamType || !reason) { showToast('Please fill in all required fields', 'warning'); return; }
+  const btn = document.getElementById('submit-report-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  const payload = { company_name: company, job_title: document.getElementById('r-job-title').value.trim(), scam_type: scamType, report_reason: reason, reporter_name: document.getElementById('r-name').value.trim(), reporter_email: document.getElementById('r-email').value.trim(), reported_at: new Date().toISOString() };
+  try {
+    await api.post('/reports', payload);
+    showToast('Report submitted! Thank you for helping the community.', 'success');
+    addReportToList(payload);
+    document.querySelectorAll('#app-shell .form-control').forEach(f => f.value = '');
+  } catch (e) {
+    // Demo fallback
+    showToast('Report saved locally (connect backend for full functionality)', 'info');
+    addReportToList(payload);
+    document.querySelectorAll('#app-shell .form-control').forEach(f => f.value = '');
+  }
+  btn.disabled = false; btn.textContent = '🚨 Submit Report';
+}
+
+function addReportToList(report) {
+  const list = document.getElementById('recent-reports-list');
+  const item = document.createElement('div');
+  item.className = 'report-list-item';
+  item.style.borderColor = 'var(--accent-green)';
+  item.innerHTML = `<div class="flex-between mb-2"><strong style="font-size:13.5px">🔴 ${report.company_name} — ${report.job_title || 'Job Scam'}</strong><span class="badge badge-red">New</span></div><div class="text-xs text-secondary">Reported by ${report.reporter_name || 'Anonymous'} · just now · 0 upvotes</div>`;
+  list.insertBefore(item, list.firstChild);
+}
+</script>
+</body></html>

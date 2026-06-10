@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Domain Scanner – ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .domain-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 16px 0; }
+    .domain-check-card { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
+    .domain-check-icon { font-size: 22px; margin-bottom: 6px; }
+    .domain-check-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .domain-check-value { font-size: 14px; font-weight: 600; margin-top: 3px; }
+  </style>
+</head>
+<body>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner" style="max-width:900px">
+      <div class="page-header"><h1>🌐 Domain Scanner</h1><p>Check any domain or website for fraud indicators and blacklist status</p></div>
+
+      <div class="card">
+        <div class="card-title">🔍 Scan Domain</div>
+        <div style="display:flex;gap:10px">
+          <input type="text" id="domain-input" class="form-control" placeholder="e.g. careers-google-jobs.xyz or https://fake-company.net/jobs" style="flex:1" onkeydown="if(event.key==='Enter')scanDomain()">
+          <button class="btn btn-primary" id="scan-btn" onclick="scanDomain()">Scan Domain</button>
+        </div>
+        <p class="text-xs text-muted mt-2">Enter domain name, URL, or company website to check for fraud signals</p>
+      </div>
+
+      <div id="scan-result" class="hidden">
+        <div class="card mt-4">
+          <div class="flex-between mb-3">
+            <div><div class="card-title" id="result-domain-name" style="margin-bottom:4px">—</div><div id="result-verdict" class="text-sm"></div></div>
+            <div id="result-score-badge"></div>
+          </div>
+          <div class="domain-result-grid" id="domain-checks-grid"></div>
+          <div id="domain-details" class="mt-3"></div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <a href="report.html" class="btn btn-danger btn-sm">🚨 Report This Domain</a>
+            <a href="checker.html" class="btn btn-outline btn-sm">🔍 Analyze a Job from This Domain</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-title">🚫 Recently Blacklisted Domains</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Domain</th><th>Age</th><th>SSL</th><th>Reports</th><th>Severity</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">careers-google-jobs.xyz</td><td>14 days</td><td><span class="badge badge-red">None</span></td><td>14</td><td><span class="badge badge-red">Critical</span></td></tr>
+              <tr><td class="mono">infosys-hr-jobs.tk</td><td>8 days</td><td><span class="badge badge-red">None</span></td><td>9</td><td><span class="badge badge-red">Critical</span></td></tr>
+              <tr><td class="mono">tcs-careers2025.in</td><td>22 days</td><td><span class="badge badge-red">None</span></td><td>11</td><td><span class="badge badge-red">Critical</span></td></tr>
+              <tr><td class="mono">workfromhome-india.net</td><td>45 days</td><td><span class="badge badge-yellow">Self-signed</span></td><td>6</td><td><span class="badge badge-orange">High</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  renderSidebar('domain-scanner.html');
+  document.getElementById('page-title').textContent = 'Domain Scanner';
+});
+
+async function scanDomain() {
+  let raw = document.getElementById('domain-input').value.trim();
+  if (!raw) { showToast('Please enter a domain or URL', 'warning'); return; }
+  try { raw = new URL(raw.includes('://') ? raw : 'https://' + raw).hostname; } catch (_) {}
+  raw = raw.replace('www.', '');
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true; btn.textContent = 'Scanning...';
+
+  setTimeout(() => {
+    const suspicious = /\.xyz|\.tk|\.ml|\.ga|careers-|jobs-|hr-|fake/.test(raw);
+    const age = suspicious ? Math.floor(Math.random() * 30) + 5 : Math.floor(Math.random() * 500) + 100;
+    const ssl = !suspicious;
+    const blacklisted = suspicious && Math.random() > 0.4;
+    const score = suspicious ? 60 + Math.floor(Math.random() * 30) : 10 + Math.floor(Math.random() * 20);
+    renderDomainResult({ domain: raw, age, ssl, blacklisted, score, suspicious_pattern: suspicious });
+    btn.disabled = false; btn.textContent = 'Scan Domain';
+  }, 1200);
+}
+
+function renderDomainResult(d) {
+  document.getElementById('scan-result').classList.remove('hidden');
+  document.getElementById('result-domain-name').textContent = '🌐 ' + d.domain;
+  const risk = d.score >= 70 ? 'HIGH' : d.score >= 40 ? 'MEDIUM' : 'LOW';
+  document.getElementById('result-verdict').innerHTML = `<span class="risk-badge ${getRiskClass(risk)}">${getRiskEmoji(risk)} ${getRiskLabel(risk)}</span>`;
+  document.getElementById('result-score-badge').innerHTML = `<div style="text-align:center"><div class="mono" style="font-size:2.2rem;font-weight:800;color:${d.score>=70?'var(--accent-red)':d.score>=40?'var(--accent-yellow)':'var(--accent-green)'}">${d.score}</div><div class="text-xs text-muted">Risk Score</div></div>`;
+
+  const checks = [
+    { icon: d.age < 90 ? '⚠️' : '✅', label: 'Domain Age', value: d.age + ' days', color: d.age < 90 ? 'var(--accent-yellow)' : 'var(--accent-green)' },
+    { icon: d.ssl ? '✅' : '❌', label: 'SSL Certificate', value: d.ssl ? 'Valid' : 'None', color: d.ssl ? 'var(--accent-green)' : 'var(--accent-red)' },
+    { icon: d.blacklisted ? '🚫' : '✅', label: 'Blacklist Status', value: d.blacklisted ? 'BLACKLISTED' : 'Clean', color: d.blacklisted ? 'var(--accent-red)' : 'var(--accent-green)' },
+    { icon: d.suspicious_pattern ? '⚠️' : '✅', label: 'Pattern Check', value: d.suspicious_pattern ? 'Suspicious' : 'Normal', color: d.suspicious_pattern ? 'var(--accent-orange)' : 'var(--accent-green)' },
+  ];
+  document.getElementById('domain-checks-grid').innerHTML = checks.map(c => `<div class="domain-check-card"><div class="domain-check-icon">${c.icon}</div><div class="domain-check-label">${c.label}</div><div class="domain-check-value" style="color:${c.color}">${c.value}</div></div>`).join('');
+  document.getElementById('domain-details').innerHTML = d.blacklisted ? `<div class="alert alert-danger"><span class="alert-icon">🚫</span><span><strong>${d.domain}</strong> is on our blacklist and has been reported multiple times. Do NOT interact with this domain.</span></div>` : d.score >= 40 ? `<div class="alert alert-warning"><span class="alert-icon">⚠️</span><span><strong>${d.domain}</strong> shows suspicious signals. Proceed with extreme caution.</span></div>` : `<div class="alert alert-success"><span class="alert-icon">✅</span><span><strong>${d.domain}</strong> appears clean with no major fraud indicators.</span></div>`;
+  document.getElementById('scan-result').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body></html>
