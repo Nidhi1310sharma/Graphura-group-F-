@@ -1,12 +1,191 @@
-Public User
- ├── Analyze Job
- ├── Submit Report
- ├── View Community
- └── View Reports
 
-Admin
- ├── Login
- ├── Moderate Reports
- ├── Verify Companies
- ├── Blacklist Companies
- └── View Dashboard
+Report:
+Severity	Meaning
+Low	Suspicious or misleading activity, little direct harm
+Medium	Personal data, credentials, or privacy at risk
+High	Financial loss, payment requests, fraud, or confirmed scam
+
+Status: 
+pending
+reviewed
+accepted
+rejected
+
+
+Database:
+
+## Table `admin_users`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `id` | `uuid` | Primary |
+| `name` | `text` |  |
+| `email` | `text` |  Unique |
+| `password_hash` | `text` |  |
+| `role` | `text` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+
+## Table `user_reports`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `report_id` | `uuid` | Primary |
+| `user_id` | `uuid` |  Nullable |
+| `company_name` | `text` |  |
+| `job_title` | `text` |  Nullable |
+| `description` | `text` |  Nullable |
+| `scam_type` | `text` |  Nullable |
+| `status` | `text` |  Nullable |
+| `severity` | `text` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+| `listing_id` | `uuid` |  Nullable |
+| `analysis_id` | `uuid` |  Nullable |
+
+## Table `community_posts`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `post_id` | `uuid` | Primary |
+| `user_id` | `uuid` |  Nullable |
+| `content` | `text` |  |
+| `report_id` | `uuid` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+| `post_title` | `text` |  |
+| `post_type` | `text` |  |
+| `status` | `text` |  |
+
+## Table `community_comments`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `comment_id` | `uuid` | Primary |
+| `post_id` | `uuid` |  Nullable |
+| `user_id` | `uuid` |  Nullable |
+| `content` | `text` |  |
+| `created_at` | `timestamptz` |  Nullable |
+
+## Table `community_votes`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `vote_id` | `uuid` | Primary |
+| `post_id` | `uuid` |  |
+| `user_id` | `uuid` |  |
+| `created_at` | `timestamptz` |  Nullable |
+| `vote_type` | `int2` |  |
+
+## Table `report_evidence`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `evidence_id` | `uuid` | Primary |
+| `report_id` | `uuid` |  Nullable |
+| `file_url` | `text` |  |
+| `file_type` | `text` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+
+## Table `companies`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `company_id` | `uuid` | Primary |
+| `company_name` | `text` |  |
+| `website_url` | `text` |  Nullable |
+| `linkedin_url` | `text` |  Nullable |
+| `email` | `text` |  Nullable |
+| `phone` | `numeric` |  Nullable |
+| `trust_score` | `int2` |  Nullable |
+| `report_count` | `int4` |  Nullable |
+| `status` | `text` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+
+## Table `job_listings`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `listing_id` | `uuid` | Primary |
+| `company_id` | `uuid` |  Nullable |
+| `job_title` | `text` |  Nullable |
+| `description` | `text` |  Nullable |
+| `source_url` | `text` |  |
+| `risk_score` | `int2` |  Nullable |
+| `status` | `text` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+| `analysis_id` | `uuid` |  Nullable |
+
+## Table `scam_indicators`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `indicator_id` | `uuid` | Primary |
+| `keyword` | `text` |  |
+| `category` | `text` |  |
+| `weight` | `int4` |  |
+| `created_at` | `timestamptz` |  Nullable |
+
+## Table `domain_analysis`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `domain_id` | `uuid` | Primary |
+| `domain` | `text` |  Unique |
+| `creation_date` | `date` |  Nullable |
+| `expiration_date` | `date` |  Nullable |
+| `registrar` | `text` |  Nullable |
+| `ssl_valid` | `bool` |  Nullable |
+| `trust_score` | `numeric` |  Nullable |
+| `last_checked` | `timestamptz` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+| `status` | `text` |  |
+
+## Table `audit_logs`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `log_id` | `uuid` | Primary |
+| `admin_id` | `uuid` |  Nullable |
+| `action` | `text` |  |
+| `target_type` | `text` |  Nullable |
+| `target_id` | `text` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+
+## Table `analysis`
+
+### Columns
+
+| Name | Type | Constraints |
+|------|------|-------------|
+| `analysis_id` | `uuid` | Primary |
+| `user_id` | `uuid` |  Nullable |
+| `listing_id` | `uuid` |  Nullable |
+| `company_id` | `uuid` |  Nullable |
+| `domain_id` | `uuid` |  Nullable |
+| `analysis_type` | `text` |  |
+| `input_source` | `text` |  Nullable |
+| `risk_score` | `int4` |  |
+| `risk_level` | `text` |  |
+| `summary` | `text` |  Nullable |
+| `created_at` | `timestamptz` |  Nullable |
+
