@@ -1,8 +1,44 @@
+#backend/routes/auth.py
+
 from backend.supabase_client import supabase
 from backend.schemas.auth import LoginRequest, RegisterRequest
 from backend.auth import hash_password, verify_password, create_access_token
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from datetime import datetime, timezone
+from jose import jwt, JWTError
+from fastapi import status
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+security = HTTPBearer()
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not payload or "user_id" not in payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return payload
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

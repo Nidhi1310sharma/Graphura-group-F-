@@ -11,6 +11,9 @@ reviewed
 accepted
 rejected
 
+verification_status pending, verified spam, fake report
+
+file_type in report evidence: url, image, pdf
 
 Database:
 
@@ -54,7 +57,6 @@ Database:
 | `post_id` | `uuid` | Primary |
 | `user_id` | `uuid` |  Nullable |
 | `content` | `text` |  |
-| `report_id` | `uuid` |  Nullable |
 | `created_at` | `timestamptz` |  Nullable |
 | `post_title` | `text` |  |
 | `post_type` | `text` |  |
@@ -71,6 +73,7 @@ Database:
 | `user_id` | `uuid` |  Nullable |
 | `content` | `text` |  |
 | `created_at` | `timestamptz` |  Nullable |
+| `status` | `text` |  |
 
 ## Table `community_votes`
 
@@ -95,6 +98,7 @@ Database:
 | `file_url` | `text` |  |
 | `file_type` | `text` |  Nullable |
 | `created_at` | `timestamptz` |  Nullable |
+| `verification_status` | `text` |  |
 
 ## Table `companies`
 
