@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community – ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<!-- Navbar injected -->
+
+<!-- Post Modal -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal-box">
+    <div class="modal-title">📝 Share Experience</div>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" id="post-title" class="form-control" placeholder="e.g. Career Solutions asked for ₹5000 fee">
+    </div>
+    <div class="two-col">
+      <div class="form-group">
+        <label class="form-label">Post Type</label>
+        <select class="form-control" id="post-type">
+          <option value="scam_report">🔴 Scam Report</option>
+          <option value="discussion">💬 Discussion</option>
+          <option value="warning">🟠 Warning</option>
+          <option value="question">❓ Question</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Company (optional)</label>
+        <input type="text" class="form-control" id="post-company" placeholder="Company name">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your Experience</label>
+      <textarea class="form-control" id="post-content" rows="4" placeholder="Describe what happened…"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closePostModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPost()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-container wide" style="margin-top:28px">
+  <div class="community-layout-v2">
+
+    <!-- LEFT: Filters -->
+    <div class="community-filters-col">
+      <div class="card" style="padding:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">Filter</div>
+        <div class="filter-list" id="filter-list">
+          <button class="filter-item active" onclick="applyFilter('all',this)">All Posts</button>
+          <button class="filter-item" onclick="applyFilter('discussion',this)">💬 Discussions</button>
+          <button class="filter-item" onclick="applyFilter('scam_report',this)">🔴 Scam Reports</button>
+          <button class="filter-item" onclick="applyFilter('warning',this)">🟠 Warnings</button>
+          <button class="filter-item" onclick="applyFilter('recent',this)">🕐 Recent</button>
+          <button class="filter-item" onclick="applyFilter('popular',this)">🔥 Popular</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: Posts feed -->
+    <div>
+      <!-- Search -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="text" class="form-control" id="post-search" placeholder="🔍 Search posts, companies, domains…" oninput="searchPosts(this.value)">
+        <button class="btn btn-primary" onclick="searchPosts(document.getElementById('post-search').value)">Search</button>
+        <button class="btn btn-outline" onclick="openPostModal()">+ Post</button>
+      </div>
+
+      <div id="posts-feed"></div>
+      <div id="no-results" style="display:none;text-align:center;padding:40px;color:var(--text-muted)">
+        <div style="font-size:2rem;margin-bottom:8px">🔎</div>
+        <strong>No results found</strong>
+        <p style="font-size:13px;margin-top:6px">Try a different keyword, or <button class="btn-link" onclick="openPostModal()">share what you know</button></p>
+      </div>
+    </div>
+
+    <!-- RIGHT: Live Feed widget -->
+    <div>
+      <div class="card live-feed-widget">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
+          <span style="font-weight:700;font-size:13px">📡 Live Scam Feed</span>
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--accent-red);animation:pulse 1.4s infinite;display:inline-block"></span>
+        </div>
+        <div class="live-feed-scroll" id="live-widget-scroll">
+          <div id="live-widget-entries"></div>
+        </div>
+        <a href="live-feed.html" class="text-xs link" style="display:block;margin-top:10px;text-align:center">View full feed →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+let allPosts = [];
+let currentFilter = 'all';
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff/60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  if (m < 1440) return Math.floor(m/60) + 'h ago';
+  return Math.floor(m/1440) + 'd ago';
+}
+
+function voteCount(votes) {
+  if (!Array.isArray(votes)) return 0;
+  return votes.filter(v => v.vote_type === 'upvote').length - votes.filter(v => v.vote_type === 'downvote').length;
+}
+
+function renderPosts(posts, highlight = '') {
+  const feed = document.getElementById('posts-feed');
+  const nr = document.getElementById('no-results');
+  if (!posts.length) { feed.innerHTML = ''; nr.style.display = 'block'; return; }
+  nr.style.display = 'none';
+  const typeIcon = { scam_report:'🔴', discussion:'💬', warning:'🟠', question:'❓' };
+  const typeLabel = { scam_report:'Scam Report', discussion:'Discussion', warning:'Warning', question:'Question' };
+  const tagClass = { scam_report:'badge-red', discussion:'badge-blue', warning:'badge-orange', question:'badge-gray' };
+
+  feed.innerHTML = posts.map(p => {
+    const name = p.users?.full_name || 'Anonymous';
+    const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const votes = voteCount(p.community_votes);
+    let body = p.content;
+    if (highlight) {
+      const re = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+      body = body.replace(re, '<mark style="background:rgba(88,166,255,.22);border-radius:2px;color:var(--accent-blue)">$1</mark>');
+    }
+    return `
+    <div class="feed-card" data-type="${p.post_type}" data-id="${p.post_id}">
+      <div class="feed-header">
+        <div class="feed-avatar" style="background:linear-gradient(135deg,#58a6ff,#bc8cff)">${initials}</div>
+        <div class="feed-meta">
+          <div class="feed-name">${name}</div>
+          <div class="feed-time">${timeAgo(p.created_at)}</div>
+        </div>
+        <span class="badge ${tagClass[p.post_type]||'badge-gray'}">${typeIcon[p.post_type]||'📝'} ${typeLabel[p.post_type]||p.post_type}</span>
+      </div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px">${p.title}</div>
+      ${p.company ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">🏢 ${p.company}${p.domain?' · 🌐 '+p.domain:''}</div>` : ''}
+      <div class="feed-body">${body}</div>
+      <div class="feed-actions">
+        <button class="feed-action-btn" onclick="handleVote('${p.post_id}',this,'upvote')">👍 <span class="vote-val">${votes}</span></button>
+        <button class="feed-action-btn" onclick="handleVote('${p.post_id}',this,'downvote')">👎</button>
+        <button class="feed-action-btn" onclick="toggleComments('${p.post_id}')">💬 Comments</button>
+        <button class="feed-action-btn" onclick="sharePost('${p.title}')">⇪ Share</button>
+        <button class="feed-action-btn" onclick="window.location.href='report.html'">🚩 Report</button>
+      </div>
+      <div class="replies-section" id="comments-${p.post_id}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="reply-input-row">
+          <input class="form-control" id="reply-${p.post_id}" placeholder="Add a comment…" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="addComment('${p.post_id}')">Post</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadPosts(type = 'all', search = null) {
+  try {
+    const opts = {};
+    if (type !== 'all' && type !== 'recent' && type !== 'popular') opts.type = type;
+    if (search) opts.search = search;
+    if (type === 'popular') opts.sort = 'community_votes';
+    allPosts = await DB.getCommunityPosts(opts);
+    renderPosts(allPosts, search);
+  } catch (e) {
+    console.error(e);
+    allPosts = DEMO_DATA.communityPosts;
+    renderPosts(allPosts, search);
+  }
+}
+
+function applyFilter(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('post-search').value = '';
+  loadPosts(type);
+}
+
+function searchPosts(q) {
+  q = q.trim();
+  if (!q) { loadPosts(currentFilter); return; }
+  const filtered = allPosts.filter(p =>
+    (p.title + p.content + (p.company||'') + (p.domain||'')).toLowerCase().includes(q.toLowerCase())
+  );
+  renderPosts(filtered, q);
+  if (filtered.length) showToast(`Found ${filtered.length} result(s)`, 'info');
+}
+
+async function handleVote(postId, btn, type) {
+  const user = auth.getUser();
+  if (!user) { showToast('Sign in to vote', 'warning'); return; }
+  try {
+    await DB.votePost(postId, user.user_id, type);
+    const valEl = btn.querySelector('.vote-val');
+    if (valEl) valEl.textContent = parseInt(valEl.textContent||0) + (type === 'upvote' ? 1 : -1);
+    btn.style.color = 'var(--accent-blue)';
+  } catch (e) { showToast('Vote saved (demo)', 'info'); }
+}
+
+function toggleComments(id) {
+  const el = document.getElementById('comments-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function addComment(postId) {
+  const input = document.getElementById('reply-' + postId);
+  const content = input.value.trim(); if (!content) return;
+  const user = auth.getUser();
+  try {
+    await DB.addComment(postId, user?.user_id, content);
+    const wrap = document.getElementById('comments-' + postId);
+    const div = document.createElement('div');
+    div.className = 'reply-item'; div.style.display = 'flex'; div.style.gap = '8px'; div.style.marginBottom = '8px';
+    div.innerHTML = `<div class="reply-avatar" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${(user?.full_name||'Y')[0]}</div><div style="background:var(--bg-input);border-radius:0 8px 8px 8px;padding:8px 12px;flex:1"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">${user?.full_name||'You'} · just now</div><div style="font-size:13px;color:var(--text-secondary)">${content}</div></div>`;
+    wrap.insertBefore(div, wrap.lastElementChild);
+    input.value = '';
+    showToast('Comment added', 'success');
+  } catch (e) { showToast('Comment saved (demo)', 'info'); }
+}
+
+function sharePost(title) {
+  navigator.clipboard?.writeText('⚠️ ScamShield Community: "' + title + '" — check it at ScamShield')
+    .then(() => showToast('Copied for WhatsApp/Twitter!', 'success'));
+}
+
+// Post modal
+function openPostModal() {
+  const user = auth.getUser();
+  if (!user) { showToast('Please sign in to post', 'warning'); setTimeout(() => window.location.href = 'login.html', 900); return; }
+  document.getElementById('post-modal').classList.add('open');
+}
+function closePostModal() { document.getElementById('post-modal').classList.remove('open'); }
+document.getElementById('post-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closePostModal(); });
+
+async function submitPost() {
+  const user = auth.getUser();
+  const title = document.getElementById('post-title').value.trim();
+  const content = document.getElementById('post-content').value.trim();
+  const post_type = document.getElementById('post-type').value;
+  const company = document.getElementById('post-company').value.trim();
+  if (!title || !content) { showToast('Please fill in title and content', 'warning'); return; }
+  try {
+    await DB.createCommunityPost({ title, content, post_type, company, domain: null, author_id: user.user_id });
+    showToast('Post submitted!', 'success');
+    closePostModal();
+    loadPosts(currentFilter);
+  } catch (e) { showToast('Post saved (demo mode)', 'info'); closePostModal(); }
+}
+
+// Live feed widget
+const LIVE_ENTRIES = [
+  { job:'Fake Google Recruiter', city:'Ahmedabad', risk:'red', time:'2 min ago' },
+  { job:'Data Entry Scam', city:'Mumbai', risk:'amber', time:'5 min ago' },
+  { job:'Telegram Job Scam', city:'Pune', risk:'red', time:'8 min ago' },
+  { job:'WFH Typing Fraud', city:'Delhi', risk:'red', time:'14 min ago' },
+  { job:'Suspicious HR Contact', city:'Bangalore', risk:'amber', time:'21 min ago' },
+  { job:'Verified TCS Posting', city:'Chennai', risk:'green', time:'28 min ago' },
+];
+function renderLiveFeed() {
+  document.getElementById('live-widget-entries').innerHTML = LIVE_ENTRIES.map(e => `
+  <div class="live-feed-entry">
+    <div class="live-dot-sm ${e.risk}"></div>
+    <div>
+      <div class="live-feed-job-title">${e.job}</div>
+      <div class="live-feed-city">📍 ${e.city}</div>
+    </div>
+    <div class="live-feed-time">${e.time}</div>
+  </div>`).join('');
+}
+
+// Handle URL params (search or compose)
+const params = new URLSearchParams(location.search);
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  renderNavbar();
+  renderLiveFeed();
+  const search = params.get('search');
+  if (search) {
+    document.getElementById('post-search').value = search;
+    loadPosts('all', search);
+  } else {
+    loadPosts();
+  }
+  if (params.get('compose') === '1') openPostModal();
+});
+</script>
+</body></html>

@@ -1,0 +1,135 @@
+// ============================================================
+// main.js – ScamShield v5 Core Utilities
+// Handles: API calls, Auth, Theme, Toast, Sidebar interactions
+// ============================================================
+const BASE_URL = "http://localhost:8000";
+
+// ── API Client ──
+const api = {
+  async request(method, path, body = null) {
+    const token = localStorage.getItem('ss_token');
+    const opts = { method, headers: { "Content-Type": "application/json" } };
+    if (token) opts.headers["Authorization"] = "Bearer " + token;
+    if (body) opts.body = JSON.stringify(body);
+    try {
+      const res = await fetch(BASE_URL + path, opts);
+      if (!res.ok) { const err = await res.json().catch(() => ({ detail: "Server error" })); throw new Error(err.detail || `HTTP ${res.status}`); }
+      return await res.json();
+    } catch (e) {
+      if (e.message.includes("Failed to fetch")) throw new Error("Cannot connect to server.");
+      throw e;
+    }
+  },
+  get: p => api.request("GET", p),
+  post: (p, b) => api.request("POST", p, b),
+  put: (p, b) => api.request("PUT", p, b),
+  delete: p => api.request("DELETE", p),
+};
+
+// ── Theme ──
+function initTheme() {
+  const saved = localStorage.getItem('ss_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeBtn(saved);
+}
+function toggleTheme() {
+  const curr = document.documentElement.getAttribute('data-theme');
+  const next = curr === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ss_theme', next);
+  updateThemeBtn(next);
+}
+function updateThemeBtn(theme) {
+  document.querySelectorAll('.theme-toggle').forEach(btn => {
+    const icon = btn.querySelector('.theme-toggle-icon');
+    const text = btn.querySelector('.theme-toggle-text');
+    if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    if (text) text.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+  });
+}
+
+// ── Auth ──
+const auth = {
+  getUser() { try { return JSON.parse(localStorage.getItem('ss_user') || 'null'); } catch { return null; } },
+  isLoggedIn() { return !!localStorage.getItem('ss_token'); },
+  isAdmin() { const u = this.getUser(); return u?.role === 'admin'; },
+  logout() {
+    localStorage.removeItem('ss_token');
+    localStorage.removeItem('ss_user');
+    window.location.href = 'login.html';
+  },
+};
+
+// ── Sidebar init ──
+function initSidebar() {
+  const toggle = document.querySelector('.sidebar-toggle');
+  const sidebar = document.querySelector('.sidebar');
+  if (toggle && sidebar) {
+    toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.addEventListener('click', e => {
+      if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target))
+        sidebar.classList.remove('open');
+    });
+  }
+  const cur = window.location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    if (a.getAttribute('href') === cur) a.classList.add('active');
+  });
+  const user = auth.getUser();
+  if (user) {
+    document.querySelectorAll('.topbar-user-name').forEach(el => el.textContent = user.full_name || 'User');
+    document.querySelectorAll('.topbar-user-role').forEach(el => el.textContent = user.role === 'admin' ? '🔐 Administrator' : '👤 Member');
+    document.querySelectorAll('.user-avatar').forEach(el => {
+      if (user.avatar) el.innerHTML = `<img src="${user.avatar}" alt="${user.full_name}">`;
+      else el.textContent = (user.full_name || 'U')[0].toUpperCase();
+    });
+  }
+}
+
+// ── Toast ──
+const toastEl = () => { let c = document.querySelector('.toast-container'); if (!c) { c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); } return c; };
+function showToast(msg, type = "info", duration = 4000) {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = msg;
+  toastEl().appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.4s'; setTimeout(() => t.remove(), 400); }, duration);
+}
+
+// ── Risk Helpers ──
+function getRiskClass(r) { return { LOW: "risk-low", MEDIUM: "risk-medium", HIGH: "risk-high", CONFIRMED_SCAM: "risk-scam" }[r] || "risk-low"; }
+function getRiskEmoji(r) { return { LOW: "✅", MEDIUM: "⚠️", HIGH: "❌", CONFIRMED_SCAM: "🚫" }[r] || "❓"; }
+function getRiskLabel(r) { return { LOW: "Low Risk", MEDIUM: "Medium Risk", HIGH: "High Risk", CONFIRMED_SCAM: "Confirmed Scam" }[r] || "Unknown"; }
+
+function renderScoreBar(containerId, score, riskLevel) {
+  const el = document.getElementById(containerId); if (!el) return;
+  const color = riskLevel === 'LOW' ? 'var(--accent-green)' : riskLevel === 'MEDIUM' ? 'var(--accent-yellow)' : 'var(--accent-red)';
+  el.innerHTML = `<div style="width:100%;height:8px;background:var(--bg-input);border-radius:4px;overflow:hidden"><div style="height:100%;width:${score}%;background:${color};border-radius:4px;transition:width 1s ease"></div></div>`;
+}
+
+// ── Admin Guard ──
+// Call on admin pages to redirect non-admins
+function requireAdmin() {
+  const user = auth.getUser();
+  if (!user || user.role !== 'admin') {
+    showToast('Admin access required', 'error');
+    setTimeout(() => window.location.href = 'login.html', 1000);
+    return false;
+  }
+  return true;
+}
+
+// ── User Guard ──
+// Redirect logged-in admin away from user pages
+function requireUser() {
+  const user = auth.getUser();
+  if (user && user.role === 'admin') {
+    window.location.href = 'admin.html';
+  }
+}
+
+// Init on load
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  initSidebar();
+});

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-wrap { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px; }
+    .auth-card { width:100%;max-width:420px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px; }
+    .auth-brand { display:flex;align-items:center;gap:9px;margin-bottom:24px; }
+    .auth-brand-icon { width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));display:flex;align-items:center;justify-content:center;font-size:18px; }
+    .auth-brand-name { font-size:17px;font-weight:800; }
+    .demo-box { background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:18px; }
+    .demo-title { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px; }
+  </style>
+</head>
+<body>
+<button style="position:fixed;top:16px;right:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--text-secondary)" onclick="toggleTheme()">
+  <span class="theme-toggle-icon">☀️</span>
+</button>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">🛡️</div>
+      <div class="auth-brand-name">ScamShield</div>
+    </div>
+    <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Welcome back</h2>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:22px">Sign in to your account to continue</p>
+
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" id="login-email" class="form-control" placeholder="you@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <div style="position:relative">
+        <input type="password" id="login-password" class="form-control" placeholder="Password" style="padding-right:42px" autocomplete="current-password">
+        <button onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px">👁</button>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" style="accent-color:var(--accent-blue)"> Remember me</label>
+      <a href="#" class="link" style="font-size:13px">Forgot password?</a>
+    </div>
+    <button class="btn btn-primary btn-full" style="height:44px;font-size:15px;font-weight:700" id="login-btn" onclick="handleLogin()">Sign In</button>
+
+    <div class="demo-box">
+      <div class="demo-title">Demo Accounts — No Signup Needed</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-full" onclick="demoLogin('user')">User Demo</button>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:center"></p>
+    </div>
+
+    <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-secondary)">
+      No account? <a href="register.html" class="link">Sign up free</a>
+    </p>
+  </div>
+</div>
+<script src="js/main.js"></script>
+<script>
+const DEMO_USERS = {
+  user: { user_id:'demo-user-001', email:'demo@scamshield.in', full_name:'Rahul Sharma', role:'user', bio:'Active community member. Filed 5 reports.', reports_count:5, checks_count:23, city:'Pune' },
+  admin: { user_id:'admin-001', email:'admin@scamshield.in', full_name:'Sunil (Admin)', role:'admin', bio:'ScamShield platform administrator.', reports_count:0, checks_count:0 }
+};
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showToast('Please fill in all fields','warning'); return; }
+  const btn = document.getElementById('login-btn'); btn.disabled=true; btn.textContent='Signing in...';
+  if (email === 'admin@scamshield.in' && password === 'Admin@2026') { await delay(); loginAs('admin'); return; }
+  if (email === 'demo@scamshield.in') { await delay(); loginAs('user'); return; }
+  try {
+    const data = await api.post('/auth/login', { email, password });
+    localStorage.setItem('ss_token', data.token);
+    localStorage.setItem('ss_user', JSON.stringify(data.user));
+    redirect(data.user.role);
+  } catch(e) {
+    showToast('Invalid credentials. Try demo accounts below.','error');
+    btn.disabled=false; btn.textContent='Sign In';
+  }
+}
+function delay() { return new Promise(r => setTimeout(r, 700)); }
+function demoLogin(role) { loginAs(role); }
+function loginAs(role) {
+  const user = DEMO_USERS[role];
+  localStorage.setItem('ss_token', 'demo-' + role + '-' + Date.now());
+  localStorage.setItem('ss_user', JSON.stringify(user));
+  showToast('Signed in as ' + user.full_name,'success');
+  setTimeout(() => redirect(role), 600);
+}
+function redirect(role) { window.location.href = role === 'admin' ? 'admin.html' : 'index.html'; }
+function togglePwd() { const f = document.getElementById('login-password'); f.type = f.type==='password'?'text':'password'; }
+document.addEventListener('DOMContentLoaded', initTheme);
+</script>
+</body></html>

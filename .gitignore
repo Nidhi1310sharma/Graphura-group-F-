@@ -101,9 +101,5 @@ analytics_export/
 
 #test files
 
-generate_hash.py
-backend/routes/test_pwd.py
-backend/routes/test_supabse_client.py
-backend/routes/test.py
 admin_panel.txt
 architechture.txt

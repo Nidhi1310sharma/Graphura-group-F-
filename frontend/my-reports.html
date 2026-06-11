@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Reports - ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="page-container" style="max-width:800px;margin-top:28px">
+  <div class="page-header">
+    <h1>My Reports</h1>
+    <p>All scam reports you have submitted. Track their review status here.</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="filter-chip active" onclick="filterReports(null,this)">All</button>
+    <button class="filter-chip" onclick="filterReports('pending',this)">Pending</button>
+    <button class="filter-chip" onclick="filterReports('under_review',this)">Under Review</button>
+    <button class="filter-chip" onclick="filterReports('confirmed',this)">Confirmed</button>
+    <button class="filter-chip" onclick="filterReports('rejected',this)">Rejected</button>
+    <a href="report.html" class="btn btn-primary btn-sm" style="margin-left:auto">+ New Report</a>
+  </div>
+  <div id="reports-list"><div style="text-align:center;padding:30px;color:var(--text-muted)">Loading your reports...</div></div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+let allReports = [];
+const sevColor = { critical:'badge-red', high:'badge-orange', medium:'badge-yellow', low:'badge-gray' };
+const stColor = { pending:'badge-yellow', under_review:'badge-blue', confirmed:'badge-green', rejected:'badge-gray' };
+const stIcon = { pending:'⏳', under_review:'🔍', confirmed:'✅', rejected:'❌' };
+
+function renderReports(reports) {
+  const el = document.getElementById('reports-list');
+  if (!reports.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:2rem;margin-bottom:10px">📋</div><strong>No reports yet</strong><p style="margin-top:8px;font-size:13px"><a href="report.html" class="link">Submit your first report →</a></p></div>';
+    return;
+  }
+  el.innerHTML = reports.map(r => `
+    <div class="card mb-3">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <strong style="font-size:15px">${r.company_name}</strong>
+        <span class="badge ${sevColor[r.severity]||'badge-gray'}">${r.severity}</span>
+        <span class="badge ${stColor[r.status]||'badge-yellow'}">${stIcon[r.status]||'⏳'} ${r.status.replace('_',' ')}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">${new Date(r.reported_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>
+      </div>
+      ${r.job_title ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Position: ${r.job_title}${r.domain?' · '+r.domain:''}</div>` : ''}
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.65;margin-bottom:10px">${r.description.slice(0,180)}${r.description.length>180?'…':''}</div>
+      <div style="display:flex;gap:8px">
+        <span class="badge badge-blue" style="font-size:10px">${r.scam_type?.replace('_',' ')||'General'}</span>
+        ${r.status === 'confirmed' ? '<span class="badge badge-green" style="font-size:10px">Added to blacklist</span>' : ''}
+      </div>
+    </div>`).join('');
+}
+
+function filterReports(status, btn) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = status ? allReports.filter(r => r.status === status) : allReports;
+  renderReports(filtered);
+}
+
+async function loadReports() {
+  const user = auth.getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+  try {
+    allReports = await DB.getUserReports(user.user_id);
+    renderReports(allReports);
+  } catch(e) {
+    allReports = DEMO_DATA.adminReports.map(r => ({ ...r, reporter_id: user.user_id }));
+    renderReports(allReports);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => { initTheme(); renderNavbar(); loadReports(); });
+</script>
+</body></html>

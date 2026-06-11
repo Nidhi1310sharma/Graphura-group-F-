@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from backend.supabase_client import supabase
-from backend.routes.auth import get_current_user
+from backend.auth import get_current_user
 from typing import Optional, List
 import os
 from datetime import datetime, timezone

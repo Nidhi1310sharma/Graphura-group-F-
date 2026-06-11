@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview – ScamShield Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <a href="admin.html" class="sidebar-brand">
+      <span class="sidebar-logo">🛡️</span>
+      <div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div>
+    </a>
+    <nav class="admin-nav">
+      <a href="admin.html" class="active"><span>📊</span> Overview</a>
+      <a href="admin-reports.html"><span>🚩</span> Reports <span class="nav-badge" id="sb-pending">—</span></a>
+      <a href="admin-community.html"><span>👥</span> Community</a>
+      <a href="admin-listings.html"><span>💼</span> Listings</a>
+      <div class="admin-nav-group">Knowledge Base</div>
+      <a href="admin-companies.html"><span>🏢</span> Companies</a>
+      <a href="admin-domains.html"><span>🌐</span> Domains</a>
+      <a href="admin-indicators.html"><span>⚡</span> Scam Indicators</a>
+      <div class="admin-nav-group">System</div>
+      <a href="admin-users.html"><span>👤</span> Admins & Logs</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <div class="admin-sidebar-user">
+        <div class="admin-sidebar-avatar" id="sb-avatar">A</div>
+        <div>
+          <div style="font-weight:600;font-size:13px" id="sb-name">Admin</div>
+          <div style="font-size:11px;color:var(--text-muted)">Administrator</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button>
+        <button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-page">
+      <div class="page-header">
+        <h1>📊 Overview</h1>
+        <p>Platform snapshot — reports, community, listings, domains</p>
+      </div>
+
+      <!-- KPIs from Supabase -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px" id="kpi-grid">
+        <div class="admin-kpi" style="--kpi-color:var(--accent-red)"><div class="admin-kpi-val" id="kpi-pending">—</div><div class="admin-kpi-lbl">Pending Reports</div></div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-orange)"><div class="admin-kpi-val" id="kpi-confirmed">—</div><div class="admin-kpi-lbl">Confirmed Scams</div></div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-blue)"><div class="admin-kpi-val" id="kpi-posts">—</div><div class="admin-kpi-lbl">Community Posts</div></div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-yellow)"><div class="admin-kpi-val" id="kpi-high">—</div><div class="admin-kpi-lbl">High Risk Listings</div></div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-red)"><div class="admin-kpi-val" id="kpi-blacklisted">—</div><div class="admin-kpi-lbl">Blacklisted Domains</div></div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-orange)"><div class="admin-kpi-val" id="kpi-suspicious">—</div><div class="admin-kpi-lbl">Suspicious Domains</div></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="two-col mb-4">
+        <div class="card"><div class="card-title">📈 Weekly Activity</div><canvas id="chart-activity" style="max-height:180px"></canvas></div>
+        <div class="card"><div class="card-title">🥧 Scam Types</div><canvas id="chart-types" style="max-height:180px"></canvas></div>
+      </div>
+
+      <!-- Recent Activity Feed from audit_logs -->
+      <div class="card mb-4">
+        <div class="card-title flex-between"><span>📋 Recent Activity</span><button class="btn btn-outline btn-sm" onclick="loadAuditLogs()">↺ Refresh</button></div>
+        <div id="activity-feed">
+          <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Quick nav -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <a href="admin-reports.html" class="action-card"><div class="action-card-icon" style="background:rgba(248,81,73,.1)">🚩</div><div class="action-card-text"><div class="action-card-title">Review Reports</div><div class="action-card-sub">Pending moderation</div></div></a>
+        <a href="admin-community.html" class="action-card"><div class="action-card-icon" style="background:rgba(88,166,255,.1)">👥</div><div class="action-card-text"><div class="action-card-title">Moderate Community</div><div class="action-card-sub">Posts & comments</div></div></a>
+        <a href="admin-listings.html" class="action-card"><div class="action-card-icon" style="background:rgba(188,140,255,.1)">💼</div><div class="action-card-text"><div class="action-card-title">Manage Listings</div><div class="action-card-sub">Analyzed jobs</div></div></a>
+        <a href="admin-companies.html" class="action-card"><div class="action-card-icon" style="background:rgba(227,112,42,.1)">🏢</div><div class="action-card-text"><div class="action-card-title">Companies</div><div class="action-card-sub">Knowledge base</div></div></a>
+        <a href="admin-domains.html" class="action-card"><div class="action-card-icon" style="background:rgba(210,153,34,.1)">🌐</div><div class="action-card-text"><div class="action-card-title">Domains</div><div class="action-card-sub">Blacklist management</div></div></a>
+        <a href="admin-indicators.html" class="action-card"><div class="action-card-icon" style="background:rgba(63,185,80,.1)">⚡</div><div class="action-card-text"><div class="action-card-title">Scam Indicators</div><div class="action-card-sub">Rule engine</div></div></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+// Extra admin KPI card style
+document.head.insertAdjacentHTML('beforeend', `<style>
+.admin-kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
+.admin-kpi::after{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--kpi-color,var(--accent-blue));border-radius:0 var(--radius) var(--radius) 0}
+.admin-kpi-val{font-size:26px;font-weight:800;font-family:var(--font-mono)}
+.admin-kpi-lbl{font-size:11px;color:var(--text-muted);margin-top:2px}
+@media(max-width:1000px){#kpi-grid{grid-template-columns:repeat(3,1fr)!important}}
+</style>`);
+
+async function loadKPIs() {
+  try {
+    const kpis = await DB.getKPIs();
+    document.getElementById('kpi-pending').textContent = kpis.pendingReports;
+    document.getElementById('kpi-confirmed').textContent = kpis.confirmedScams;
+    document.getElementById('kpi-posts').textContent = kpis.communityPosts;
+    document.getElementById('kpi-high').textContent = kpis.highRiskListings;
+    document.getElementById('kpi-blacklisted').textContent = kpis.blacklistedDomains;
+    document.getElementById('kpi-suspicious').textContent = kpis.suspiciousDomains;
+    document.getElementById('sb-pending').textContent = kpis.pendingReports;
+  } catch(e) { console.error('KPI load:', e); }
+}
+
+async function loadAuditLogs() {
+  try {
+    const logs = await DB.getAuditLogs(15);
+    const icons = { CONFIRM_REPORT:'✅', REJECT_REPORT:'❌', BLACKLIST_DOMAIN:'🚫', VERIFY_COMPANY:'✔️', MARK_SUSPICIOUS:'⚠️', HIDE_POST:'🙈', DELETE_POST:'🗑️' };
+    document.getElementById('activity-feed').innerHTML = logs.length
+      ? logs.map(l => `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <span style="font-size:16px">${icons[l.action]||'📝'}</span>
+          <span style="color:var(--text-primary);font-weight:600">${l.admin_users?.full_name||'Admin'}</span>
+          <span style="color:var(--text-secondary)">${l.action.replace(/_/g,' ')}</span>
+          <span class="badge badge-gray" style="font-size:10px">${l.target_type}</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">${new Date(l.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+        </div>`).join('')
+      : '<div style="text-align:center;padding:20px;color:var(--text-muted)">No recent activity</div>';
+  } catch(e) {
+    document.getElementById('activity-feed').innerHTML = DEMO_DATA.auditLogs.map(l =>
+      `<div style="padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">📝 Admin — ${l.action} on ${l.target_type} ${l.target_id}</div>`).join('');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
+  if (!requireAdmin()) return;
+  const user = auth.getUser();
+  if (user) {
+    document.getElementById('sb-avatar').textContent = (user.full_name||'A')[0].toUpperCase();
+    document.getElementById('sb-name').textContent = user.full_name || 'Admin';
+  }
+
+  await loadKPIs();
+  await loadAuditLogs();
+
+  // Charts
+  new Chart(document.getElementById('chart-activity').getContext('2d'), {
+    type:'bar',
+    data:{ labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets:[
+      {label:'Reports',data:[12,18,9,22,15,7,4],backgroundColor:'rgba(248,81,73,.7)',borderRadius:4},
+      {label:'New Users',data:[5,8,3,11,6,2,1],backgroundColor:'rgba(88,166,255,.7)',borderRadius:4}
+    ]},
+    options:{plugins:{legend:{labels:{color:'#8b949e'}}},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'rgba(48,54,61,.4)'}},y:{ticks:{color:'#8b949e'},grid:{color:'rgba(48,54,61,.4)'}}}}
+  });
+  new Chart(document.getElementById('chart-types').getContext('2d'), {
+    type:'doughnut',
+    data:{labels:['Fee Demand','Fake Company','Phishing','Impersonation','Other'],datasets:[{data:[34,24,18,13,11],backgroundColor:['#f85149','#e3702a','#d29922','#bc8cff','#58a6ff']}]},
+    options:{plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:14},position:'bottom'}}}
+  });
+});
+</script>
+</body></html>

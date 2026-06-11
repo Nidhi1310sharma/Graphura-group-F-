@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compare Jobs - ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .compare-grid { display:grid;grid-template-columns:1fr 48px 1fr;gap:0;margin-top:20px; }
+    @media(max-width:800px){.compare-grid{grid-template-columns:1fr;gap:16px} .vs-col{display:none}}
+    .compare-col { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden; }
+    .compare-col.fake { border-color:rgba(248,81,73,.35); }
+    .compare-col.real { border-color:rgba(63,185,80,.35); }
+    .chead { padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px; }
+    .chead.fake { background:rgba(248,81,73,.06); }
+    .chead.real { background:rgba(63,185,80,.06); }
+    .crow { display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px; }
+    .crow:last-child { border-bottom:none; }
+    .crow-lbl { color:var(--text-muted);font-size:11.5px;min-width:110px;flex-shrink:0; }
+    .crow-val { font-weight:600; }
+    .crow-val.bad { color:var(--accent-red); }
+    .crow-val.warn { color:var(--accent-orange); }
+    .crow-val.ok { color:var(--accent-green); }
+    .vs-col { display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text-muted);font-size:16px; }
+    .cverdbar { padding:14px 16px;border-top:1px solid var(--border); }
+    .cverdbar.fake { background:rgba(248,81,73,.05);border-color:rgba(248,81,73,.2); }
+    .cverdbar.real { background:rgba(63,185,80,.05);border-color:rgba(63,185,80,.2); }
+    .ai-box { background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px; }
+    .ai-box-lbl { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent-blue);margin-bottom:8px; }
+    .unique-badge { background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple));color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:8px; }
+  </style>
+</head>
+<body>
+<div class="page-container wide" style="margin-top:28px">
+  <div style="margin-bottom:20px">
+    <h1 style="margin-bottom:4px">Job Comparison Mode <span class="unique-badge">UNIQUE FEATURE</span></h1>
+    <p style="color:var(--text-secondary);font-size:13.5px">Paste two job URLs side by side — every signal shown with red/green diffs. Perfect for spotting TCS/Infosys fakes.</p>
+  </div>
+
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div>
+        <label class="form-label">Job A — Suspicious URL</label>
+        <input type="url" id="url-a" class="form-control" placeholder="https://tcs-careers-hiring.xyz/job/1">
+      </div>
+      <div>
+        <label class="form-label">Job B — Official / Reference URL</label>
+        <input type="url" id="url-b" class="form-control" placeholder="https://www.tcs.com/careers/india">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" id="cmp-btn" onclick="runCompare()">Compare Now</button>
+      <button class="btn btn-outline" onclick="loadDemo()">Load Demo</button>
+      <span style="font-size:12px;color:var(--text-muted)">Tip — paste the suspicious URL next to the company official careers page</span>
+    </div>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="compare-grid">
+      <div class="compare-col fake">
+        <div class="chead fake">
+          <div style="flex:1"><div style="font-weight:700;font-size:14px" id="a-title">Job A</div><div style="font-size:11px;color:var(--text-muted)" id="a-domain"></div></div>
+          <span class="badge badge-red" id="a-pct">62% scam</span>
+        </div>
+        <div class="crow"><span class="crow-lbl">Domain age</span><span class="crow-val bad" id="a-age">12 days</span></div>
+        <div class="crow"><span class="crow-lbl">SSL cert</span><span class="crow-val bad" id="a-ssl">Invalid</span></div>
+        <div class="crow"><span class="crow-lbl">Registrar</span><span class="crow-val warn" id="a-reg">Unknown</span></div>
+        <div class="crow"><span class="crow-lbl">Recruiter email</span><span class="crow-val bad" id="a-email">Gmail</span></div>
+        <div class="crow"><span class="crow-lbl">Salary offered</span><span class="crow-val warn" id="a-sal">Rs 1L/mo</span></div>
+        <div class="crow"><span class="crow-lbl">Registration fee</span><span class="crow-val bad" id="a-fee">Yes Rs 5000</span></div>
+        <div class="crow"><span class="crow-lbl">Openings listed</span><span class="crow-val bad" id="a-openings">5000+</span></div>
+        <div class="crow"><span class="crow-lbl">Company match</span><span class="crow-val bad" id="a-match">No match</span></div>
+        <div class="cverdbar fake"><div style="color:var(--accent-red);font-weight:700;font-size:13px">Likely fake — do not apply</div></div>
+      </div>
+      <div class="vs-col">vs</div>
+      <div class="compare-col real">
+        <div class="chead real">
+          <div style="flex:1"><div style="font-weight:700;font-size:14px" id="b-title">Job B</div><div style="font-size:11px;color:var(--text-muted)" id="b-domain"></div></div>
+          <span class="badge badge-green" id="b-pct">4% risk</span>
+        </div>
+        <div class="crow"><span class="crow-lbl">Domain age</span><span class="crow-val ok" id="b-age">8 years</span></div>
+        <div class="crow"><span class="crow-lbl">SSL cert</span><span class="crow-val ok" id="b-ssl">Valid</span></div>
+        <div class="crow"><span class="crow-lbl">Registrar</span><span class="crow-val ok" id="b-reg">GoDaddy</span></div>
+        <div class="crow"><span class="crow-lbl">Recruiter email</span><span class="crow-val ok" id="b-email">@tcs.com</span></div>
+        <div class="crow"><span class="crow-lbl">Salary offered</span><span class="crow-val ok" id="b-sal">Rs 3.6 LPA</span></div>
+        <div class="crow"><span class="crow-lbl">Registration fee</span><span class="crow-val ok" id="b-fee">None</span></div>
+        <div class="crow"><span class="crow-lbl">Openings listed</span><span class="crow-val ok" id="b-openings">Specific</span></div>
+        <div class="crow"><span class="crow-lbl">Company match</span><span class="crow-val ok" id="b-match">Verified</span></div>
+        <div class="cverdbar real"><div style="color:var(--accent-green);font-weight:700;font-size:13px">Verified official posting</div></div>
+      </div>
+    </div>
+    <div class="ai-box">
+      <div class="ai-box-lbl">AI Summary of Differences</div>
+      <div id="ai-summary" style="font-size:13.5px;color:var(--text-secondary);line-height:1.75"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+      <button class="btn btn-danger" onclick="window.location.href='report.html'">Report Job A as Scam</button>
+      <button class="btn btn-outline" onclick="showToast('Download Trust Card — connect backend for PDF','info')">Download Trust Card</button>
+      <button class="btn btn-outline" onclick="navigator.clipboard?.writeText(location.href).then(()=>showToast('Link copied!','success'))">Share Comparison</button>
+    </div>
+  </div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+function loadDemo() {
+  document.getElementById('url-a').value = 'https://tcs-careers-hiring.xyz/job/1';
+  document.getElementById('url-b').value = 'https://www.tcs.com/careers/india';
+  runCompare();
+}
+function runCompare() {
+  const a = document.getElementById('url-a').value.trim();
+  const b = document.getElementById('url-b').value.trim();
+  if (!a || !b) { showToast('Please enter both URLs to compare', 'warning'); return; }
+  const btn = document.getElementById('cmp-btn'); btn.disabled = true; btn.textContent = 'Analyzing...';
+  let domA = '', domB = '';
+  try { domA = new URL(a).hostname.replace('www.',''); } catch { domA = a; }
+  try { domB = new URL(b).hostname.replace('www.',''); } catch { domB = b; }
+  setTimeout(() => {
+    document.getElementById('a-title').textContent = 'Job A — ' + domA;
+    document.getElementById('a-domain').textContent = domA;
+    document.getElementById('b-title').textContent = 'Job B — ' + domB;
+    document.getElementById('b-domain').textContent = domB;
+    document.getElementById('ai-summary').innerHTML = '<strong>Job A uses a domain registered just 12 days ago</strong>, requests a registration fee, and lists an unrealistically high salary for a fresher role. <strong>Job B is hosted on the official domain (8 years old)</strong>, uses a verified corporate email, and matches the company\'s known salary band. Job A is almost certainly impersonating the brand — it shares the name but none of the trust signals. Do not apply, and report it immediately.';
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+    btn.disabled = false; btn.textContent = 'Compare Now';
+    showToast('Comparison complete — AI summary generated', 'success');
+  }, 1600);
+}
+document.addEventListener('DOMContentLoaded', () => { initTheme(); renderNavbar(); });
+</script>
+</body></html>

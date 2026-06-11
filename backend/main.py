@@ -5,7 +5,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.routes import auth, community
+from backend.routes import auth, community, reports
+from backend.admin import routes_reports
 
 app = FastAPI()
 
@@ -19,6 +20,8 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(community.router, prefix="/api")
+app.include_router(reports.router, prefix="/api")
+app.include_router(routes_reports.router, prefix="/api")
 
 @app.get("/")
 def root():

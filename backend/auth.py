@@ -44,7 +44,32 @@ def create_access_token(data: dict):
     )
 
     to_encode.update({"exp": expire})
-
+    # use a dedicated JWT secret for access tokens if provided
+    key = os.getenv("JWT_SECRET_KEY") or SECRET_KEY
     return jwt.encode(
-        to_encode, SECRET_KEY, algorithm=ALGORITHM
+        to_encode, key, algorithm=ALGORITHM
     )
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(token, os.getenv("JWT_SECRET_KEY") or SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not payload or "user_id" not in payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return payload

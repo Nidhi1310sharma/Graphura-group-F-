@@ -12,14 +12,14 @@ load_dotenv(dotenv_path=env_path)
 # print("URL:", os.getenv("SUPABASE_URL"))
 # print("KEY:", os.getenv("SUPABASE_ANON_KEY"))
 
-
+SUPABASE_ANON_KEY=os.getenv("SUPABASE_ANON_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+# SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 # print("Current dir:", current_dir)
 # print("Env path:", env_path)
 # print("Env exists:", os.path.exists(env_path))
 
-if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise ValueError("Missing Supabase credentials in environment variables.")
 
-supabase =create_client(SUPABASE_URL,SUPABASE_SERVICE_KEY)
+supabase =create_client(SUPABASE_URL,SUPABASE_ANON_KEY)

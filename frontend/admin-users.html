@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admins & Logs – ScamShield Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
+    <nav class="admin-nav">
+      <a href="admin.html"><span>📊</span> Overview</a>
+      <a href="admin-reports.html" class="adminsreports"><span>🚩</span> Reports</a>
+      <a href="admin-community.html" class="adminscommunity"><span>👥</span> Community</a>
+      <a href="admin-listings.html" class="adminslistings"><span>💼</span> Listings</a>
+      <div class="admin-nav-group">Knowledge Base</div>
+      <a href="admin-companies.html" class="adminscompanies"><span>🏢</span> Companies</a>
+      <a href="admin-domains.html" class="adminsdomains"><span>🌐</span> Domains</a>
+      <a href="admin-indicators.html" class="adminsindicators"><span>⚡</span> Scam Indicators</a>
+      <div class="admin-nav-group">System</div>
+      <a href="admin-users.html" class="active" class="active" class="active"><span>👤</span> Admins & Logs</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
+    </div>
+  </aside>
+  <div class="admin-main"><div class="admin-page">
+    
+      <div class="page-header"><h1>👤 Admins & Audit Logs</h1><p>Manage admin accounts and view all platform actions</p></div>
+      <div class="two-col" style="gap:20px;align-items:start">
+        <div class="card">
+          <div class="card-title flex-between"><span>Admin Users</span><button class="btn btn-primary btn-sm" onclick="showToast(\"Invite sent (demo)\",\"success\")">+ Add Admin</button></div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+            <tbody id="admins-tbody"><tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px">Loading…</td></tr></tbody></table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title flex-between"><span>Audit Log</span><button class="btn btn-outline btn-sm" onclick="loadLogs()">↺</button></div>
+          <div id="audit-log-list" style="max-height:500px;overflow-y:auto">
+            <div style="text-align:center;padding:16px;color:var(--text-muted)">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+  </div></div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+
+async function loadUsers() {
+  try {
+    const users = await DB.getUsers();
+    document.getElementById("admins-tbody").innerHTML = users.filter(u=>u.role==="admin").map(u => `
+      <tr>
+        <td><strong>${u.full_name}</strong></td>
+        <td class="mono" style="font-size:12px">${u.email}</td>
+        <td><span class="badge badge-blue">${u.role}</span></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="showToast(\"Role change coming soon\",\"info\")">Edit</button></td>
+      </tr>`).join("") || "<tr><td colspan=\"4\" style=\"text-align:center;color:var(--text-muted)\">No admins</td></tr>";
+  } catch(e) { console.error(e); }
+}
+async function loadLogs() {
+  try {
+    const logs = await DB.getAuditLogs(50);
+    const icons = { CONFIRM_REPORT:"✅", REJECT_REPORT:"❌", BLACKLIST_DOMAIN:"🚫", VERIFY_COMPANY:"✔️", MARK_SUSPICIOUS:"⚠️", HIDE_POST:"🙈", DELETE_POST:"🗑️", FLAG_SUSPICIOUS:"🚩" };
+    document.getElementById("audit-log-list").innerHTML = logs.map(l => `
+      <div style="display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px">
+        <span style="font-size:15px;flex-shrink:0">${icons[l.action]||"📝"}</span>
+        <div>
+          <span style="font-weight:600">${l.admin_users?.full_name||"Admin"}</span>
+          <span style="color:var(--text-secondary)"> ${l.action.replace(/_/g," ")}</span>
+          <span class="badge badge-gray" style="font-size:10px;margin-left:4px">${l.target_type} ${l.target_id?.slice(0,6)||""}</span>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${new Date(l.created_at).toLocaleString("en-IN")}</div>
+        </div>
+      </div>`).join("") || "<div style=\"text-align:center;padding:16px;color:var(--text-muted)\">No logs yet</div>";
+  } catch(e) { document.getElementById("audit-log-list").innerHTML = DEMO_DATA.auditLogs.map(l=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)">📝 ${l.action} on ${l.target_type} ${l.target_id}</div>`).join(""); }
+}
+document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadUsers(); loadLogs(); });
+
+</script>
+</body></html>

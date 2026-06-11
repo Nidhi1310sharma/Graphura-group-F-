@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from backend.supabase_client import supabase
 from backend.schemas.community import CreatePostRequest, CreateCommentRequest, UpdatePostRequest, UpdateCommentRequest, VoteRequest
 from datetime import datetime, timezone
 from typing import Optional
+from backend.auth import get_current_user
 
 router = APIRouter(prefix="/community", tags=["Community"])
 
@@ -10,12 +11,12 @@ router = APIRouter(prefix="/community", tags=["Community"])
 #to creaete a post in the community forum, which can be a discussion, question, or report of a scam. 
 # The post will be associated with the user who created it and can optionally link to a specific scam report if it's a report post.
 @router.post("/posts")
-async def create_post(data: CreatePostRequest):
+async def create_post(data: CreatePostRequest, current_user: dict = Depends(get_current_user)):
     try:
         response = (
             supabase.table("community_posts")
             .insert({
-                "user_id": data.user_id,
+                "user_id": str(current_user.get("user_id")),
                 "post_title": data.post_title,
                 "content": data.content,
                 "post_type": data.post_type,
@@ -149,7 +150,7 @@ async def get_post(post_id: str):
 # create a comment on a specific post, allowing users to engage in discussions and provide feedback on posts in the community forum. 
 # The comment will be associated with the user who created it and the post it belongs to.
 @router.post("/posts/{post_id}/comments")
-async def create_comment(post_id: str, data: CreateCommentRequest):
+async def create_comment(post_id: str, data: CreateCommentRequest, current_user: dict = Depends(get_current_user)):
     post = (
         supabase.table("community_posts")
         .select("post_id")
@@ -165,7 +166,7 @@ async def create_comment(post_id: str, data: CreateCommentRequest):
     response = (
         supabase.table("community_comments")
         .insert({
-            "user_id": data.user_id,
+            "user_id": str(current_user.get("user_id")),
             "post_id": post_id,
             "content": data.content,
             "created_at": datetime.now(
@@ -214,12 +215,18 @@ async def get_comments(post_id: str):
 #vote on a post, allowing users to upvote or downvote posts in the community forum. 
 # This will help surface valuable content and provide feedback to post creators. Users can only vote once per post, and they can change their vote if they wish.
 @router.post("/posts/{post_id}/vote")
-async def vote_post(post_id: str, data: VoteRequest):
+async def vote_post(post_id: str, data: VoteRequest, current_user: dict = Depends(get_current_user)):
+    if data.vote_type not in [1, -1]:
+        raise HTTPException(
+            status_code=400,
+            detail="vote_type must be 1 or -1"
+        )
+    user_id = str(current_user.get("user_id"))
     # Check if the user has already voted on this post
     existing_vote = (
         supabase.table("community_votes")
         .select("*")
-        .eq("user_id", data.user_id)
+        .eq("user_id", user_id)
         .eq("post_id", post_id)
         .execute()
     )
@@ -231,7 +238,7 @@ async def vote_post(post_id: str, data: VoteRequest):
             response = (
                 supabase.table("community_votes")
                 .delete()
-                .eq("user_id", data.user_id)
+                .eq("user_id", user_id)
                 .eq("post_id", post_id)
                 .execute()
             )
@@ -239,7 +246,7 @@ async def vote_post(post_id: str, data: VoteRequest):
             response = (
                 supabase.table("community_votes")
                 .update({"vote_type": data.vote_type})
-                .eq("user_id", data.user_id)
+                .eq("user_id", user_id)
                 .eq("post_id", post_id)
                 .execute()
             )
@@ -248,7 +255,7 @@ async def vote_post(post_id: str, data: VoteRequest):
         response = (
             supabase.table("community_votes")
             .insert({
-                "user_id": data.user_id,
+                "user_id": user_id,
                 "post_id": post_id,
                 "vote_type": data.vote_type,
                 "created_at": datetime.now(
@@ -272,7 +279,23 @@ async def vote_post(post_id: str, data: VoteRequest):
 # delete a post, allowing users to remove their own posts from the community forum. 
 # This will mark the post as deleted in the database, and it will no longer be visible to other users.
 @router.delete("/posts/{post_id}")
-async def delete_post(post_id: str):
+async def delete_post(post_id: str, current_user: dict = Depends(get_current_user)):
+    # ensure post exists and ownership/admin check
+    post_resp = (
+        supabase.table("community_posts")
+        .select("post_id, user_id")
+        .eq("post_id", post_id)
+        .execute()
+    )
+    if not post_resp.data:
+        raise HTTPException(status_code=404, detail="Post not found")
+    post = post_resp.data[0]
+    owner_id = str(post.get("user_id"))
+    user_id = str(current_user.get("user_id"))
+    role = current_user.get("role")
+    if role != "admin" and owner_id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     response = (
         supabase.table("community_posts")
         .update({"status": "deleted"})
@@ -281,17 +304,29 @@ async def delete_post(post_id: str):
     )
 
     if not response.data:
-        raise HTTPException(
-            status_code=404,
-            detail="Comment not found"
-        )
-        
+        raise HTTPException(status_code=404, detail="Post not found")
+
     return {"message": "Post deleted successfully"}
 
 # delete a comment, allowing users to remove their own comments from the community forum. 
 # This will mark the comment as deleted in the database, and it will no longer be visible to others
 @router.delete("/comments/{comment_id}")
-async def delete_comment(comment_id: str):
+async def delete_comment(comment_id: str, current_user: dict = Depends(get_current_user)):
+    comment_resp = (
+        supabase.table("community_comments")
+        .select("comment_id, user_id")
+        .eq("comment_id", comment_id)
+        .execute()
+    )
+    if not comment_resp.data:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    comment = comment_resp.data[0]
+    owner_id = str(comment.get("user_id"))
+    user_id = str(current_user.get("user_id"))
+    role = current_user.get("role")
+    if role != "admin" and owner_id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     response = (
         supabase.table("community_comments")
         .update({"status": "deleted"})
@@ -300,17 +335,14 @@ async def delete_comment(comment_id: str):
     )
 
     if not response.data:
-        raise HTTPException(
-            status_code=404,
-            detail="Comment not found"
-        )
+        raise HTTPException(status_code=404, detail="Comment not found")
 
     return {"message": "Comment deleted successfully"}
 
 # edit a comment, allowing users to update their comment content.
 # Only supplied fields will be updated.
 @router.put("/comments/{comment_id}")
-async def edit_comment(comment_id: str, data: UpdateCommentRequest):
+async def edit_comment(comment_id: str, data: UpdateCommentRequest, current_user: dict = Depends(get_current_user)):
     comment = (
         supabase.table("community_comments")
         .select("comment_id")
@@ -324,10 +356,23 @@ async def edit_comment(comment_id: str, data: UpdateCommentRequest):
             detail="Comment not found"
         )
 
+    # enforce ownership unless admin
+    owner_resp = (
+        supabase.table("community_comments")
+        .select("user_id")
+        .eq("comment_id", comment_id)
+        .execute()
+    )
+    owner_id = str(owner_resp.data[0].get("user_id")) if owner_resp.data else None
+    user_id = str(current_user.get("user_id"))
+    role = current_user.get("role")
+    if role != "admin" and owner_id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     updated_fields = {
         key: value
         for key, value in data.model_dump(exclude_unset=True).items()
-        if value is not None
+        if value is not None and key != "user_id"
     }
 
     if not updated_fields:
@@ -336,7 +381,7 @@ async def edit_comment(comment_id: str, data: UpdateCommentRequest):
             detail="No update fields provided"
         )
 
-    updated_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+    # #updated_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     response = (
         supabase.table("community_comments")
@@ -359,7 +404,7 @@ async def edit_comment(comment_id: str, data: UpdateCommentRequest):
 # edit a post, allowing users to update one or more fields of their posts in the community forum.
 # Only the supplied fields will be updated; unspecified fields remain unchanged.
 @router.put("/posts/{post_id}")
-async def edit_post(post_id: str, data: UpdatePostRequest):
+async def edit_post(post_id: str, data: UpdatePostRequest, current_user: dict = Depends(get_current_user)):
     post = (
         supabase.table("community_posts")
         .select("post_id")
@@ -373,10 +418,23 @@ async def edit_post(post_id: str, data: UpdatePostRequest):
             detail="Post not found"
         )
 
+    # enforce ownership unless admin
+    owner_resp = (
+        supabase.table("community_posts")
+        .select("user_id")
+        .eq("post_id", post_id)
+        .execute()
+    )
+    owner_id = str(owner_resp.data[0].get("user_id")) if owner_resp.data else None
+    user_id = str(current_user.get("user_id"))
+    role = current_user.get("role")
+    if role != "admin" and owner_id != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     updated_fields = {
         key: value
         for key, value in data.model_dump(exclude_unset=True).items()
-        if value is not None
+        if value is not None and key != "user_id"
     }
 
     if not updated_fields:
