@@ -2,6 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
   <title>Manage Reports – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -161,5 +162,96 @@ function approveFromModal() {
   closeModal('view-report-modal');
   showToast('Report approved from modal view', 'success');
 }
+=======
+  <title>Reports – ScamShield Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
+    <nav class="admin-nav">
+      <a href="admin.html"><span>📊</span> Overview</a>
+      <a href="admin-reports.html" class="active" class="active" class="active"><span>🚩</span> Reports</a>
+      <a href="admin-community.html" class="reportscommunity"><span>👥</span> Community</a>
+      <a href="admin-listings.html" class="reportslistings"><span>💼</span> Listings</a>
+      <div class="admin-nav-group">Knowledge Base</div>
+      <a href="admin-companies.html" class="reportscompanies"><span>🏢</span> Companies</a>
+      <a href="admin-domains.html" class="reportsdomains"><span>🌐</span> Domains</a>
+      <a href="admin-indicators.html" class="reportsindicators"><span>⚡</span> Scam Indicators</a>
+      <div class="admin-nav-group">System</div>
+      <a href="admin-users.html" class="reportsadmins"><span>👤</span> Admins & Logs</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
+    </div>
+  </aside>
+  <div class="admin-main"><div class="admin-page">
+    
+      <div class="page-header"><h1>🚩 Reports</h1><p>Review, confirm, or reject user-submitted scam reports</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="filter-chip active" onclick="setFilter(null,this)">All</button>
+        <button class="filter-chip" onclick="setFilter(\"pending\",this)">⏳ Pending</button>
+        <button class="filter-chip" onclick="setFilter(\"under_review\",this)">🔍 Under Review</button>
+        <button class="filter-chip" onclick="setFilter(\"confirmed\",this)">✅ Confirmed</button>
+        <button class="filter-chip" onclick="setFilter(\"rejected\",this)">❌ Rejected</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>Report ID</th><th>Company</th><th>Job Title</th><th>Severity</th><th>Status</th><th>Reporter</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="reports-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+  </div></div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+
+let currentFilter = null;
+async function loadReports(status) {
+  try {
+    const reports = await DB.getAllReports(status ? { status } : {});
+    const tbody = document.getElementById("reports-tbody");
+    const sevColor = { critical:"badge-red", high:"badge-orange", medium:"badge-yellow", low:"badge-gray" };
+    const stColor = { pending:"badge-yellow", under_review:"badge-blue", confirmed:"badge-green", rejected:"badge-gray" };
+    tbody.innerHTML = reports.map(r => `
+      <tr>
+        <td class="mono" style="font-size:11px">${r.report_id?.slice(0,8)||"—"}…</td>
+        <td><strong>${r.company_name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${r.domain||""}</span></td>
+        <td>${r.job_title||"—"}</td>
+        <td><span class="badge ${sevColor[r.severity]||"badge-gray"}">${r.severity||"medium"}</span></td>
+        <td><span class="badge ${stColor[r.status]||"badge-gray"}">${r.status}</span></td>
+        <td style="font-size:12px">${r.users?.full_name||"—"}</td>
+        <td style="font-size:12px">${new Date(r.reported_at).toLocaleDateString("en-IN")}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="setStatus(\"${r.report_id}\",\"under_review\",this)">🔍 Review</button>
+          <button class="btn btn-primary btn-sm" onclick="setStatus(\"${r.report_id}\",\"confirmed\",this)">✓ Confirm</button>
+          <button class="btn btn-ghost btn-sm" onclick="setStatus(\"${r.report_id}\",\"rejected\",this)">✗ Reject</button>
+        </td>
+      </tr>`).join("") || "<tr><td colspan=\"8\" style=\"text-align:center;color:var(--text-muted)\">No reports</td></tr>";
+  } catch(e) { console.error(e); }
+}
+async function setStatus(id, status, btn) {
+  try {
+    await DB.updateReportStatus(id, status);
+    await DB.logAction({ admin_id: null, action: status === "confirmed" ? "CONFIRM_REPORT" : status === "rejected" ? "REJECT_REPORT" : "REVIEW_REPORT", target_type: "REPORT", target_id: id });
+    showToast("Report marked as " + status, "success");
+    btn.closest("tr").style.opacity = "0.5";
+    setTimeout(() => loadReports(currentFilter), 800);
+  } catch(e) { showToast("Updated (demo)", "info"); btn.closest("tr").style.opacity="0.5"; }
+}
+function setFilter(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll(".filter-chip").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  loadReports(status);
+}
+document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadReports(); });
+
+>>>>>>> backup-before-frontend-sync
 </script>
 </body></html>

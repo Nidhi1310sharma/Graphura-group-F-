@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page-container" style="max-width:640px;margin-top:28px">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Manage your account preferences and privacy</p>
+  </div>
+  <div class="card mb-3">
+    <div class="card-title">Theme Preferences</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-weight:600;font-size:14px">Dark Mode</div><div style="font-size:12px;color:var(--text-muted)">Easier on eyes in low-light environments</div></div>
+      <button class="btn btn-outline btn-sm" onclick="toggleTheme(); this.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Switch to Light' : 'Switch to Dark'">Switch Theme</button>
+    </div>
+  </div>
+  <div class="card mb-3">
+    <div class="card-title">Notification Preferences</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div><div style="font-weight:600;font-size:14px">Report status updates</div><div style="font-size:12px;color:var(--text-muted)">When your report is reviewed or confirmed</div></div>
+        <input type="checkbox" checked style="accent-color:var(--accent-blue);width:16px;height:16px">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div><div style="font-weight:600;font-size:14px">Community replies</div><div style="font-size:12px;color:var(--text-muted)">When someone replies to your posts</div></div>
+        <input type="checkbox" checked style="accent-color:var(--accent-blue);width:16px;height:16px">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div><div style="font-weight:600;font-size:14px">Weekly scam digest</div><div style="font-size:12px;color:var(--text-muted)">Summary of new scams in your area</div></div>
+        <input type="checkbox" style="accent-color:var(--accent-blue);width:16px;height:16px">
+      </label>
+    </div>
+  </div>
+  <div class="card mb-3">
+    <div class="card-title">Privacy Settings</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div><div style="font-weight:600;font-size:14px">Show my name on reports</div><div style="font-size:12px;color:var(--text-muted)">Otherwise shows as Anonymous</div></div>
+        <input type="checkbox" checked style="accent-color:var(--accent-blue);width:16px;height:16px">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div><div style="font-weight:600;font-size:14px">Public profile</div><div style="font-size:12px;color:var(--text-muted)">Others can see your community activity</div></div>
+        <input type="checkbox" checked style="accent-color:var(--accent-blue);width:16px;height:16px">
+      </label>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Account</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-outline" onclick="showToast('Password reset email sent (demo)','info')">Change Password</button>
+      <button class="btn btn-ghost" onclick="auth.logout()" style="color:var(--accent-red)">Sign Out</button>
+      <button class="btn btn-ghost" onclick="showToast('Account deletion requires email confirmation (demo)','warning')" style="color:var(--text-muted);font-size:12px">Delete Account</button>
+    </div>
+  </div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/chatbot.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => { initTheme(); renderNavbar(); });</script>
+</body></html>

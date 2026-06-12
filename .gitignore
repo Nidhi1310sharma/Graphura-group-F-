@@ -1,0 +1,105 @@
+# Python bytecode
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+
+myvenv/
+venv/
+env/
+.venv/
+
+# Environment variables / secrets
+backend/.env
+.env
+*.env
+
+# Never commit Supabase keys
+
+backend/.env
+
+# Python caches
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Build artifacts
+
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Logs
+
+*.log
+
+# Databases
+
+*.sqlite3
+*.db
+*.db-journal
+
+# Uploads / user files
+
+uploads/
+backend/uploads/
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# VS Code
+
+.vscode/
+
+# JetBrains
+
+.idea/
+
+# Jupyter
+
+.ipynb_checkpoints/
+
+# Python packaging
+
+**pypackages**/
+
+# Secrets / certificates
+
+*.pem
+*.key
+*.crt
+
+# Node (if frontend later uses npm)
+
+node_modules/
+npm-debug.log*
+
+# Supabase local development
+
+.supabase/
+
+# Temporary files
+
+*.tmp
+*.temp
+
+# Generated reports
+
+reports_export/
+analytics_export/
+
+
+#test files
+
+admin_panel.txt
+architechture.txt

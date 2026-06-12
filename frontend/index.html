@@ -2,6 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
   <title>ScamShield – Detect Fake Jobs</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -307,10 +308,107 @@
             <div style="font-size:13px;color:var(--text-secondary);line-height:1.7" id="daily-tip">
               Loading tip…
             </div>
+=======
+  <title>ScamShield – Detect Fake Jobs Instantly</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<!-- Navbar injected by nav.js -->
+
+<div class="page-container wide" style="margin-top:28px">
+
+  <!-- Hero -->
+  <div class="analyzer-hero">
+    <h1>India's Job Scam Detector<br><span>Know before you apply.</span></h1>
+    <p>Analyze any job offer — URL, description, email, screenshot or offer letter — and get an instant Trust Card. Free. No sign-up required.</p>
+  </div>
+
+  <!-- KPI Strip (from Supabase) -->
+  <div class="kpi-strip">
+    <div class="kpi-item"><span class="kpi-val" id="kpi-analyzed">1,842</span><span class="kpi-lbl">Jobs Analysed</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-scams">214</span><span class="kpi-lbl">Scams Detected</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-domains">89</span><span class="kpi-lbl">Blacklisted Domains</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpi-community">189</span><span class="kpi-lbl">Community Reports</span></div>
+  </div>
+
+  <!-- Analyzer + Blacklist Widget -->
+  <div class="analyzer-page">
+    <!-- LEFT: Analyzer -->
+    <div>
+      <!-- Tabs -->
+      <div class="analyzer-tabs" id="analyzer-tabs">
+        <button class="analyzer-tab active" onclick="switchTab('url',this)">🔗 URL</button>
+        <button class="analyzer-tab" onclick="switchTab('description',this)">📝 Description</button>
+        <button class="analyzer-tab" onclick="switchTab('offer',this)">📄 Offer Letter</button>
+        <button class="analyzer-tab" onclick="switchTab('screenshot',this)">📷 Screenshot</button>
+      </div>
+
+      <div class="analyzer-body">
+        <!-- URL tab -->
+        <div id="tab-url" class="tab-panel">
+          <div class="form-group">
+            <label class="form-label">Paste a job posting link or suspicious company URL</label>
+            <input type="url" id="url-input" class="form-control" placeholder="https://tcs-careers-hiring.xyz/job/1234 or naukri.com/job/…" style="font-size:15px;height:48px">
+          </div>
+          <p class="text-xs text-muted">We check domain age, SSL, WHOIS, recruiter email, and content signals.</p>
+        </div>
+
+        <!-- Description tab -->
+        <div id="tab-description" class="tab-panel" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Paste recruiter message, job description, email content or WhatsApp message</label>
+            <textarea id="desc-input" class="form-control" rows="6" placeholder="Hi, I'm from TCS HR team. You've been shortlisted for Data Entry role. Salary ₹45,000/month WFH. Registration fee ₹3000 required…"></textarea>
+          </div>
+          <p class="text-xs text-muted">Copy and paste any text you received — we'll scan it for 50+ fraud patterns.</p>
+        </div>
+
+        <!-- Offer Letter tab -->
+        <div id="tab-offer" class="tab-panel" style="display:none">
+          <div class="drop-zone" onclick="document.getElementById('offer-file').click()" id="offer-drop"
+            ondragover="onDragOver(event,'offer-drop')" ondragleave="onDragLeave('offer-drop')" ondrop="onFileDrop(event,'offer-file','offer-drop')">
+            <div class="drop-zone-icon">📄</div>
+            <div class="drop-zone-label">Click to upload or drag & drop your offer letter</div>
+            <div class="drop-zone-hint">PDF · DOC · DOCX — we scan for registration fee clauses, fake company signals, vague terms</div>
+          </div>
+          <input type="file" id="offer-file" accept=".pdf,.doc,.docx" style="display:none" onchange="onFileSelect(this,'offer-drop')">
+          <div id="offer-preview" class="mt-2"></div>
+        </div>
+
+        <!-- Screenshot tab -->
+        <div id="tab-screenshot" class="tab-panel" style="display:none">
+          <div class="drop-zone" onclick="document.getElementById('ss-file').click()" id="ss-drop"
+            ondragover="onDragOver(event,'ss-drop')" ondragleave="onDragLeave('ss-drop')" ondrop="onFileDrop(event,'ss-file','ss-drop')">
+            <div class="drop-zone-icon">📷</div>
+            <div class="drop-zone-label">Click or drag to upload screenshot</div>
+            <div class="drop-zone-hint">PNG · JPG · WEBP — recruiter chats, offer images, LinkedIn posts, emails</div>
+          </div>
+          <input type="file" id="ss-file" accept="image/*" style="display:none" onchange="onFileSelect(this,'ss-drop')">
+          <div id="ss-preview" class="mt-2"></div>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="flex:2;height:44px;font-size:15px;font-weight:700" onclick="runAnalysis()" id="analyze-btn">
+            🔍 Analyze
+          </button>
+          <button class="btn btn-outline" style="flex:1;height:44px;font-weight:600" onclick="toggleCompare()" id="compare-toggle">
+            ⚖️ Compare Mode
+          </button>
+        </div>
+
+        <!-- Compare mode (hidden by default) -->
+        <div id="compare-section" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+          <p class="text-xs text-muted mb-2">Paste a second URL, description or upload a second document to compare side by side.</p>
+          <div class="form-group">
+            <label class="form-label">Job B — Reference / Comparison Input</label>
+            <input type="url" id="compare-input" class="form-control" placeholder="https://www.tcs.com/careers/india (official URL for comparison)">
+>>>>>>> backup-before-frontend-sync
           </div>
         </div>
       </div>
 
+<<<<<<< HEAD
     </div>
   </div>
 </div>
@@ -424,6 +522,242 @@ document.addEventListener('DOMContentLoaded', () => {
     container.addEventListener('mouseleave', startScroll);
   }
   setTimeout(startScroll, 1000);
+=======
+      <!-- Trust Card Result (injected here after analysis) -->
+      <div id="result-section" style="display:none"></div>
+    </div>
+
+    <!-- RIGHT: Blacklisted Domains Widget -->
+    <div>
+      <div class="blacklist-widget">
+        <div class="blacklist-header">
+          <span>🚫 Blacklisted Domains</span>
+          <span class="text-xs text-muted" id="bl-count">Loading…</span>
+        </div>
+        <div id="blacklist-list">
+          <div style="padding:14px;text-align:center;color:var(--text-muted);font-size:12px">Loading…</div>
+        </div>
+        <div style="padding:10px 14px;border-top:1px solid var(--border)">
+          <a href="community.html" class="text-xs link">See community reports →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+// ── Tab switching ──
+let activeTab = 'url';
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.analyzer-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).style.display = 'block';
+  btn.classList.add('active');
+}
+
+function toggleCompare() {
+  const sec = document.getElementById('compare-section');
+  const isOpen = sec.style.display !== 'none';
+  sec.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('compare-toggle').textContent = isOpen ? '⚖️ Compare Mode' : '✕ Close Compare';
+}
+
+// ── Drag & drop helpers ──
+function onDragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over'); }
+function onDragLeave(id) { document.getElementById(id).classList.remove('drag-over'); }
+function onFileDrop(e, inputId, dropId) {
+  e.preventDefault();
+  document.getElementById(dropId).classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById(inputId);
+  const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+  showFilePreview(file, dropId);
+}
+function onFileSelect(input, dropId) {
+  if (input.files[0]) showFilePreview(input.files[0], dropId);
+}
+function showFilePreview(file, dropId) {
+  const el = document.getElementById(dropId);
+  el.innerHTML = `<div style="padding:12px;text-align:center"><div style="font-size:1.5rem">${file.type.startsWith('image/')? '🖼️':'📄'}</div><div style="font-weight:600;font-size:13px;margin-top:4px">${file.name}</div><div style="font-size:11px;color:var(--text-muted)">${(file.size/1024).toFixed(0)} KB · Ready to analyze</div></div>`;
+  el.style.borderStyle = 'solid';
+  el.style.borderColor = 'var(--accent-green)';
+}
+
+// ── Main analysis function ──
+async function runAnalysis() {
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true; btn.textContent = '⏳ Analyzing…';
+
+  // Gather input
+  let input = '';
+  if (activeTab === 'url') input = document.getElementById('url-input').value.trim();
+  else if (activeTab === 'description') input = document.getElementById('desc-input').value.trim();
+
+  if (!input && activeTab !== 'offer' && activeTab !== 'screenshot') {
+    showToast('Please enter a URL or description to analyze', 'warning');
+    btn.disabled = false; btn.textContent = '🔍 Analyze'; return;
+  }
+
+  // Simulate ML analysis (replace with actual backend call)
+  await new Promise(r => setTimeout(r, 1800 + Math.random() * 600));
+
+  // Demo: detect red flags from input
+  const redFlags = [];
+  const greenFlags = [];
+  let riskScore = 15;
+
+  const lower = input.toLowerCase();
+  if (/registration fee|processing fee|security deposit|refundable/i.test(lower)) { redFlags.push('Registration / deposit fee demanded'); riskScore += 35; }
+  if (/gmail\.com|yahoo\.com|hotmail/i.test(lower)) { redFlags.push('Recruiter using free email (Gmail/Yahoo)'); riskScore += 25; }
+  if (/whatsapp only|telegram only|no interview|no experience needed/i.test(lower)) { redFlags.push('WhatsApp-only communication'); riskScore += 20; }
+  if (/urgent|immediate joining|today only/i.test(lower)) { redFlags.push('Urgent / pressure tactics'); riskScore += 10; }
+  if (activeTab === 'url' && input) {
+    try {
+      const dom = new URL(input).hostname.replace('www.','');
+      if (/\.xyz|\.tk|\.top|\.buzz|\.click/.test(dom)) { redFlags.push('Suspicious TLD (.xyz, .tk, .top)'); riskScore += 20; }
+      if (/tcs|infosys|wipro|google|amazon/.test(dom) && !/(tcs\.com|infosys\.com|wipro\.com|google\.com|amazon\.com)$/.test(dom)) { redFlags.push('Possible brand impersonation'); riskScore += 30; }
+    } catch {}
+    greenFlags.push('URL parsed successfully');
+  }
+  if (redFlags.length === 0) greenFlags.push('No major fraud keywords detected');
+
+  riskScore = Math.min(99, riskScore + Math.floor(Math.random() * 8));
+  const riskLevel = riskScore >= 70 ? 'HIGH' : riskScore >= 40 ? 'MEDIUM' : 'LOW';
+  const riskColor = riskLevel === 'HIGH' ? 'var(--accent-red)' : riskLevel === 'MEDIUM' ? 'var(--accent-orange)' : 'var(--accent-green)';
+
+  const reportId = 'SS-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 90000 + 10000);
+  const domain = activeTab === 'url' ? (() => { try { return new URL(input).hostname.replace('www.',''); } catch { return 'N/A'; } })() : 'N/A';
+  const domainRisk = Math.min(99, riskScore + Math.floor(Math.random()*10 - 5));
+  const recruiterRisk = redFlags.some(f => f.includes('email')) ? 80 : 15;
+  const contentRisk = redFlags.some(f => f.includes('fee') || f.includes('keyword')) ? 75 : 20;
+  const salaryRisk = /salary.*(lakh|lpa|per month)/i.test(lower) ? 40 : 10;
+  const communityRisk = 0;
+
+  // Save to Supabase if logged in
+  const user = auth.getUser();
+  if (user) {
+    try {
+      await DB.saveAnalysis({
+        title: domain || 'Job Analysis',
+        company_name: null, source_url: activeTab === 'url' ? input : null,
+        description: activeTab === 'description' ? input : null,
+        domain, recruiter_email: null, risk_score: riskScore, risk_level: riskLevel,
+        domain_risk: domainRisk, recruiter_risk: recruiterRisk,
+        content_risk: contentRisk, salary_risk: salaryRisk, structure_risk: 20,
+        indicators: redFlags, summary: null, user_id: user.user_id
+      });
+    } catch (e) { console.warn('Save failed:', e.message); }
+  }
+
+  // Render trust card
+  const circumference = 2 * Math.PI * 30;
+  const dash = circumference - (riskScore / 100) * circumference;
+  const resultHTML = `
+  <div class="trust-card-result">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">📋 JOB TRUST CARD</div>
+      <span class="badge ${riskLevel === 'HIGH' ? 'badge-red' : riskLevel === 'MEDIUM' ? 'badge-orange' : 'badge-green'}">${riskLevel === 'HIGH' ? '❌ HIGH RISK' : riskLevel === 'MEDIUM' ? '⚠️ SUSPICIOUS' : '✅ LIKELY SAFE'}</span>
+    </div>
+    <div class="trust-card-header">
+      <div class="trust-card-score">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="30" fill="none" stroke="var(--border)" stroke-width="8"/>
+          <circle cx="40" cy="40" r="30" fill="none" stroke="${riskColor}" stroke-width="8"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${dash}" stroke-linecap="round" style="transition:stroke-dashoffset 1s ease"/>
+        </svg>
+        <div class="score-text">
+          <span class="score-num" style="color:${riskColor}">${riskScore}</span>
+          <span class="score-label">/100</span>
+        </div>
+      </div>
+      <div class="trust-card-info">
+        <h3>${domain !== 'N/A' ? domain : 'Job Analyzed'}</h3>
+        <div class="meta">${activeTab === 'url' ? '🔗 URL Analysis' : activeTab === 'description' ? '📝 Text Analysis' : activeTab === 'offer' ? '📄 Offer Letter Analysis' : '📷 Screenshot Analysis'}</div>
+        <div class="report-id">Report ID: ${reportId}</div>
+      </div>
+    </div>
+
+    <div class="trust-dimensions">
+      ${[['Domain Risk', domainRisk], ['Recruiter Risk', recruiterRisk], ['Content Risk', contentRisk], ['Salary Risk', salaryRisk]].map(([lbl, val]) => `
+      <div class="trust-dim">
+        <div class="trust-dim-label">${lbl}</div>
+        <div class="trust-dim-bar"><div class="trust-dim-fill" style="width:${val}%;background:${val>60?'var(--accent-red)':val>35?'var(--accent-orange)':'var(--accent-green)'}"></div></div>
+        <div class="trust-dim-val" style="color:${val>60?'var(--accent-red)':val>35?'var(--accent-orange)':'var(--accent-green)'}">${val}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="trust-indicators">
+      <h4>Detected Indicators</h4>
+      ${redFlags.map(f => `<div class="indicator-row bad">⊗ ${f}</div>`).join('')}
+      ${greenFlags.map(f => `<div class="indicator-row ok">✓ ${f}</div>`).join('')}
+    </div>
+
+    <div style="background:var(--bg-input);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;font-size:13.5px;color:var(--text-secondary);line-height:1.65">
+      <strong>Recommendation:</strong> ${riskLevel === 'HIGH' ? '🚨 Do not apply or pay any money. This job shows multiple fraud signals. Report it below.' : riskLevel === 'MEDIUM' ? '⚠️ Proceed with caution. Verify the company independently before sharing personal details.' : '✅ This job appears legitimate based on available signals. Always verify company details independently.'}
+    </div>
+
+    <div class="trust-actions">
+      <button class="btn btn-outline btn-sm" onclick="downloadTrustCard('${reportId}')">⬇ Download Report</button>
+      <button class="btn btn-outline btn-sm" onclick="shareTrustCard('${reportId}')">⇪ Share Report</button>
+      <button class="btn btn-danger btn-sm" onclick="window.location.href='report.html'">🚨 Report Scam</button>
+      <button class="btn btn-outline btn-sm" onclick="window.location.href='community.html'">💬 Discuss</button>
+      <button class="btn btn-ghost btn-sm" onclick="verifyAnother()">🔄 Verify Another</button>
+    </div>
+  </div>`;
+
+  document.getElementById('result-section').innerHTML = resultHTML;
+  document.getElementById('result-section').style.display = 'block';
+  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  btn.disabled = false; btn.textContent = '🔍 Analyze';
+  showToast('Analysis complete — Trust Card generated', riskLevel === 'HIGH' ? 'error' : riskLevel === 'MEDIUM' ? 'warning' : 'success');
+}
+
+function verifyAnother() {
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('url-input').value = '';
+  document.getElementById('desc-input').value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function downloadTrustCard(id) { showToast('Trust Card download — connect backend for PDF generation', 'info'); }
+function shareTrustCard(id) {
+  navigator.clipboard?.writeText(`ScamShield Trust Card ${id}: ${window.location.href}`).then(() => showToast('Report link copied!', 'success'));
+}
+
+// ── Blacklist widget from Supabase ──
+async function loadBlacklist() {
+  const domains = await DB.getBlacklistedDomains(12);
+  const list = document.getElementById('blacklist-list');
+  document.getElementById('bl-count').textContent = domains.length + ' blocked';
+  list.innerHTML = domains.map(d => {
+    const icon = d.status === 'blacklisted' ? '🔴' : '🟠';
+    return `
+    <div class="blacklist-item">
+      <div class="blacklist-item-row">
+        <span>${icon}</span>
+        <span class="blacklist-domain">${d.domain}</span>
+      </div>
+      <div class="blacklist-tooltip">
+        <strong style="color:var(--text-primary)">${d.domain}</strong><br>
+        Risk: <span style="color:${d.status==='blacklisted'?'var(--accent-red)':'var(--accent-orange)'}">${d.status}</span><br>
+        Reports: ${d.report_count || 0}<br>
+        ${d.reason ? `Reason: ${d.reason}` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  renderNavbar();
+  loadBlacklist();
+>>>>>>> backup-before-frontend-sync
 });
 </script>
 </body></html>

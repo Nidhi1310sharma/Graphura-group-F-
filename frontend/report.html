@@ -2,6 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
   <title>Scam Reports – ScamShield</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -144,6 +145,153 @@
             </div>
             <a href="community.html" class="btn btn-outline btn-full mt-3">View All in Community →</a>
           </div>
+=======
+  <title>Report Scam – ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    .step-item { display:flex;align-items:center;gap:8px; }
+    .step-num { width:28px;height:28px;border-radius:50%;background:var(--bg-input);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-muted); }
+    .step-lbl { font-size:12px;color:var(--text-muted); }
+    .step-item.active .step-num { background:var(--accent-blue);border-color:var(--accent-blue);color:#fff; }
+    .step-item.active .step-lbl { color:var(--accent-blue);font-weight:600; }
+    .step-item.done .step-num { background:var(--accent-green);border-color:var(--accent-green);color:#fff; }
+    .step-divider { flex:1;height:2px;background:var(--border);margin:0 8px; }
+    .evidence-drop { border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:var(--transition);background:var(--bg-input);min-height:100px; }
+    .evidence-drop:hover { border-color:var(--accent-blue);background:rgba(88,166,255,.04); }
+    .evidence-list { display:flex;flex-direction:column;gap:6px;margin-top:10px; }
+    .evidence-file { display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-input);border-radius:var(--radius-sm);font-size:12.5px; }
+    .evidence-file-name { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .success-card { text-align:center;padding:32px 20px; }
+    .success-icon { font-size:3rem;margin-bottom:12px; }
+    .success-id { font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--accent-blue);margin:12px 0; }
+  </style>
+</head>
+<body>
+<div class="page-container" style="max-width:700px;margin-top:28px">
+  <div class="page-header">
+    <h1>🚨 Report a Scam Job</h1>
+    <p>Help protect other job seekers. Your report is reviewed by our team and added to the community knowledge base.</p>
+  </div>
+
+  <div class="card">
+    <!-- Steps bar -->
+    <div style="display:flex;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div class="step-item active" id="s1"><div class="step-num">1</div><div class="step-lbl">Job Details</div></div>
+      <div class="step-divider"></div>
+      <div class="step-item" id="s2"><div class="step-num">2</div><div class="step-lbl">Evidence</div></div>
+      <div class="step-divider"></div>
+      <div class="step-item" id="s3"><div class="step-num">3</div><div class="step-lbl">Submit</div></div>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="step-1">
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">Company Name <span style="color:var(--accent-red)">*</span></label>
+          <input type="text" id="r-company" class="form-control" placeholder="XYZ Solutions Pvt Ltd">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job Title</label>
+          <input type="text" id="r-jobtitle" class="form-control" placeholder="Data Entry Executive">
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">Domain / Website</label>
+          <input type="text" id="r-domain" class="form-control" placeholder="xyz-solutions.xyz">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job URL</label>
+          <input type="url" id="r-url" class="form-control" placeholder="https://...">
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">Scam Type <span style="color:var(--accent-red)">*</span></label>
+          <select id="r-type" class="form-control">
+            <option value="">Select type...</option>
+            <option value="fee_demand">Fee / Deposit Demand</option>
+            <option value="impersonation">Brand Impersonation</option>
+            <option value="fake_offer">Fake Offer Letter</option>
+            <option value="phishing">Phishing / Data Theft</option>
+            <option value="unpaid_work">Unpaid Work</option>
+            <option value="mlm">MLM / Pyramid Scheme</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Severity</label>
+          <select id="r-severity" class="form-control">
+            <option value="high">High — clear fraud signals</option>
+            <option value="critical">Critical — money lost</option>
+            <option value="medium">Medium — suspicious</option>
+            <option value="low">Low — minor flags</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description <span style="color:var(--accent-red)">*</span></label>
+        <textarea id="r-desc" class="form-control" rows="5" placeholder="What happened? What did they ask for? How did they communicate? Any amounts mentioned?"></textarea>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px">More detail = more useful for others and faster review by our team.</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="goStep(2)">Next: Evidence →</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="step-2" style="display:none">
+      <p style="color:var(--text-secondary);font-size:13.5px;margin-bottom:16px">Upload any proof you have. Screenshots, emails, offer letters all strengthen your report.</p>
+      <div class="proof-btns" style="margin-bottom:14px">
+        <button class="proof-btn active" onclick="selectEvidType('screenshot',this)">📷 Screenshot</button>
+        <button class="proof-btn" onclick="selectEvidType('email',this)">📧 Email</button>
+        <button class="proof-btn" onclick="selectEvidType('offer_letter',this)">📄 Offer Letter</button>
+        <button class="proof-btn" onclick="selectEvidType('other',this)">📎 Other</button>
+      </div>
+      <div class="evidence-drop" onclick="document.getElementById('evid-file').click()" id="evid-drop">
+        <div style="font-size:1.8rem;margin-bottom:6px">📎</div>
+        <div style="font-weight:600;font-size:13.5px">Click to upload or drag files here</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:3px">PNG, JPG, PDF, DOCX — max 5MB each</div>
+      </div>
+      <input type="file" id="evid-file" multiple accept="image/*,.pdf,.doc,.docx,.eml" style="display:none" onchange="addEvidence(this)">
+      <div class="evidence-list" id="evid-list"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Next: Review & Submit →</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="step-3" style="display:none">
+      <h3 style="margin-bottom:14px;font-size:16px">Review your report</h3>
+      <div class="card" style="background:var(--bg-input);border-color:var(--border);margin-bottom:16px">
+        <div id="review-content" style="font-size:13.5px;line-height:2"></div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="consent-cb" style="margin-top:3px;accent-color:var(--accent-blue)">
+          <span style="color:var(--text-secondary)">I confirm this report is accurate to the best of my knowledge and I consent to it being shared with the ScamShield community to protect other job seekers.</span>
+        </label>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:16px">
+        <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+        <button class="btn btn-danger" id="submit-btn" onclick="submitReport()" style="min-width:140px">🚨 Submit Report</button>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div id="step-success" style="display:none">
+      <div class="success-card">
+        <div class="success-icon">✅</div>
+        <h2 style="margin-bottom:8px">Report Submitted!</h2>
+        <p style="color:var(--text-secondary);font-size:13.5px">Your report has been submitted and is under review. Our team typically responds within 24 hours.</p>
+        <div class="success-id" id="success-report-id">SS-REPORT-XXXX</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px">Save this Report ID for your reference</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="window.location.href='community.html'">View Community Feed</button>
+          <button class="btn btn-primary" onclick="location.reload()">Report Another</button>
+>>>>>>> backup-before-frontend-sync
         </div>
       </div>
     </div>
@@ -151,6 +299,7 @@
 </div>
 
 <script src="js/main.js"></script>
+<<<<<<< HEAD
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
@@ -205,5 +354,118 @@ function addReportToList(report) {
   item.innerHTML = `<div class="flex-between mb-2"><strong style="font-size:13.5px">🔴 ${report.company_name} — ${report.job_title || 'Job Scam'}</strong><span class="badge badge-red">New</span></div><div class="text-xs text-secondary">Reported by ${report.reporter_name || 'Anonymous'} · just now · 0 upvotes</div>`;
   list.insertBefore(item, list.firstChild);
 }
+=======
+<script src="js/supabase-client.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+let evidenceType = 'screenshot';
+let uploadedFiles = [];
+
+function goStep(n) {
+  if (n === 2) {
+    const company = document.getElementById('r-company').value.trim();
+    const desc = document.getElementById('r-desc').value.trim();
+    const type = document.getElementById('r-type').value;
+    if (!company) { showToast('Please enter the company name', 'warning'); return; }
+    if (!type) { showToast('Please select the scam type', 'warning'); return; }
+    if (desc.length < 30) { showToast('Please describe the scam in more detail (min 30 chars)', 'warning'); return; }
+  }
+  if (n === 3) { buildReview(); }
+  [1,2,3,'success'].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('step-' + n).style.display = 'block';
+  // Update step indicators
+  for (let i = 1; i <= 3; i++) {
+    const ind = document.getElementById('s' + i);
+    ind.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+    if (i < n) ind.querySelector('.step-num').textContent = '✓';
+  }
+}
+
+function selectEvidType(type, btn) {
+  evidenceType = type;
+  document.querySelectorAll('.proof-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function addEvidence(input) {
+  Array.from(input.files).forEach(file => {
+    uploadedFiles.push({ file, type: evidenceType });
+    const list = document.getElementById('evid-list');
+    const icon = file.type.startsWith('image/') ? '🖼️' : '📄';
+    const div = document.createElement('div');
+    div.className = 'evidence-file';
+    div.innerHTML = `<span>${icon}</span><span class="evidence-file-name">${file.name}</span><span style="font-size:11px;color:var(--text-muted)">${evidenceType}</span><span style="font-size:11px;color:var(--accent-green)">✓</span><button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px" onclick="this.closest('.evidence-file').remove()">✕</button>`;
+    list.appendChild(div);
+  });
+  input.value = '';
+}
+
+function buildReview() {
+  const company = document.getElementById('r-company').value;
+  const jobTitle = document.getElementById('r-jobtitle').value || 'Not specified';
+  const domain = document.getElementById('r-domain').value || 'Not specified';
+  const type = document.getElementById('r-type').value;
+  const severity = document.getElementById('r-severity').value;
+  const desc = document.getElementById('r-desc').value;
+  document.getElementById('review-content').innerHTML = `
+    <div><strong>Company:</strong> ${company}</div>
+    <div><strong>Job Title:</strong> ${jobTitle}</div>
+    <div><strong>Domain:</strong> ${domain}</div>
+    <div><strong>Scam Type:</strong> ${type.replace('_',' ')}</div>
+    <div><strong>Severity:</strong> ${severity}</div>
+    <div><strong>Evidence Files:</strong> ${uploadedFiles.length} file(s) attached</div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><strong>Description:</strong><br><span style="color:var(--text-secondary)">${desc}</span></div>`;
+}
+
+async function submitReport() {
+  if (!document.getElementById('consent-cb').checked) {
+    showToast('Please check the consent box to submit', 'warning'); return;
+  }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const user = auth.getUser();
+  try {
+    const result = await DB.submitReport({
+      company_name: document.getElementById('r-company').value.trim(),
+      job_title: document.getElementById('r-jobtitle').value.trim() || null,
+      domain: document.getElementById('r-domain').value.trim() || null,
+      job_url: document.getElementById('r-url').value.trim() || null,
+      scam_type: document.getElementById('r-type').value,
+      description: document.getElementById('r-desc').value.trim(),
+      severity: document.getElementById('r-severity').value,
+      reporter_id: user?.user_id || null,
+    });
+    const reportId = result?.report_id || ('SS-RPT-' + Math.floor(Math.random()*90000+10000));
+    document.getElementById('success-report-id').textContent = reportId;
+    [1,2,3].forEach(i => { document.getElementById('step-' + i).style.display = 'none'; });
+    document.getElementById('step-success').style.display = 'block';
+  } catch(e) {
+    const reportId = 'SS-RPT-' + Math.floor(Math.random()*90000+10000);
+    document.getElementById('success-report-id').textContent = reportId;
+    [1,2,3].forEach(i => { document.getElementById('step-' + i).style.display = 'none'; });
+    document.getElementById('step-success').style.display = 'block';
+  }
+}
+
+// Drag and drop
+const drop = document.getElementById('evid-drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.borderColor = 'var(--accent-blue)'; });
+drop.addEventListener('dragleave', () => { drop.style.borderColor = ''; });
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.style.borderColor = '';
+  const dt = new DataTransfer();
+  Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+  const inp = document.getElementById('evid-file');
+  inp.files = dt.files;
+  addEvidence(inp);
+});
+
+document.addEventListener('DOMContentLoaded', () => { initTheme(); renderNavbar(); });
+>>>>>>> backup-before-frontend-sync
 </script>
 </body></html>
