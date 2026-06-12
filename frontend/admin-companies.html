@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Companies – ScamShield Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
+    <nav class="admin-nav">
+      <a href="admin.html"><span>📊</span> Overview</a>
+      <a href="admin-reports.html" class="companiesreports"><span>🚩</span> Reports</a>
+      <a href="admin-community.html" class="companiescommunity"><span>👥</span> Community</a>
+      <a href="admin-listings.html" class="companieslistings"><span>💼</span> Listings</a>
+      <div class="admin-nav-group">Knowledge Base</div>
+      <a href="admin-companies.html" class="active" class="active" class="active"><span>🏢</span> Companies</a>
+      <a href="admin-domains.html" class="companiesdomains"><span>🌐</span> Domains</a>
+      <a href="admin-indicators.html" class="companiesindicators"><span>⚡</span> Scam Indicators</a>
+      <div class="admin-nav-group">System</div>
+      <a href="admin-users.html" class="companiesadmins"><span>👤</span> Admins & Logs</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
+    </div>
+  </aside>
+  <div class="admin-main"><div class="admin-page">
+    
+      <div class="page-header"><h1>🏢 Companies — Knowledge Base</h1><p>Manage company trust status — verify, mark suspicious, or blacklist</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input type="text" class="form-control" style="max-width:240px" placeholder="Search companies…" oninput="filterTable(this.value,\"co-tbody\")">
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>Company</th><th>Domain</th><th>Trust Score</th><th>Reports</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="co-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+  </div></div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+
+async function loadCompanies() {
+  try {
+    const cos = await DB.getCompanies();
+    document.getElementById("co-tbody").innerHTML = cos.map(c => `
+      <tr>
+        <td><strong>${c.name}</strong></td>
+        <td class="mono" style="font-size:12px">${c.domain||"—"}</td>
+        <td><span style="font-family:var(--font-mono);color:${c.trust_score>70?"var(--accent-green)":c.trust_score>40?"var(--accent-orange)":"var(--accent-red)"}">${c.trust_score}</span></td>
+        <td>${c.report_count}</td>
+        <td><span class="badge ${c.status==="verified"?"badge-green":c.status==="blacklisted"?"badge-red":c.status==="suspicious"?"badge-orange":"badge-gray"}">${c.status}</span></td>
+        <td style="display:flex;gap:5px">
+          <button class="btn btn-outline btn-sm" onclick="setCoStatus(\"${c.company_id}\",\"verified\",this)">✔ Verify</button>
+          <button class="btn btn-outline btn-sm" onclick="setCoStatus(\"${c.company_id}\",\"suspicious\",this)">⚠ Sus</button>
+          <button class="btn btn-danger btn-sm" onclick="setCoStatus(\"${c.company_id}\",\"blacklisted\",this)">🚫 BL</button>
+        </td>
+      </tr>`).join("") || "<tr><td colspan=\"6\" style=\"text-align:center;color:var(--text-muted)\">No companies</td></tr>";
+  } catch(e) { console.error(e); }
+}
+async function setCoStatus(id, status, btn) {
+  try {
+    await DB.updateCompanyStatus(id, status);
+    await DB.logAction({ admin_id:null, action:(status==="verified"?"VERIFY_COMPANY":status==="blacklisted"?"BLACKLIST_COMPANY":"MARK_SUSPICIOUS"), target_type:"COMPANY", target_id:id });
+    showToast("Company marked " + status, "success");
+    loadCompanies();
+  } catch(e) { showToast("Updated (demo)","info"); }
+}
+function filterTable(q, tbodyId) {
+  document.querySelectorAll("#"+tbodyId+" tr").forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? "" : "none"; });
+}
+document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadCompanies(); });
+
+</script>
+</body></html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community – ScamShield Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
+    <nav class="admin-nav">
+      <a href="admin.html"><span>📊</span> Overview</a>
+      <a href="admin-reports.html" class="communityreports"><span>🚩</span> Reports</a>
+      <a href="admin-community.html" class="active" class="active" class="active"><span>👥</span> Community</a>
+      <a href="admin-listings.html" class="communitylistings"><span>💼</span> Listings</a>
+      <div class="admin-nav-group">Knowledge Base</div>
+      <a href="admin-companies.html" class="communitycompanies"><span>🏢</span> Companies</a>
+      <a href="admin-domains.html" class="communitydomains"><span>🌐</span> Domains</a>
+      <a href="admin-indicators.html" class="communityindicators"><span>⚡</span> Scam Indicators</a>
+      <div class="admin-nav-group">System</div>
+      <a href="admin-users.html" class="communityadmins"><span>👤</span> Admins & Logs</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
+    </div>
+  </aside>
+  <div class="admin-main"><div class="admin-page">
+    
+      <div class="page-header"><h1>👥 Community</h1><p>Moderate posts and comments — hide, delete, or lock discussions</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="filter-chip active" onclick="setFilter(null,this)">All</button>
+        <button class="filter-chip" onclick="setFilter(\"active\",this)">Active</button>
+        <button class="filter-chip" onclick="setFilter(\"hidden\",this)">Hidden</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>Title</th><th>Type</th><th>Author</th><th>Votes</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="posts-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+  </div></div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+
+const typeIcon = { scam_report:"🔴", discussion:"💬", warning:"🟠", question:"❓" };
+async function loadPosts(status) {
+  try {
+    const posts = await DB.getAllPosts(status ? { status } : {});
+    document.getElementById("posts-tbody").innerHTML = posts.map(p => {
+      const votes = (p.community_votes||[]).reduce((a,v) => a + (v.vote_type==="upvote"?1:-1), 0);
+      return `<tr>
+        <td><strong style="font-size:13px">${p.title.slice(0,60)}${p.title.length>60?"…":""}</strong></td>
+        <td>${typeIcon[p.post_type]||"📝"} ${p.post_type}</td>
+        <td style="font-size:12px">${p.users?.full_name||"—"}</td>
+        <td style="font-family:var(--font-mono)">${votes}</td>
+        <td><span class="badge ${p.status==="active"?"badge-green":p.status==="hidden"?"badge-gray":"badge-red"}">${p.status}</span></td>
+        <td style="font-size:12px">${new Date(p.created_at).toLocaleDateString("en-IN")}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="updatePost(\"${p.post_id}\",\"hidden\",this)">🙈 Hide</button>
+          <button class="btn btn-danger btn-sm" onclick="updatePost(\"${p.post_id}\",\"deleted\",this)">🗑 Delete</button>
+        </td>
+      </tr>`;
+    }).join("") || "<tr><td colspan=\"7\" style=\"text-align:center;color:var(--text-muted)\">No posts</td></tr>";
+  } catch(e) { console.error(e); }
+}
+async function updatePost(id, status, btn) {
+  try {
+    await DB.updatePostStatus(id, status);
+    await DB.logAction({ admin_id:null, action: status==="hidden"?"HIDE_POST":"DELETE_POST", target_type:"POST", target_id:id });
+    showToast("Post " + status, "success");
+    btn.closest("tr").style.opacity = "0.4";
+  } catch(e) { showToast("Updated (demo)", "info"); btn.closest("tr").style.opacity="0.4"; }
+}
+function setFilter(s, btn) { document.querySelectorAll(".filter-chip").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); loadPosts(s); }
+document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadPosts(); });
+
+</script>
+</body></html>

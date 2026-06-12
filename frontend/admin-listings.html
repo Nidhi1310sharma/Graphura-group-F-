@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listings – ScamShield Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
+    <nav class="admin-nav">
+      <a href="admin.html"><span>📊</span> Overview</a>
+      <a href="admin-reports.html" class="listingsreports"><span>🚩</span> Reports</a>
+      <a href="admin-community.html" class="listingscommunity"><span>👥</span> Community</a>
+      <a href="admin-listings.html" class="active" class="active" class="active"><span>💼</span> Listings</a>
+      <div class="admin-nav-group">Knowledge Base</div>
+      <a href="admin-companies.html" class="listingscompanies"><span>🏢</span> Companies</a>
+      <a href="admin-domains.html" class="listingsdomains"><span>🌐</span> Domains</a>
+      <a href="admin-indicators.html" class="listingsindicators"><span>⚡</span> Scam Indicators</a>
+      <div class="admin-nav-group">System</div>
+      <a href="admin-users.html" class="listingsadmins"><span>👤</span> Admins & Logs</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
+    </div>
+  </aside>
+  <div class="admin-main"><div class="admin-page">
+    
+      <div class="page-header"><h1>💼 Listings</h1><p>All analyzed job postings — mark safe, flag suspicious, or archive</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="filter-chip active" onclick="setFilter(null,this)">All</button>
+        <button class="filter-chip" onclick="setFilter(\"flagged\",this)">🚩 Flagged</button>
+        <button class="filter-chip" onclick="setFilter(\"safe\",this)">✅ Safe</button>
+        <button class="filter-chip" onclick="setFilter(\"archived\",this)">📦 Archived</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>Job Title</th><th>Company</th><th>Risk Score</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody id="listings-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+  </div></div>
+</div>
+<script src="js/main.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+
+async function loadListings(status) {
+  try {
+    const listings = await DB.getListings(status ? {status} : {});
+    document.getElementById("listings-tbody").innerHTML = listings.map(l => {
+      const score = l.analysis?.risk_score || 0;
+      const color = score > 70 ? "var(--accent-red)" : score > 40 ? "var(--accent-orange)" : "var(--accent-green)";
+      return `<tr>
+        <td><strong>${l.title}</strong><br><span style="font-size:11px;color:var(--text-muted)">${l.domain||""}</span></td>
+        <td>${l.company_name||"—"}</td>
+        <td><span style="font-family:var(--font-mono);font-weight:700;color:${color}">${score}</span></td>
+        <td><span class="badge ${l.status==="safe"?"badge-green":l.status==="flagged"?"badge-red":l.status==="archived"?"badge-gray":"badge-yellow"}">${l.status}</span></td>
+        <td style="font-size:12px">${new Date(l.created_at).toLocaleDateString("en-IN")}</td>
+        <td style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="setStatus(\"${l.listing_id}\",\"safe\",this)">✓ Safe</button>
+          <button class="btn btn-danger btn-sm" onclick="setStatus(\"${l.listing_id}\",\"flagged\",this)">⚑ Flag</button>
+          <button class="btn btn-ghost btn-sm" onclick="setStatus(\"${l.listing_id}\",\"archived\",this)">📦</button>
+        </td>
+      </tr>`;
+    }).join("") || "<tr><td colspan=\"6\" style=\"text-align:center;color:var(--text-muted)\">No listings</td></tr>";
+  } catch(e) { console.error(e); }
+}
+async function setStatus(id, status, btn) {
+  try {
+    await DB.updateListingStatus(id, status);
+    await DB.logAction({ admin_id:null, action:(status==="safe"?"MARK_SAFE":status==="flagged"?"FLAG_SUSPICIOUS":"ARCHIVE_LISTING"), target_type:"LISTING", target_id:id });
+    showToast("Listing marked " + status, "success");
+    btn.closest("tr").style.opacity="0.5";
+    setTimeout(() => loadListings(), 600);
+  } catch(e) { showToast("Updated (demo)","info"); btn.closest("tr").style.opacity="0.5"; }
+}
+function setFilter(s, btn) { document.querySelectorAll(".filter-chip").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); loadListings(s); }
+document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadListings(); });
+
+</script>
+</body></html>

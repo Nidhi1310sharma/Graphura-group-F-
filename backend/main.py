@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ============================================================
 # ScamShield v4 – FastAPI Backend
 # ============================================================
@@ -10,6 +11,19 @@ from datetime import datetime, timedelta
 import uuid, re, os
 
 app = FastAPI(title="ScamShield API v4", version="4.0.0")
+=======
+# # backend/main.py
+# # to run: python -m uvicorn backend.main:app --reload
+
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from backend.routes import auth, community, reports
+from backend.admin import routes_reports
+
+app = FastAPI()
+>>>>>>> backup-before-frontend-sync
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 security = HTTPBearer(auto_error=False)
 
 # ── In-memory store (replace with PostgreSQL via DATABASE_URL) ──
@@ -356,3 +371,13 @@ if __name__ == "__main__":
 #   SUPABASE_KEY=your-anon-key
 #   DATABASE_URL=postgresql://user:pass@host:5432/db
 # ============================================================
+=======
+app.include_router(auth.router, prefix="/api")
+app.include_router(community.router, prefix="/api")
+app.include_router(reports.router, prefix="/api")
+app.include_router(routes_reports.router, prefix="/api")
+
+@app.get("/")
+def root():
+    return {"message": "API Running"}
+>>>>>>> backup-before-frontend-sync
