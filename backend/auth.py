@@ -14,6 +14,7 @@ pwd_context = CryptContext(
     schemes=["bcrypt"], deprecated="auto"
 )
 
+SUPABASE_ANON_KEY=os.getenv("SUPABASE_ANON_KEY")
 SECRET_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
@@ -57,7 +58,7 @@ async def get_current_user(
     token = credentials.credentials
 
     try:
-        payload = jwt.decode(token, os.getenv("JWT_SECRET_KEY") or SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET_KEY or SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
