@@ -4,139 +4,6 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Community – ScamShield</title>
   <link rel="stylesheet" href="css/style.css">
-<<<<<<< HEAD
-  <style>
-    .community-layout { display:grid; grid-template-columns:1fr 300px; gap:20px; align-items:start; }
-    @media(max-width:1000px){.community-layout{grid-template-columns:1fr;}}
-    .feed-tag { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700; }
-    .feed-tag-scam { background:rgba(248,81,73,.15); color:var(--accent-red); border:1px solid rgba(248,81,73,.25); }
-    .feed-tag-suspicious { background:rgba(210,153,34,.15); color:var(--accent-yellow); border:1px solid rgba(210,153,34,.25); }
-    .feed-tag-warning { background:rgba(227,112,42,.15); color:var(--accent-orange); border:1px solid rgba(227,112,42,.25); }
-    .feed-tag-safe { background:rgba(63,185,80,.15); color:var(--accent-green); border:1px solid rgba(63,185,80,.25); }
-    .feed-detail-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px; }
-    .feed-detail-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-muted); }
-    .replies-section { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); display:none; }
-    .reply-item { display:flex; gap:8px; margin-bottom:10px; }
-    .reply-avatar { width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0; }
-    .reply-bubble { background:var(--bg-input); border-radius:0 8px 8px 8px; padding:8px 12px; flex:1; }
-    .reply-meta { font-size:11px; color:var(--text-muted); margin-bottom:3px; }
-    .reply-text { font-size:13px; color:var(--text-secondary); }
-    .reply-input-row { display:flex; gap:8px; margin-top:10px; }
-    .filter-bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
-    .filter-chip { padding:5px 12px; background:var(--bg-input); border:1px solid var(--border); border-radius:99px; font-size:12.5px; color:var(--text-secondary); cursor:pointer; transition:var(--transition); }
-    .filter-chip:hover,.filter-chip.active { border-color:var(--accent-blue); color:var(--accent-blue); background:rgba(88,166,255,.08); }
-
-    /* Search bar */
-    .search-bar { display:flex; gap:8px; margin-bottom:16px; }
-    .search-bar input { flex:1; }
-    .search-highlight { background:rgba(88,166,255,.2); border-radius:2px; color:var(--accent-blue); }
-    .no-results { text-align:center; padding:40px 20px; color:var(--text-muted); }
-
-    .community-stat-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; }
-    .community-stat-row:last-child { border-bottom:none; }
-    .trending-company { padding:8px 12px; background:var(--bg-input); border-radius:var(--radius-sm); margin-bottom:6px; font-size:13px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:var(--transition); }
-    .trending-company:hover { background:var(--bg-card-hover); }
-    .post-count { font-size:11px; color:var(--text-muted); }
-    .new-post-form { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:18px; }
-  </style>
-</head>
-<body>
-<div class="app-shell" id="app-shell">
-  <div class="main-content">
-    <div class="page-inner">
-      <div class="page-header">
-        <h1>👥 Community Feed</h1>
-        <p>Real reports from job seekers — upvote, reply, search, and share your experience</p>
-      </div>
-
-      <div class="community-layout">
-        <!-- FEED -->
-        <div>
-          <!-- Search -->
-          <div class="search-bar">
-            <input type="text" class="form-control" id="community-search" placeholder="🔍 Search scam reports — company name, domain, job title…" oninput="searchFeed(this.value)">
-            <button class="btn btn-primary" onclick="searchFeed(document.getElementById('community-search').value)">Search</button>
-          </div>
-
-          <!-- Filters -->
-          <div class="filter-bar">
-            <button class="filter-chip active" onclick="filterFeed('all',this)">All Reports</button>
-            <button class="filter-chip" onclick="filterFeed('scam',this)">🔴 Confirmed Scam</button>
-            <button class="filter-chip" onclick="filterFeed('suspicious',this)">⚠️ Suspicious</button>
-            <button class="filter-chip" onclick="filterFeed('recent',this)">🕐 Most Recent</button>
-            <button class="filter-chip" onclick="filterFeed('popular',this)">🔥 Most Upvoted</button>
-            <div style="margin-left:auto">
-              <button class="btn btn-primary btn-sm" onclick="togglePostForm()">+ Share Experience</button>
-            </div>
-          </div>
-
-          <!-- New Post Form (hidden by default) -->
-          <div class="new-post-form" id="post-form" style="display:none">
-            <div class="card-title mb-3" style="padding:0;border:none">📝 Share Your Experience</div>
-            <div class="two-col mb-2">
-              <div class="form-group" style="margin:0">
-                <label class="form-label">Company Name</label>
-                <input type="text" class="form-control" id="post-company" placeholder="e.g. XYZ Solutions Pvt Ltd">
-              </div>
-              <div class="form-group" style="margin:0">
-                <label class="form-label">Type</label>
-                <select class="form-control" id="post-type">
-                  <option value="scam">🔴 Confirmed Scam</option>
-                  <option value="suspicious">⚠️ Suspicious</option>
-                  <option value="warning">🟠 Warning</option>
-                  <option value="safe">🟢 Legit Company</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Your Experience</label>
-              <textarea class="form-control" id="post-body" rows="3" placeholder="Describe what happened — the more detail, the more useful it is for others…"></textarea>
-            </div>
-            <div class="flex-between">
-              <button class="btn btn-primary" onclick="submitPost()">Submit Report</button>
-              <button class="btn btn-ghost" onclick="togglePostForm()">Cancel</button>
-            </div>
-          </div>
-
-          <!-- Feed Container -->
-          <div id="feed-container"></div>
-          <div id="no-results" class="no-results" style="display:none">
-            <div style="font-size:2rem;margin-bottom:10px">🔎</div>
-            <div style="font-weight:600;margin-bottom:6px">No results found</div>
-            <p>Try a different company name or keyword. You can also <a href="report.html" class="link">submit a new report</a>.</p>
-          </div>
-        </div>
-
-        <!-- SIDEBAR -->
-        <div>
-          <!-- Stats -->
-          <div class="card mb-3">
-            <div class="card-title">📊 Community Stats</div>
-            <div class="community-stat-row"><span>Total reports</span><strong>214</strong></div>
-            <div class="community-stat-row"><span>Confirmed scams</span><strong style="color:var(--accent-red)">147</strong></div>
-            <div class="community-stat-row"><span>Companies flagged</span><strong>89</strong></div>
-            <div class="community-stat-row"><span>This week</span><strong style="color:var(--accent-green)">↑ 23 new</strong></div>
-            <div class="community-stat-row"><span>Active members</span><strong>1,248</strong></div>
-          </div>
-
-          <!-- Trending Companies -->
-          <div class="card mb-3">
-            <div class="card-title">🔥 Most Reported Companies</div>
-            <div onclick="searchFeed('Career Solutions')" class="trending-company"><span>Career Solutions Ltd</span><span class="badge badge-red">14 reports</span></div>
-            <div onclick="searchFeed('DigiWork')" class="trending-company"><span>DigiWork India</span><span class="badge badge-orange">9 reports</span></div>
-            <div onclick="searchFeed('NetJob')" class="trending-company"><span>NetJob India</span><span class="badge badge-red">8 reports</span></div>
-            <div onclick="searchFeed('QuickEarnings')" class="trending-company"><span>QuickEarnings Ltd</span><span class="badge badge-orange">6 reports</span></div>
-            <div onclick="searchFeed('CareerBoost')" class="trending-company"><span>CareerBoost Pvt Ltd</span><span class="badge badge-orange">5 reports</span></div>
-          </div>
-
-          <!-- Quick Report -->
-          <div class="card">
-            <div class="card-title">🚨 Quick Report</div>
-            <p style="font-size:12.5px;color:var(--text-secondary);margin-bottom:12px">Encountered a scam? File a detailed report with proof to help others.</p>
-            <a href="report.html" class="btn btn-danger btn-full">File Scam Report</a>
-          </div>
-        </div>
-=======
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -222,62 +89,10 @@
           <div id="live-widget-entries"></div>
         </div>
         <a href="live-feed.html" class="text-xs link" style="display:block;margin-top:10px;text-align:center">View full feed →</a>
->>>>>>> backup-before-frontend-sync
       </div>
     </div>
   </div>
 </div>
-<<<<<<< HEAD
-<script src="js/main.js"></script>
-<script src="js/sidebar.js"></script>
-<script src="js/chatbot.js"></script>
-<script>
-const POSTS = [
-  { id:1, name:'Rahul S.', initials:'RS', city:'Pune, Maharashtra', time:'7 days ago', type:'scam', tag:'🔴 Scam', tagClass:'feed-tag-scam', company:'Career Solutions Ltd', domain:'careers-google-jobs.xyz', salary:null, body:'Asked for ₹5000 registration fee after interview. Domain was registered just 2 weeks ago. They used a Gmail account for communication despite claiming to be from Google. Complete fraud — avoid at all costs! Reported to cyber crime portal also.', upvotes:14, replies:[{init:'PM',name:'Priya M.',time:'6d ago',text:"Same experience! They also asked for ID card fee after this."},{init:'AK',name:'Ankit K.',time:'5d ago',text:"Reported them on Cyber Crime India portal too. Case number CC2025-4821."}], verified:true },
-  { id:2, name:'Priya M.', initials:'PM', city:'Mumbai, Maharashtra', time:'3 days ago', type:'suspicious', tag:'⚠️ Suspicious', tagClass:'feed-tag-suspicious', company:'DigiWork India', domain:null, salary:'₹800/hr', body:'WFH data entry job that promised ₹800/hr. After 2 weeks of actual work — entering data daily — no payment was received. Company website went offline last week. Phone numbers are now unreachable. Be careful!', upvotes:8, replies:[{init:'VR',name:'Vikram R.',time:'2d ago',text:"I had the same issue! They vanished after I put in 3 weeks of work."}], verified:false },
-  { id:3, name:'Ankit R.', initials:'AR', city:'Delhi', time:'1 day ago', type:'scam', tag:'🔴 Scam', tagClass:'feed-tag-scam', company:'TCS Impersonation', domain:'tcs-careers2025.in', salary:'₹1.2L/mo', body:'Got a call claiming to be TCS HR. They sent an offer letter on tcs-careers2025.in — not tcs.com. The offer had a ₹3000 "security deposit" requirement. The email was from tcs.hr.jobs@gmail.com. Real TCS never uses Gmail. Reported to TCS fraud team.', upvotes:22, replies:[], verified:false },
-  { id:4, name:'Sneha P.', initials:'SP', city:'Hyderabad', time:'5 days ago', type:'warning', tag:'🟠 Warning', tagClass:'feed-tag-warning', company:'GlobalWork Solutions', domain:'globalwork.xyz', salary:'₹60,000/mo WFH', body:'Company asked me to pay for a "training kit" worth ₹1500 before joining. Said it\'s refundable after 30 days — which is a classic delay tactic. The kit never arrives, then they go silent. Multiple people in my college have been targeted.', upvotes:11, replies:[], verified:false },
-];
-
-let currentPosts = [...POSTS];
-
-function renderPosts(posts, searchQuery) {
-  const container = document.getElementById('feed-container');
-  const noResults = document.getElementById('no-results');
-  if (posts.length === 0) { container.innerHTML = ''; noResults.style.display = 'block'; return; }
-  noResults.style.display = 'none';
-  container.innerHTML = posts.map(p => {
-    const bodyHtml = searchQuery ? highlightText(p.body, searchQuery) : p.body;
-    const companyHtml = searchQuery ? highlightText(p.company, searchQuery) : p.company;
-    return `
-    <div class="feed-card" data-type="${p.type}" data-id="${p.id}">
-      <div class="feed-header">
-        <div class="feed-avatar" style="background:linear-gradient(135deg,#58a6ff,#bc8cff)">${p.initials}</div>
-        <div class="feed-meta">
-          <div class="feed-name">${p.name} ${p.verified ? '<span class="badge badge-blue" style="font-size:10px;margin-left:4px">Verified</span>' : ''}</div>
-          <div class="feed-time">${p.time} · ${p.city}</div>
-        </div>
-        <span class="feed-tag ${p.tagClass}">${p.tag}</span>
-      </div>
-      <div class="feed-detail-row">
-        <span class="feed-detail-item">💼 <strong>${companyHtml}</strong></span>
-        ${p.domain ? `<span class="feed-detail-item">🌐 ${p.domain}</span>` : ''}
-        ${p.salary ? `<span class="feed-detail-item">💰 ${p.salary} promised</span>` : ''}
-      </div>
-      <div class="feed-body">${bodyHtml}</div>
-      <div class="feed-actions">
-        <button class="feed-action-btn" onclick="upvote(this,${p.id})">👍 <span class="upvote-count">${p.upvotes}</span></button>
-        <button class="feed-action-btn" onclick="toggleReplies(this)">💬 <span>${p.replies.length} ${p.replies.length === 1 ? 'reply' : 'replies'}</span></button>
-        <button class="feed-action-btn" onclick="window.location.href='report.html'">🚨 Report</button>
-        <button class="feed-action-btn" onclick="sharePost(${p.id})">⇪ Share</button>
-        <button class="feed-action-btn" onclick="window.location.href='checker.html'">🔍 Analyze</button>
-      </div>
-      <div class="replies-section" id="replies-${p.id}">
-        ${p.replies.map(r => `<div class="reply-item"><div class="reply-avatar">${r.init}</div><div class="reply-bubble"><div class="reply-meta">${r.name} · ${r.time}</div><div class="reply-text">${r.text}</div></div></div>`).join('')}
-        <div class="reply-input-row">
-          <input class="form-control" placeholder="Write a reply…" style="flex:1" id="reply-input-${p.id}">
-          <button class="btn btn-primary btn-sm" onclick="addReply(${p.id})">Reply</button>
-=======
 
 <script src="js/main.js"></script>
 <script src="js/supabase-client.js"></script>
@@ -343,106 +158,12 @@ function renderPosts(posts, highlight = '') {
         <div class="reply-input-row">
           <input class="form-control" id="reply-${p.post_id}" placeholder="Add a comment…" style="flex:1">
           <button class="btn btn-primary btn-sm" onclick="addComment('${p.post_id}')">Post</button>
->>>>>>> backup-before-frontend-sync
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-<<<<<<< HEAD
-function highlightText(text, query) {
-  if (!query) return text;
-  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
-  return text.replace(re, '<mark class="search-highlight">$1</mark>');
-}
-
-function searchFeed(query) {
-  const q = query.trim().toLowerCase();
-  document.getElementById('community-search').value = query;
-  if (!q) { currentPosts = [...POSTS]; renderPosts(currentPosts, ''); return; }
-  const filtered = POSTS.filter(p =>
-    p.company.toLowerCase().includes(q) ||
-    p.body.toLowerCase().includes(q) ||
-    (p.domain && p.domain.toLowerCase().includes(q)) ||
-    p.name.toLowerCase().includes(q) ||
-    p.city.toLowerCase().includes(q)
-  );
-  currentPosts = filtered;
-  renderPosts(filtered, query);
-  if (filtered.length > 0) showToast(`Found ${filtered.length} result(s) for "${query}"`, 'info');
-}
-
-function filterFeed(type, btn) {
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('community-search').value = '';
-  let filtered;
-  if (type === 'all') filtered = [...POSTS];
-  else if (type === 'recent') filtered = [...POSTS].sort((a,b) => a.id - b.id).reverse();
-  else if (type === 'popular') filtered = [...POSTS].sort((a,b) => b.upvotes - a.upvotes);
-  else filtered = POSTS.filter(p => p.type === type);
-  currentPosts = filtered;
-  renderPosts(filtered, '');
-}
-
-function upvote(btn, id) {
-  const count = btn.querySelector('.upvote-count');
-  const post = POSTS.find(p => p.id === id);
-  if (!post) return;
-  if (btn.dataset.voted) { post.upvotes--; btn.style.color=''; delete btn.dataset.voted; }
-  else { post.upvotes++; btn.style.color='var(--accent-blue)'; btn.dataset.voted='1'; }
-  count.textContent = post.upvotes;
-}
-
-function toggleReplies(btn) {
-  const card = btn.closest('.feed-card');
-  const section = card.querySelector('.replies-section');
-  section.style.display = section.style.display === 'block' ? 'none' : 'block';
-}
-
-function addReply(id) {
-  const input = document.getElementById('reply-input-' + id);
-  const text = input.value.trim();
-  if (!text) return;
-  const user = auth.getUser();
-  const name = user?.full_name || 'You';
-  const init = name[0].toUpperCase();
-  const repliesEl = document.getElementById('replies-' + id);
-  const div = document.createElement('div');
-  div.className = 'reply-item';
-  div.innerHTML = `<div class="reply-avatar">${init}</div><div class="reply-bubble"><div class="reply-meta">${name} · just now</div><div class="reply-text">${text}</div></div>`;
-  repliesEl.insertBefore(div, repliesEl.lastElementChild);
-  input.value = '';
-  showToast('Reply added', 'success');
-}
-
-function sharePost(id) {
-  const post = POSTS.find(p => p.id === id);
-  const text = `⚠️ ScamShield Alert: ${post.company} reported as ${post.type}. Check ScamShield for details.`;
-  navigator.clipboard?.writeText(text).then(() => showToast('Alert text copied — paste on WhatsApp or Twitter!', 'success')).catch(() => showToast('Copy the alert manually', 'info'));
-}
-
-function togglePostForm() {
-  const f = document.getElementById('post-form');
-  f.style.display = f.style.display === 'none' ? 'block' : 'none';
-}
-
-function submitPost() {
-  const company = document.getElementById('post-company').value.trim();
-  const body = document.getElementById('post-body').value.trim();
-  if (!company || !body) { showToast('Please fill in company name and your experience', 'warning'); return; }
-  showToast('Report submitted! Under review by moderators.', 'success');
-  togglePostForm();
-  document.getElementById('post-company').value = '';
-  document.getElementById('post-body').value = '';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderSidebar('community.html');
-  document.getElementById('page-title').textContent = 'Community Feed';
-  renderPosts(POSTS, '');
-=======
 async function loadPosts(type = 'all', search = null) {
   try {
     const opts = {};
@@ -573,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPosts();
   }
   if (params.get('compose') === '1') openPostModal();
->>>>>>> backup-before-frontend-sync
 });
 </script>
 </body></html>
