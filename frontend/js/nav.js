@@ -1,3 +1,4 @@
+//
 // ============================================================
 // nav.js – Top Navbar renderer (replaces sidebar.js for public pages)
 // ScamShield uses a top navbar, NOT a sidebar
