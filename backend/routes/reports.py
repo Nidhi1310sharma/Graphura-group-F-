@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 router = APIRouter(prefix="/reports",tags=["Reports"])
 
-
+# to fill record for file type in the report_evidence
 def get_file_type(filename: str, content_type: str) -> str:
     lc = filename.lower()
     if lc.endswith(".pdf") or "pdf" in content_type:
@@ -20,7 +20,7 @@ def get_file_type(filename: str, content_type: str) -> str:
         return "image"
     return "file"
 
-
+#to check for valid urls given in evidence
 def validate_url(url: str) -> bool:
     parsed = urlparse(url)
     return parsed.scheme in ("http", "https") and bool(parsed.netloc)
@@ -58,8 +58,8 @@ async def create_report(
     company_name: str = Form(...),
     job_title: Optional[str] = Form(None),
     description: str = Form(...),
-    scam_type: Optional[str] = Form(None),
-    severity: Optional[str] = Form(None),
+    scam_type: str = Form(...),
+    severity: str = Form(...),
     files: Optional[List[UploadFile]] = File(None),
     urls: Optional[List[str]] = Form(None),
 ):

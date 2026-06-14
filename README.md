@@ -227,10 +227,6 @@ scamshield/
 │   ├── admin-analytics.html
 │   └── admin-ml.html
 │
-├── database/
-│   ├── schema.sql
-│   └── seed_data.sql
-│
 ├── requirements.txt
 ├── README.md
 └── .gitignore
