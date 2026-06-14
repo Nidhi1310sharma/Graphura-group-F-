@@ -5,13 +5,12 @@ from typing import Optional
 # Report Management
 class ChangeReportStatusRequest(BaseModel):
     status: str
-    verification_status: Optional[str] = None
 
-class ReportFilterParams(BaseModel):
-    status: Optional[str] = None
-    severity: Optional[str] = None
-    limit: Optional[int] = 50
-    offset: Optional[int] = 0
+# report filters based on pending, confirmed and rejected   
+# class ReportFilter
+ 
+class UpdateEvidenceVerificationRequest(BaseModel):
+    verification_status: str
 
 # Company Management
 class CreateCompanyRequest(BaseModel):

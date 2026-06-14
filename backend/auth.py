@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from typing import Optional
 
 load_dotenv()
 
@@ -72,5 +73,24 @@ async def get_current_user(
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    return payload
+
+
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
+):
+    if credentials is None:
+        return None
+
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY or SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+
+    if not payload or "user_id" not in payload:
+        return None
 
     return payload

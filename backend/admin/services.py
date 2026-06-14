@@ -54,12 +54,55 @@ def get_report_evidence(report_id: str):
 
     return evidence_list
 
-def update_report_status(report_id: str, status: str, verification_status: Optional[str]=None):
-    payload = {"status": status}
-    if verification_status is not None:
-        payload["verification_status"] = verification_status
-    resp = supabase.table("user_reports").update(payload).eq("report_id", report_id).execute()
+#get single evidence
+def get_evidence(evidence_id: str):
+    resp = (
+        supabase.table("report_evidence")
+        .select("*")
+        .eq("evidence_id", evidence_id)
+        .execute()
+    )
+
     return resp.data[0] if resp.data else None
+
+def update_evidence_verification(
+    evidence_id: str,
+    verification_status: str
+):
+    resp = (
+        supabase.table("report_evidence")
+        .update({
+            "verification_status": verification_status
+        })
+        .eq("evidence_id", evidence_id)
+        .execute()
+    )
+
+    return resp.data[0] if resp.data else None
+
+def update_report_status(
+    report_id: str,status: str
+):
+    resp = (
+        supabase.table("user_reports")
+        .update({"status": status})
+        .eq("report_id", report_id)
+        .execute()
+    )
+
+    return resp.data[0] if resp.data else None
+
+def generate_evidence_url(file_path: str):
+    signed = (
+        supabase.storage
+        .from_("evidence")
+        .create_signed_url(
+            file_path,
+            3600
+        )
+    )
+
+    return signed.get("signedURL")
 
 # ===== USERS =====
 def list_users(limit: int=100, offset: int=0):
@@ -75,8 +118,29 @@ def count_users():
     return resp.count if hasattr(resp, "count") else 0
 
 # ===== AUDIT LOGS =====
-def list_audit_logs(limit: int=100, offset: int=0):
-    resp = supabase.table("audit_logs").select("*").order("created_at", desc=True).range(offset, offset+limit-1).execute()
+def list_audit_logs(
+    limit: int = 100,
+    offset: int = 0
+):
+    resp = (
+        supabase.table("audit_logs")
+        .select("""
+            log_id,
+            action,
+            target_type,
+            target_id,
+            created_at,
+            admin_users (
+                id,
+                name,
+                email
+            )
+        """)
+        .order("created_at", desc=True)
+        .range(offset, offset + limit - 1)
+        .execute()
+    )
+
     return resp.data or []
 
 def create_audit_log(admin_id: str, action: str, target_type: str, target_id: str):
@@ -122,7 +186,10 @@ def delete_company(company_id: str):
 # ===== DOMAINS =====
 def list_domains(limit: int=100, offset: int=0):
     resp = supabase.table("domain_analysis").select("*").range(offset, offset+limit-1).execute()
-    return resp.data or []
+    domains = resp.data or []
+    for domain in domains:
+        domain["reports"] = count_reports_for_domain(domain["domain"])
+    return domains
 
 def get_domain(domain_id: str):
     resp = supabase.table("domain_analysis").select("*").eq("domain_id", domain_id).execute()
@@ -137,6 +204,16 @@ def blacklist_domain(domain: str, reason: Optional[str]=None):
         "last_checked": datetime.now(timezone.utc).isoformat()
     }).execute()
     return resp.data[0] if resp.data else None
+
+def count_reports_for_domain(domain: str):
+    resp = (
+        supabase.table("user_reports")
+        .select("report_id", count="exact")
+        .ilike("description", f"%{domain}%")
+        .execute()
+    )
+
+    return resp.count if hasattr(resp, "count") else 0
 
 def update_domain_status(domain_id: str, status: str):
     resp = supabase.table("domain_analysis").update({"status": status}).eq("domain_id", domain_id).execute()
@@ -173,30 +250,110 @@ def delete_indicator(indicator_id: str):
     return len(resp.data) > 0 if resp.data else False
 
 # ===== COMMUNITY MODERATION =====
+def get_post_vote_count(post_id: str):
+    resp = (
+        supabase.table("community_votes")
+        .select("vote_type")
+        .eq("post_id", post_id)
+        .execute()
+    )
+
+    votes = resp.data or []
+
+    return sum(v["vote_type"] for v in votes)
+
 def delete_community_post(post_id: str):
-    resp = supabase.table("community_posts").update({"status": "deleted"}).eq("post_id", post_id).execute()
+    resp = supabase.table("community_posts").update({"status": "deleted"}).eq("post_id", post_id).eq("status", "active").execute()
     return resp.data[0] if resp.data else None
 
 def delete_community_comment(comment_id: str):
-    resp = supabase.table("community_comments").update({"status": "deleted"}).eq("comment_id", comment_id).execute()
+    resp = supabase.table("community_comments").update({"status": "deleted"}).eq("comment_id", comment_id).eq("status", "active").execute()
     return resp.data[0] if resp.data else None
 
 def list_community_posts(limit: int=50, offset: int=0):
     resp = supabase.table("community_posts").select("*").order("created_at", desc=True).range(offset, offset+limit-1).execute()
+    posts = resp.data or []
+    for post in posts:
+        post["net_votes"] = get_post_vote_count(
+            post["post_id"])
     return resp.data or []
 
 def list_community_comments(limit: int=50, offset: int=0):
     resp = supabase.table("community_comments").select("*").order("created_at", desc=True).range(offset, offset+limit-1).execute()
     return resp.data or []
 
+def get_post_with_comments(post_id: str):
+
+    post = (
+        supabase.table("community_posts")
+        .select("*")
+        .eq("post_id", post_id)
+        .execute()
+    )
+
+    if not post.data:
+        return None
+
+    comments = (
+        supabase.table("community_comments")
+        .select("*")
+        .eq("post_id", post_id)
+        .eq("status", "active")
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    result = post.data[0]
+
+    result["comments"] = comments.data or []
+    result["net_votes"] = get_post_vote_count(post_id)
+
+    return result
+
 # ===== JOB LISTINGS =====
-def list_job_listings(limit: int=100, offset: int=0):
-    resp = supabase.table("job_listings").select("*").range(offset, offset+limit-1).execute()
+def list_job_listings(
+    limit: int = 100,
+    offset: int = 0
+):
+    resp = (
+        supabase.table("job_listings")
+        .select("""
+            listing_id,
+            job_title,
+            risk_score,
+            status,
+            created_at,
+            companies (
+                company_name
+            )
+        """)
+        .range(offset, offset + limit - 1)
+        .execute()
+    )
+
     return resp.data or []
 
-def get_job_listing(listing_id: str):
-    resp = supabase.table("job_listings").select("*").eq("listing_id", listing_id).execute()
-    return resp.data[0] if resp.data else None
+def list_job_listings(
+    limit: int = 100,
+    offset: int = 0
+):
+    resp = (
+        supabase.table("job_listings")
+        .select("""
+            listing_id,
+            job_title,
+            risk_score,
+            status,
+            created_at,
+            companies (
+                company_name
+            )
+        """)
+        .range(offset, offset + limit - 1)
+        .execute()
+    )
+
+    return resp.data or []
 
 def count_high_risk_listings():
     resp = supabase.table("job_listings").select("listing_id", count="exact").gte("risk_score", 70).execute()
@@ -247,3 +404,5 @@ def get_scam_types_distribution():
         st = r.get("scam_type", "unknown")
         dist[st] = dist.get(st, 0) + 1
     return dist
+
+

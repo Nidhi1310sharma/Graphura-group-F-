@@ -31,10 +31,10 @@
     <div>
       <!-- Tabs -->
       <div class="analyzer-tabs" id="analyzer-tabs">
-        <button class="analyzer-tab active" onclick="switchTab('url',this)">🔗 URL</button>
-        <button class="analyzer-tab" onclick="switchTab('description',this)">📝 Description</button>
-        <button class="analyzer-tab" onclick="switchTab('offer',this)">📄 Offer Letter</button>
-        <button class="analyzer-tab" onclick="switchTab('screenshot',this)">📷 Screenshot</button>
+        <button class="analyzer-tab active" onclick="switchTab('url',this)">URL</button>
+        <button class="analyzer-tab" onclick="switchTab('description',this)">Description</button>
+        <button class="analyzer-tab" onclick="switchTab('offer',this)">Offer Letter</button>
+        <button class="analyzer-tab" onclick="switchTab('screenshot',this)">Screenshot</button>
       </div>
 
       <div class="analyzer-body">
@@ -295,57 +295,54 @@ async function runAnalysis() {
     btn.disabled = false; btn.textContent = '🔍 Analyze'; return;
   }
 
-  // Simulate ML analysis (replace with actual backend call)
-  await new Promise(r => setTimeout(r, 1800 + Math.random() * 600));
+  //Analyze
+  const formData = new FormData();
 
-  // Demo: detect red flags from input
-  const redFlags = [];
-  const greenFlags = [];
-  let riskScore = 15;
-
-  const lower = input.toLowerCase();
-  if (/registration fee|processing fee|security deposit|refundable/i.test(lower)) { redFlags.push('Registration / deposit fee demanded'); riskScore += 35; }
-  if (/gmail\.com|yahoo\.com|hotmail/i.test(lower)) { redFlags.push('Recruiter using free email (Gmail/Yahoo)'); riskScore += 25; }
-  if (/whatsapp only|telegram only|no interview|no experience needed/i.test(lower)) { redFlags.push('WhatsApp-only communication'); riskScore += 20; }
-  if (/urgent|immediate joining|today only/i.test(lower)) { redFlags.push('Urgent / pressure tactics'); riskScore += 10; }
-  if (activeTab === 'url' && input) {
-    try {
-      const dom = new URL(input).hostname.replace('www.','');
-      if (/\.xyz|\.tk|\.top|\.buzz|\.click/.test(dom)) { redFlags.push('Suspicious TLD (.xyz, .tk, .top)'); riskScore += 20; }
-      if (/tcs|infosys|wipro|google|amazon/.test(dom) && !/(tcs\.com|infosys\.com|wipro\.com|google\.com|amazon\.com)$/.test(dom)) { redFlags.push('Possible brand impersonation'); riskScore += 30; }
-    } catch {}
-    greenFlags.push('URL parsed successfully');
-  }
-  if (redFlags.length === 0) greenFlags.push('No major fraud keywords detected');
-
-  riskScore = Math.min(99, riskScore + Math.floor(Math.random() * 8));
-  const riskLevel = riskScore >= 70 ? 'HIGH' : riskScore >= 40 ? 'MEDIUM' : 'LOW';
-  const riskColor = riskLevel === 'HIGH' ? 'var(--accent-red)' : riskLevel === 'MEDIUM' ? 'var(--accent-orange)' : 'var(--accent-green)';
-
-  const reportId = 'SS-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 90000 + 10000);
-  const domain = activeTab === 'url' ? (() => { try { return new URL(input).hostname.replace('www.',''); } catch { return 'N/A'; } })() : 'N/A';
-  const domainRisk = Math.min(99, riskScore + Math.floor(Math.random()*10 - 5));
-  const recruiterRisk = redFlags.some(f => f.includes('email')) ? 80 : 15;
-  const contentRisk = redFlags.some(f => f.includes('fee') || f.includes('keyword')) ? 75 : 20;
-  const salaryRisk = /salary.*(lakh|lpa|per month)/i.test(lower) ? 40 : 10;
-  const communityRisk = 0;
-
-  // Save to Supabase if logged in
-  const user = auth.getUser();
-  if (user) {
-    try {
-      await DB.saveAnalysis({
-        title: domain || 'Job Analysis',
-        company_name: null, source_url: activeTab === 'url' ? input : null,
-        description: activeTab === 'description' ? input : null,
-        domain, recruiter_email: null, risk_score: riskScore, risk_level: riskLevel,
-        domain_risk: domainRisk, recruiter_risk: recruiterRisk,
-        content_risk: contentRisk, salary_risk: salaryRisk, structure_risk: 20,
-        indicators: redFlags, summary: null, user_id: user.user_id
-      });
-    } catch (e) { console.warn('Save failed:', e.message); }
+  if (activeTab === "url") {
+      formData.append("source_type", "URL");
+      formData.append("url", document.getElementById("url-input").value.trim());
   }
 
+  else if (activeTab === "description") {
+      formData.append("source_type", "TEXT");
+      formData.append("content", document.getElementById("desc-input").value.trim());
+  }
+
+  else if (activeTab === "offer") {
+      const file = document.getElementById("offer-file").files[0];
+
+      if (!file) {
+          showToast("Please upload an offer letter", "warning");
+          return;
+      }
+
+      formData.append("source_type", "DOCUMENT");
+      formData.append("file", file);
+  }
+
+  else if (activeTab === "screenshot") {
+      const file = document.getElementById("ss-file").files[0];
+
+      if (!file) {
+          showToast("Please upload a screenshot", "warning");
+          return;
+      }
+      formData.append("source_type", "IMAGE");
+      formData.append("file", file);
+  }
+  
+  const response = await fetch(
+      "http://localhost:8000/analyze/",
+      {
+          method: "POST",
+          body: formData
+      }
+  );
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.detail || "Analysis failed");}
+
+  console.log(result);
   // Render trust card
   const circumference = 2 * Math.PI * 30;
   const dash = circumference - (riskScore / 100) * circumference;

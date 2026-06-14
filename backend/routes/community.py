@@ -8,7 +8,7 @@ from backend.auth import get_current_user
 router = APIRouter(prefix="/community", tags=["Community"])
 
 
-#to creaete a post in the community forum, which can be a discussion, question, or report of a scam. 
+#to create a post in the community forum, which can be a discussion, question, or report of a scam. 
 # The post will be associated with the user who created it and can optionally link to a specific scam report if it's a report post.
 @router.post("/posts")
 async def create_post(data: CreatePostRequest, current_user: dict = Depends(get_current_user)):
