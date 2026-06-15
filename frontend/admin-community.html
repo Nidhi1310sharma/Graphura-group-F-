@@ -9,26 +9,29 @@
 <body>
 <div class="admin-layout">
   <aside class="admin-sidebar">
-    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
+    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo"></span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
     <nav class="admin-nav">
-      <a href="admin.html"><span>📊</span> Overview</a>
-      <a href="admin-reports.html" class="communityreports"><span>🚩</span> Reports</a>
-      <a href="admin-community.html" class="active" class="active" class="active"><span>👥</span> Community</a>
-      <a href="admin-listings.html" class="communitylistings"><span>💼</span> Listings</a>
+      <a href="admin.html"><span></span> Overview</a>
+      <a href="admin-reports.html" class="communityreports"><span></span> Reports</a>
+      <a href="admin-community.html" class="active" class="active" class="active"><span></span> Community</a>
+      <a href="admin-listings.html" class="communitylistings"><span></span> Listings</a>
       <div class="admin-nav-group">Knowledge Base</div>
-      <a href="admin-companies.html" class="communitycompanies"><span>🏢</span> Companies</a>
-      <a href="admin-domains.html" class="communitydomains"><span>🌐</span> Domains</a>
-      <a href="admin-indicators.html" class="communityindicators"><span>⚡</span> Scam Indicators</a>
+      <a href="admin-companies.html" class="communitycompanies"><span></span> Companies</a>
+      <a href="admin-domains.html" class="communitydomains"><span></span> Domains</a>
+      <a href="admin-indicators.html" class="communityindicators"><span></span> Scam Indicators</a>
       <div class="admin-nav-group">System</div>
-      <a href="admin-users.html" class="communityadmins"><span>👤</span> Admins & Logs</a>
+      <a href="admin-users.html" class="communityadmins"><span></span> Admins & Logs</a>
     </nav>
     <div class="admin-sidebar-footer">
       <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
     </div>
   </aside>
   <div class="admin-main"><div class="admin-page">
+    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+    </button>
     
-      <div class="page-header"><h1>👥 Community</h1><p>Moderate posts and comments — hide, delete, or lock discussions</p></div>
+      <div class="page-header"><h1> Community</h1><p>Moderate posts and comments — hide, delete, or lock discussions</p></div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
         <button class="filter-chip active" onclick="setFilter(null,this)">All</button>
         <button class="filter-chip" onclick="setFilter(\"active\",this)">Active</button>
@@ -48,7 +51,7 @@
 <script src="js/chatbot.js"></script>
 <script>
 
-const typeIcon = { scam_report:"🔴", discussion:"💬", warning:"🟠", question:"❓" };
+const typeIcon = { scam_report:"", discussion:"💬", warning:"", question:"❓" };
 async function loadPosts(status) {
   try {
     const posts = await DB.getAllPosts(status ? { status } : {});
@@ -56,7 +59,7 @@ async function loadPosts(status) {
       const votes = (p.community_votes||[]).reduce((a,v) => a + (v.vote_type==="upvote"?1:-1), 0);
       return `<tr>
         <td><strong style="font-size:13px">${p.title.slice(0,60)}${p.title.length>60?"…":""}</strong></td>
-        <td>${typeIcon[p.post_type]||"📝"} ${p.post_type}</td>
+        <td>${typeIcon[p.post_type]||""} ${p.post_type}</td>
         <td style="font-size:12px">${p.users?.full_name||"—"}</td>
         <td style="font-family:var(--font-mono)">${votes}</td>
         <td><span class="badge ${p.status==="active"?"badge-green":p.status==="hidden"?"badge-gray":"badge-red"}">${p.status}</span></td>

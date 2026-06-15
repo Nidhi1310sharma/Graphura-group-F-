@@ -72,11 +72,7 @@ async def get_all_posts(filter: Optional[str] = None, search: Optional[str] = No
         response = base_query.eq("post_type", "question").order("created_at", desc=True).execute()
         posts = response.data or []
 
-    elif f and ("warning" in f or f in ("warning", "warnings")):
-        response = base_query.eq("post_type", "warning").order("created_at", desc=True).execute()
-        posts = response.data or []
-
-    elif f and ("scam" in f or f in ("report", "reports", "scam reports", "scam_report", "scam_reports")):
+    elif f and ("report" in f or f in ("report", "reports", "scam reports", "scam_report", "scam_reports")):
         response = base_query.eq("post_type", "report").order("created_at", desc=True).execute()
         posts = response.data or []
 

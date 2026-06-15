@@ -2,83 +2,139 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Domains – ScamShield Admin</title>
+  <title>Domain Blacklist – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
-    <nav class="admin-nav">
-      <a href="admin.html"><span>📊</span> Overview</a>
-      <a href="admin-reports.html" class="domainsreports"><span>🚩</span> Reports</a>
-      <a href="admin-community.html" class="domainscommunity"><span>👥</span> Community</a>
-      <a href="admin-listings.html" class="domainslistings"><span>💼</span> Listings</a>
-      <div class="admin-nav-group">Knowledge Base</div>
-      <a href="admin-companies.html" class="domainscompanies"><span>🏢</span> Companies</a>
-      <a href="admin-domains.html" class="active" class="active" class="active"><span>🌐</span> Domains</a>
-      <a href="admin-indicators.html" class="domainsindicators"><span>⚡</span> Scam Indicators</a>
-      <div class="admin-nav-group">System</div>
-      <a href="admin-users.html" class="domainsadmins"><span>👤</span> Admins & Logs</a>
-    </nav>
-    <div class="admin-sidebar-footer">
-      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
-    </div>
-  </aside>
-  <div class="admin-main"><div class="admin-page">
-    
-      <div class="page-header"><h1>🌐 Domains — Knowledge Base</h1><p>View analyzed domains, update status, manage blacklist</p></div>
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <input type="text" class="form-control" style="max-width:240px" placeholder="Search domain…" oninput="filterTable(this.value,\"dom-tbody\")">
-        <button class="btn btn-primary" onclick="addDomain()">+ Add Domain</button>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+    </button>
+      <div class="page-header">
+        <h1> Domain Blacklist</h1>
+        <p>Manage flagged and blacklisted domains across the platform</p>
       </div>
-      <div class="card">
+      <div class="card mb-3">
+        <div class="flex-between mb-3">
+          <div style="display:flex;gap:8px;flex:1">
+            <input type="text" class="form-control" id="domain-search" placeholder="Search domain…" style="max-width:280px" oninput="filterDomains(this.value)">
+            <select class="form-control" style="max-width:140px" onchange="filterDomains(document.getElementById('domain-search').value)">
+              <option>All severity</option><option>Critical</option><option>High</option><option>Medium</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="addDomainForm()">+ Add Domain</button>
+        </div>
         <div class="table-wrap">
-          <table><thead><tr><th>Domain</th><th>Trust Score</th><th>SSL</th><th>Registrar</th><th>Reports</th><th>Status</th><th>Last Checked</th><th>Actions</th></tr></thead>
-          <tbody id="dom-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+          <table id="domains-table">
+            <thead><tr><th>Domain</th><th>Severity</th><th>Reports</th><th>Added</th><th>Reason</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">careers-google-jobs.xyz</td><td><span class="badge badge-red">Critical</span></td><td>14</td><td>5d ago</td><td>Fee demand, brand impersonation</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+              <tr><td class="mono">infosys-hr-jobs.tk</td><td><span class="badge badge-red">Critical</span></td><td>9</td><td>1w ago</td><td>Infosys impersonation, phishing</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+              <tr><td class="mono">tcs-careers2025.in</td><td><span class="badge badge-red">Critical</span></td><td>11</td><td>2d ago</td><td>TCS impersonation, fake offer letters</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+              <tr><td class="mono">workfromhome-india.net</td><td><span class="badge badge-orange">High</span></td><td>6</td><td>2w ago</td><td>Data theft, advance fee fraud</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+              <tr><td class="mono">netjob-india.xyz</td><td><span class="badge badge-orange">High</span></td><td>8</td><td>3d ago</td><td>Registration fee, MLM structure</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+              <tr><td class="mono">digiwork-india.net</td><td><span class="badge badge-orange">High</span></td><td>9</td><td>4d ago</td><td>Unpaid work, disappeared</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+              <tr><td class="mono">quickearnings-jobs.in</td><td><span class="badge badge-yellow">Medium</span></td><td>4</td><td>1w ago</td><td>MLM, advance salary request</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
-
-  </div></div>
+    </div>
+  </div>
 </div>
 <script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+function filterDomains(q) {
+  document.querySelectorAll('#domains-table tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
 
-async function loadDomains() {
-  try {
-    const doms = await DB.getDomains();
-    document.getElementById("dom-tbody").innerHTML = doms.map(d => `
-      <tr>
-        <td class="mono" style="font-size:12px">${d.domain}</td>
-        <td><span style="font-family:var(--font-mono);color:${d.trust_score>70?"var(--accent-green)":d.trust_score>40?"var(--accent-orange)":"var(--accent-red)"}">${d.trust_score}</span></td>
-        <td>${d.ssl_valid?"<span style=\"color:var(--accent-green)\">✓ Valid</span>":"<span style=\"color:var(--accent-red)\">✗ Invalid</span>"}</td>
-        <td style="font-size:12px">${d.registrar||"Unknown"}</td>
-        <td>${d.report_count}</td>
-        <td><span class="badge ${d.status==="safe"?"badge-green":d.status==="blacklisted"?"badge-red":d.status==="suspicious"?"badge-orange":"badge-gray"}">${d.status}</span></td>
-        <td style="font-size:11px;color:var(--text-muted)">${new Date(d.last_checked).toLocaleDateString("en-IN")}</td>
-        <td style="display:flex;gap:5px">
-          <button class="btn btn-danger btn-sm" onclick="setDomStatus(\"${d.domain_id}\",\"blacklisted\",this)">🚫 BL</button>
-          <button class="btn btn-outline btn-sm" onclick="setDomStatus(\"${d.domain_id}\",\"safe\",this)">✓ Safe</button>
-        </td>
-      </tr>`).join("") || "<tr><td colspan=\"8\" style=\"text-align:center;color:var(--text-muted)\">No domains</td></tr>";
-  } catch(e) { console.error(e); }
+function addDomainForm() {
+  const d = prompt('Enter domain to add (e.g. scam-site.xyz):');
+  if (!d) return;
+  const clean = d.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
+  if (!clean.includes('.')) { showToast('Please enter a valid domain (e.g. scam-site.xyz)', 'error'); return; }
+  const tbody = document.querySelector('#domains-table tbody');
+  const tr = document.createElement('tr');
+  tr.dataset.status = 'blacklisted';
+  tr.innerHTML = `
+    <td>${clean}</td>
+    <td>–</td><td>–</td><td>Unknown</td><td>Just now</td>
+    <td><span class="badge badge-red">Blacklisted</span></td>
+    <td><div style="display:flex;gap:4px">
+      <button class="btn btn-outline btn-sm" onclick="whitelistDomain(this)" title="Whitelist">✓ Safe</button>
+      <button class="btn btn-outline btn-sm" onclick="refreshDomain(this)" title="Re-analyze">🔄</button>
+      <button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="removeDomain(this)" title="Remove">✗</button>
+    </div></td>`;
+  tbody.prepend(tr);
+  showToast(`Domain "${clean}" blacklisted`, 'success');
+  logAdminAction('BLACKLIST_DOMAIN', clean);
 }
-async function setDomStatus(id, status, btn) {
-  try {
-    await DB.updateDomainStatus(id, status);
-    await DB.logAction({ admin_id:null, action:(status==="blacklisted"?"BLACKLIST_DOMAIN":"WHITELIST_DOMAIN"), target_type:"DOMAIN", target_id:id });
-    showToast("Domain " + status, "success"); loadDomains();
-  } catch(e) { showToast("Updated (demo)","info"); }
-}
-function addDomain() {
-  const d = prompt("Domain to add (e.g. scam-site.xyz):"); if (!d) return;
-  showToast("Domain \"" + d + "\" queued for analysis", "success");
-}
-function filterTable(q, tbodyId) { document.querySelectorAll("#"+tbodyId+" tr").forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? "" : "none"; }); }
-document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadDomains(); });
 
+function blacklistDomain(btn) {
+  const row = btn.closest('tr');
+  row.dataset.status = 'blacklisted';
+  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-red'; b.textContent = 'Blacklisted'; });
+  btn.closest('div').innerHTML = `
+    <button class="btn btn-outline btn-sm" onclick="whitelistDomain(this)">✓ Safe</button>
+    <button class="btn btn-outline btn-sm" onclick="refreshDomain(this)">🔄</button>
+    <button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="removeDomain(this)">✗</button>`;
+  showToast('Domain blacklisted', 'success');
+  logAdminAction('BLACKLIST_DOMAIN', row.cells[0]?.textContent || 'Domain');
+}
+
+function whitelistDomain(btn) {
+  const row = btn.closest('tr');
+  row.dataset.status = 'safe';
+  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-green'; b.textContent = 'Safe'; });
+  btn.closest('div').innerHTML = `
+    <button class="btn btn-outline btn-sm" onclick="blacklistDomain(this)" style="color:var(--accent-red)">🚫 Blacklist</button>
+    <button class="btn btn-outline btn-sm" onclick="refreshDomain(this)">🔄</button>
+    <button class="btn btn-outline btn-sm" onclick="removeDomain(this)">✗</button>`;
+  showToast('Domain marked as safe', 'success');
+  logAdminAction('WHITELIST_DOMAIN', row.cells[0]?.textContent || 'Domain');
+}
+
+function refreshDomain(btn) {
+  const row = btn.closest('tr');
+  const domain = row.cells[0]?.textContent || 'Domain';
+  btn.textContent = '⟳'; btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = '🔄'; btn.disabled = false;
+    if (row.cells[4]) row.cells[4].textContent = 'Just now';
+    showToast(`Re-analyzed ${domain}`, 'info');
+    logAdminAction('REFRESH_DOMAIN', domain);
+  }, 1200);
+}
+
+function removeDomain(btn) {
+  const row = btn.closest('tr');
+  const domain = row.cells[0]?.textContent || 'Domain';
+  if (!confirm(`Remove "${domain}" from the list?`)) return;
+  row.style.opacity = '0.4'; row.style.transition = 'opacity .3s';
+  setTimeout(() => row.remove(), 300);
+  showToast('Domain removed', 'info');
+  logAdminAction('REMOVE_DOMAIN', domain);
+}
+
+function logAdminAction(action, target) {
+  try {
+    const logs = JSON.parse(localStorage.getItem('ss_audit_logs') || '[]');
+    const user = typeof _getUser === 'function' ? _getUser() : null;
+    logs.unshift({ ts: new Date().toISOString(), admin: user?.full_name || 'Admin', action, target });
+    localStorage.setItem('ss_audit_logs', JSON.stringify(logs.slice(0, 50)));
+  } catch(_) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  requireAdmin();
+  renderSidebar('admin-domains.html', true);
+  document.getElementById('page-title').textContent = 'Domain Management';
+});
 </script>
 </body></html>

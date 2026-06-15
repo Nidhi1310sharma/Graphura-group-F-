@@ -9,8 +9,11 @@
 <div class="app-shell" id="app-shell">
   <div class="main-content">
     <div class="page-inner">
+    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+    </button>
       <div class="page-header flex-between" style="align-items:flex-end">
-        <div><h1>💼 Job Database</h1><p>Manage all job postings in the scam detection database</p></div>
+        <div><h1> Job Database</h1><p>Manage all job postings in the scam detection database</p></div>
         <button class="btn btn-primary" onclick="openModal('add-job-modal')">+ Add Job</button>
       </div>
 
@@ -30,7 +33,7 @@
             <option>Auto Scraped</option>
             <option>Admin Added</option>
           </select>
-          <button class="btn btn-outline btn-sm">⬇️ Export</button>
+          <button class="btn btn-outline btn-sm">️ Export</button>
           <button class="btn btn-outline btn-sm" onclick="showToast('Running re-analysis on all jobs...','info')">🔄 Re-Analyze All</button>
         </div>
       </div>

@@ -1,3 +1,21 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Redirecting...</title>
-<meta http-equiv="refresh" content="0;url=index.html"></head>
-<body><script>window.location.href='index.html';<\/script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0;url=checker.html">
+  <title>ScamShield – Redirecting…</title>
+  <script>
+    // domain-scanner is now part of the unified checker flow
+    const map = {
+      'domain-scanner': '?mode=url',
+      'recruiter':      '?mode=email',
+      'compare':        '?compare=1',
+      'offer-letter':   '?mode=offer',
+      'dashboard':      ''
+    };
+    const key = 'domain-scanner';
+    window.location.replace('checker.html' + (map[key] || ''));
+  </script>
+</head>
+<body><p>Redirecting to <a href="checker.html">ScamShield Checker</a>…</p></body>
+</html>

@@ -2,85 +2,172 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admins & Logs – ScamShield Admin</title>
+  <title>Manage Users – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
-    <nav class="admin-nav">
-      <a href="admin.html"><span>📊</span> Overview</a>
-      <a href="admin-reports.html" class="adminsreports"><span>🚩</span> Reports</a>
-      <a href="admin-community.html" class="adminscommunity"><span>👥</span> Community</a>
-      <a href="admin-listings.html" class="adminslistings"><span>💼</span> Listings</a>
-      <div class="admin-nav-group">Knowledge Base</div>
-      <a href="admin-companies.html" class="adminscompanies"><span>🏢</span> Companies</a>
-      <a href="admin-domains.html" class="adminsdomains"><span>🌐</span> Domains</a>
-      <a href="admin-indicators.html" class="adminsindicators"><span>⚡</span> Scam Indicators</a>
-      <div class="admin-nav-group">System</div>
-      <a href="admin-users.html" class="active" class="active" class="active"><span>👤</span> Admins & Logs</a>
-    </nav>
-    <div class="admin-sidebar-footer">
-      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
-    </div>
-  </aside>
-  <div class="admin-main"><div class="admin-page">
-    
-      <div class="page-header"><h1>👤 Admins & Audit Logs</h1><p>Manage admin accounts and view all platform actions</p></div>
-      <div class="two-col" style="gap:20px;align-items:start">
-        <div class="card">
-          <div class="card-title flex-between"><span>Admin Users</span><button class="btn btn-primary btn-sm" onclick="showToast(\"Invite sent (demo)\",\"success\")">+ Add Admin</button></div>
-          <div class="table-wrap">
-            <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
-            <tbody id="admins-tbody"><tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px">Loading…</td></tr></tbody></table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title flex-between"><span>Audit Log</span><button class="btn btn-outline btn-sm" onclick="loadLogs()">↺</button></div>
-          <div id="audit-log-list" style="max-height:500px;overflow-y:auto">
-            <div style="text-align:center;padding:16px;color:var(--text-muted)">Loading…</div>
-          </div>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+    </button>
+      <div class="page-header flex-between" style="align-items:flex-end">
+        <div><h1> Manage Users</h1><p>View, edit, and moderate registered users</p></div>
+        <button class="btn btn-primary" onclick="openModal('add-user-modal')">+ Add User</button>
+      </div>
+
+      <div class="card mb-4">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input type="text" class="form-control" id="user-search" placeholder="Search by name or email..." style="max-width:300px" oninput="filterUsers()">
+          <select class="form-control" id="role-filter" style="max-width:150px" onchange="filterUsers()">
+            <option value="">All Roles</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+          <select class="form-control" id="status-filter" style="max-width:150px" onchange="filterUsers()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="banned">Banned</option>
+          </select>
         </div>
       </div>
 
-  </div></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table id="users-table">
+            <thead><tr><th>User</th><th>Email</th><th>Mobile</th><th>Role</th><th>Reports</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody">
+              <tr data-role="user" data-status="active">
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px">RS</div><strong>Rahul S.</strong></div></td>
+                <td class="text-secondary">rahul@gmail.com</td><td class="text-secondary">9876543210</td>
+                <td><span class="badge badge-blue">User</span></td><td>14</td><td>2mo ago</td>
+                <td><span class="badge badge-green">Active</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
+              </tr>
+              <tr data-role="user" data-status="active">
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#bc8cff,#f778ba)">PM</div><strong>Priya M.</strong></div></td>
+                <td class="text-secondary">priya@outlook.com</td><td class="text-secondary">9123456789</td>
+                <td><span class="badge badge-blue">User</span></td><td>8</td><td>1mo ago</td>
+                <td><span class="badge badge-green">Active</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
+              </tr>
+              <tr data-role="user" data-status="active">
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#e3702a,#d29922)">AR</div><strong>Ankit R.</strong></div></td>
+                <td class="text-secondary">ankit@gmail.com</td><td class="text-secondary">9001234567</td>
+                <td><span class="badge badge-blue">User</span></td><td>3</td><td>3wk ago</td>
+                <td><span class="badge badge-green">Active</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
+              </tr>
+              <tr data-role="admin" data-status="active">
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#f85149,#e3702a)">AD</div><strong>Admin Demo</strong></div></td>
+                <td class="text-secondary">admin@scamshield.in</td><td class="text-secondary">9999999999</td>
+                <td><span class="badge badge-red">Admin</span></td><td>—</td><td>6mo ago</td>
+                <td><span class="badge badge-green">Active</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button></div></td>
+              </tr>
+              <tr data-role="user" data-status="inactive">
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#3fb950,#06d6a0)">NS</div><strong>Neha S.</strong></div></td>
+                <td class="text-secondary">neha@gmail.com</td><td class="text-secondary">—</td>
+                <td><span class="badge badge-blue">User</span></td><td>1</td><td>5d ago</td>
+                <td><span class="badge badge-gray">Inactive</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px;color:var(--text-muted)">
+          <span>Showing <span id="user-count">5</span> users</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm">← Prev</button>
+            <button class="btn btn-outline btn-sm">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="add-user-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add New User</div><button class="modal-close">✕</button></div>
+    <div class="two-col">
+      <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-control" id="new-user-name" placeholder="Full name"></div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="new-user-email" placeholder="email@domain.com"></div>
+    </div>
+    <div class="two-col">
+      <div class="form-group"><label class="form-label">Mobile</label><input type="tel" class="form-control" placeholder="Phone number"></div>
+      <div class="form-group"><label class="form-label">Role</label><select class="form-control"><option>user</option><option>admin</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Temporary Password</label><input type="password" class="form-control" placeholder="Set temp password"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal('add-user-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = auth.getUser();
+  if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
+  requireAdmin();
+  renderSidebar('admin-users.html', true);
+  document.getElementById('page-title').textContent = 'Manage Users';
+});
 
-async function loadUsers() {
-  try {
-    const users = await DB.getUsers();
-    document.getElementById("admins-tbody").innerHTML = users.filter(u=>u.role==="admin").map(u => `
-      <tr>
-        <td><strong>${u.full_name}</strong></td>
-        <td class="mono" style="font-size:12px">${u.email}</td>
-        <td><span class="badge badge-blue">${u.role}</span></td>
-        <td><button class="btn btn-ghost btn-sm" onclick="showToast(\"Role change coming soon\",\"info\")">Edit</button></td>
-      </tr>`).join("") || "<tr><td colspan=\"4\" style=\"text-align:center;color:var(--text-muted)\">No admins</td></tr>";
-  } catch(e) { console.error(e); }
+function filterUsers() {
+  const search = document.getElementById('user-search').value.toLowerCase();
+  const role = document.getElementById('role-filter').value;
+  const status = document.getElementById('status-filter').value;
+  let count = 0;
+  document.querySelectorAll('#users-tbody tr').forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const rowRole = row.dataset.role;
+    const rowStatus = row.dataset.status;
+    const show = text.includes(search) && (!role || rowRole === role) && (!status || rowStatus === status);
+    row.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+  document.getElementById('user-count').textContent = count;
 }
-async function loadLogs() {
-  try {
-    const logs = await DB.getAuditLogs(50);
-    const icons = { CONFIRM_REPORT:"✅", REJECT_REPORT:"❌", BLACKLIST_DOMAIN:"🚫", VERIFY_COMPANY:"✔️", MARK_SUSPICIOUS:"⚠️", HIDE_POST:"🙈", DELETE_POST:"🗑️", FLAG_SUSPICIOUS:"🚩" };
-    document.getElementById("audit-log-list").innerHTML = logs.map(l => `
-      <div style="display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px">
-        <span style="font-size:15px;flex-shrink:0">${icons[l.action]||"📝"}</span>
-        <div>
-          <span style="font-weight:600">${l.admin_users?.full_name||"Admin"}</span>
-          <span style="color:var(--text-secondary)"> ${l.action.replace(/_/g," ")}</span>
-          <span class="badge badge-gray" style="font-size:10px;margin-left:4px">${l.target_type} ${l.target_id?.slice(0,6)||""}</span>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${new Date(l.created_at).toLocaleString("en-IN")}</div>
-        </div>
-      </div>`).join("") || "<div style=\"text-align:center;padding:16px;color:var(--text-muted)\">No logs yet</div>";
-  } catch(e) { document.getElementById("audit-log-list").innerHTML = DEMO_DATA.auditLogs.map(l=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)">📝 ${l.action} on ${l.target_type} ${l.target_id}</div>`).join(""); }
-}
-document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadUsers(); loadLogs(); });
 
+function banUser(btn) {
+  if (!confirm('Ban this user?')) return;
+  const row = btn.closest('tr');
+  row.querySelector('[class*="badge-green"]').className = 'badge badge-red';
+  row.querySelector('[class*="badge-green"]').textContent = 'Banned';
+  row.dataset.status = 'banned';
+  btn.textContent = 'Unban'; btn.onclick = unbanUser;
+  showToast('User banned', 'warning');
+}
+
+function unbanUser(btn) {
+  const row = btn.closest('tr');
+  row.querySelector('[class*="badge-red"]:not(.badge-blue):not(.badge-red:first-child)').className = 'badge badge-green';
+  row.querySelector('.badge-green').textContent = 'Active';
+  row.dataset.status = 'active';
+  btn.textContent = 'Ban'; btn.onclick = banUser;
+  showToast('User unbanned', 'success');
+}
+
+function viewUser(btn) {
+  const row = btn.closest('tr');
+  const name = row.querySelector('strong').textContent;
+  showToast('Viewing ' + name + ' (profile view coming soon)', 'info');
+}
+
+function addUser() {
+  const name = document.getElementById('new-user-name').value.trim();
+  const email = document.getElementById('new-user-email').value.trim();
+  if (!name || !email) { showToast('Fill in name and email', 'warning'); return; }
+  closeModal('add-user-modal');
+  showToast('User ' + name + ' created successfully', 'success');
+}
 </script>
 </body></html>

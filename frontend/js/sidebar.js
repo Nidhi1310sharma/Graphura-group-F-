@@ -1,16 +1,16 @@
 // ============================================================
-// sidebar.js – ScamShield v5 Sidebar & Topbar Renderer
+// sidebar.js – ScamShield Sidebar & Topbar Renderer
 // Renders navigation sidebar + topbar on every page
 // Supports: user panel, admin panel, chatbot bubble
 // ============================================================
 
 function renderSidebar(activeLink, isAdmin) {
-  const user = (() => { try { return JSON.parse(localStorage.getItem('ss_user') || 'null'); } catch { return null; } })();
+  const user = (() => { try { return JSON.parse(localStorage.getItem('gr_user') || 'null'); } catch { return null; } })();
   const avatarContent = user?.avatar
     ? `<img src="${user.avatar}" alt="${user.full_name}">`
     : (user?.full_name?.[0] || 'G').toUpperCase();
 
-  // ── USER SIDEBAR LINKS ──
+  // USER SIDEBAR LINKS - without emojis
   const userToolsLinks = `
     <li><a href="checker.html"><span class="nav-icon">🔍</span> Analyze Job</a></li>
     <li><a href="recruiter.html"><span class="nav-icon">👤</span> Verify Recruiter</a></li>
@@ -27,15 +27,15 @@ function renderSidebar(activeLink, isAdmin) {
     <li><a href="my-reports.html"><span class="nav-icon">📋</span> My Reports</a></li>
     ${!user ? '<li><a href="login.html"><span class="nav-icon">🔐</span> Sign In</a></li>' : ''}`;
 
-  // ── ADMIN SIDEBAR LINKS ──
+  // ADMIN SIDEBAR LINKS - without emojis
   const adminLinks = `
-    <li><a href="admin.html"><span class="nav-icon">📊</span> Dashboard</a></li>
-    <li><a href="admin-users.html"><span class="nav-icon">👥</span> Users</a></li>
-    <li><a href="admin-reports.html"><span class="nav-icon">🚩</span> Reports <span class="nav-badge">67</span></a></li>
-    <li><a href="admin-jobs.html"><span class="nav-icon">💼</span> Job Database</a></li>
-    <li><a href="admin-analytics.html"><span class="nav-icon">📈</span> Analytics</a></li>
-    <li><a href="admin-domains.html"><span class="nav-icon">🌐</span> Blacklist</a></li>
-    <li><a href="admin-ml.html"><span class="nav-icon">🤖</span> ML Settings</a></li>`;
+    <li><a href="admin.html" class="${activeLink === 'dashboard' ? 'active' : ''}"><span class="nav-icon">📊</span> Dashboard</a></li>
+    <li><a href="admin-users.html" class="${activeLink === 'users' ? 'active' : ''}"><span class="nav-icon">👥</span> Users</a></li>
+    <li><a href="admin-reports.html" class="${activeLink === 'reports' ? 'active' : ''}"><span class="nav-icon">🚩</span> Reports <span class="nav-badge">67</span></a></li>
+    <li><a href="admin-jobs.html" class="${activeLink === 'jobs' ? 'active' : ''}"><span class="nav-icon">💼</span> Job Database</a></li>
+    <li><a href="admin-analytics.html" class="${activeLink === 'analytics' ? 'active' : ''}"><span class="nav-icon">📈</span> Analytics</a></li>
+    <li><a href="admin-domains.html" class="${activeLink === 'domains' ? 'active' : ''}"><span class="nav-icon">🌐</span> Blacklist</a></li>
+    <li><a href="admin-ml.html" class="${activeLink === 'ml' ? 'active' : ''}"><span class="nav-icon">🤖</span> ML Settings</a></li>`;
 
   const brandHref = isAdmin ? 'admin.html' : 'checker.html';
   const sidebarClass = isAdmin ? 'sidebar admin-sidebar' : 'sidebar';
@@ -51,32 +51,36 @@ function renderSidebar(activeLink, isAdmin) {
   </a>
   ${isAdmin ? `
   <div class="sidebar-section">
-    <div class="sidebar-section-label">Administration</div>
+    <div class="sidebar-section-label">ADMINISTRATION</div>
     <ul class="sidebar-nav">${adminLinks}</ul>
   </div>
-  <div class="sidebar-section" style="margin-top:auto">
-    <ul class="sidebar-nav">
-      <li><a href="index.html" onclick="auth.logout();return false;"><span class="nav-icon">🚪</span> Logout</a></li>
-    </ul>
-  </div>` : `
-  <div class="sidebar-section">
-    <div class="sidebar-section-label">Tools</div>
-    <ul class="sidebar-nav">${userToolsLinks}</ul>
+  <div class="sidebar-section logout-section">
+    
   </div>
-  <div class="sidebar-section">
-    <div class="sidebar-section-label">Community</div>
-    <ul class="sidebar-nav">${userCommunityLinks}</ul>
-  </div>
-  <div class="sidebar-section">
-    <div class="sidebar-section-label">Account</div>
-    <ul class="sidebar-nav">${userAccountLinks}</ul>
-  </div>`}
   <div class="sidebar-footer">
     <button class="theme-toggle" onclick="toggleTheme()">
       <span class="theme-toggle-icon">☀️</span>
       <span class="theme-toggle-text">Light Mode</span>
     </button>
+  </div>` : `
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">TOOLS</div>
+    <ul class="sidebar-nav">${userToolsLinks}</ul>
   </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">COMMUNITY</div>
+    <ul class="sidebar-nav">${userCommunityLinks}</ul>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">ACCOUNT</div>
+    <ul class="sidebar-nav">${userAccountLinks}</ul>
+  </div>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span class="theme-toggle-icon">☀️</span>
+      <span class="theme-toggle-text">Light Mode</span>
+    </button>
+  </div>`}
 </aside>`;
 
   const topbarHTML = `
@@ -89,10 +93,10 @@ function renderSidebar(activeLink, isAdmin) {
     <div class="user-avatar">${avatarContent}</div>
     <div class="topbar-user-info">
       <span class="topbar-user-name">${user?.full_name || (user ? 'User' : 'Guest')}</span>
-      <span class="topbar-user-role">${user?.role === 'admin' ? '🔐 Administrator' : (user ? '👤 Member' : 'Not signed in')}</span>
+      <span class="topbar-user-role">${user?.role === 'admin' ? 'Administrator' : (user ? 'Member' : 'Not signed in')}</span>
     </div>
   </div>
-  ${user ? `<button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button>` : ''}
+  ${user ? `<button class="btn btn-ghost btn-sm" onclick="handleTopbarLogout()">Sign out</button>` : ''}
 </header>`;
 
   const target = document.getElementById('app-shell') || document.body;
@@ -104,29 +108,82 @@ function renderSidebar(activeLink, isAdmin) {
     if (mc) mc.insertAdjacentHTML('afterbegin', topbarHTML);
   }
 
-  // Set active link
+  // Set active link based on current page
   const cur = window.location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('.sidebar-nav a').forEach(a => {
-    if (a.getAttribute('href') === cur) a.classList.add('active');
+    const href = a.getAttribute('href');
+    if (href === cur) a.classList.add('active');
   });
+
+  // Remove any duplicate logout buttons from admin sidebar footer
+  if (isAdmin) {
+    const logoutBtn = document.querySelector('.logout-section');
+    const anyOtherLogout = document.querySelectorAll('.topbar-user + .btn-ghost, .navbar-avatar');
+    anyOtherLogout.forEach(btn => {
+      if (btn !== logoutBtn) btn.remove();
+    });
+  }
 
   // Inject chatbot
   const chatbot = `
-<div class="chatbot-bubble" title="Ask ScamGuard AI">🤖</div>
+<div class="chatbot-bubble" title="Ask ScamShield AI">🤖</div>
 <div class="chatbot-panel">
   <div class="chatbot-header">
     <div class="chatbot-avatar">🛡️</div>
     <div>
-      <div class="chatbot-name">ScamGuard AI</div>
-      <div class="chatbot-status">● Online</div>
+      <div class="chatbot-name">ScamShield AI</div>
+      <div class="chatbot-status">Online</div>
     </div>
     <button class="chatbot-close">✕</button>
   </div>
   <div class="chatbot-msgs"></div>
   <div class="chatbot-input-row">
     <input class="chatbot-input" placeholder="Ask about scam detection…"/>
-    <button class="chatbot-send">➤</button>
+    <button class="chatbot-send">Send</button>
   </div>
 </div>`;
   if (!document.querySelector('.chatbot-bubble')) document.body.insertAdjacentHTML('beforeend', chatbot);
+  
+  // Initialize chatbot if function exists
+  setTimeout(() => { if (typeof initChatbot === 'function') initChatbot(); }, 100);
 }
+
+// Handle sidebar logout
+function handleSidebarLogout() {
+  localStorage.removeItem('gr_user');
+  localStorage.removeItem('token');
+  localStorage.removeItem('gr_theme');
+  window.location.href = 'login.html';
+}
+
+// Handle topbar logout
+function handleTopbarLogout() {
+  localStorage.removeItem('gr_user');
+  localStorage.removeItem('token');
+  localStorage.removeItem('gr_theme');
+  window.location.href = 'login.html';
+}
+
+// Theme toggle function
+window.toggleTheme = function() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme') || 'dark';
+  const newTheme = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', newTheme);
+  localStorage.setItem('gr_theme', newTheme);
+  
+  // Update theme button text
+  const themeBtns = document.querySelectorAll('.theme-toggle');
+  themeBtns.forEach(btn => {
+    const iconSpan = btn.querySelector('.theme-toggle-icon');
+    const textSpan = btn.querySelector('.theme-toggle-text');
+    if (iconSpan) iconSpan.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    if (textSpan) textSpan.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+  });
+};
+
+// Initialize theme on load
+(function initTheme() {
+  const saved = localStorage.getItem('gr_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+})();

@@ -25,8 +25,8 @@ async def dashboard_scam_types(current_user: dict = Depends(admin_required)):
 
 # ===== REPORTS =====
 @router.get("/reports")
-async def admin_list_reports(status: str = None, severity: str = None, limit: int = 50, offset: int = 0, current_user: dict = Depends(admin_required)):
-    reports = services.list_reports(status=status, severity=severity, limit=limit, offset=offset)
+async def admin_list_reports(status: str = None, limit: int = 50, offset: int = 0, current_user: dict = Depends(admin_required)):
+    reports = services.list_reports(status=status, limit=limit, offset=offset)
     return reports
 
 @router.post("/reports/{report_id}/status")
@@ -185,48 +185,48 @@ async def admin_update_domain_status(domain_id: str, status: str, current_user: 
     services.create_audit_log(admin_id, f"UPDATE_DOMAIN_STATUS_TO_{status.upper()}", "DOMAIN", domain_id)
     return domain
 
-# ===== SCAM INDICATORS =====
-@router.get("/indicators")
-async def admin_list_indicators(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
-    indicators = services.list_indicators(limit=limit, offset=offset)
-    return indicators
+# # ===== SCAM INDICATORS =====
+# @router.get("/indicators")
+# async def admin_list_indicators(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
+#     indicators = services.list_indicators(limit=limit, offset=offset)
+#     return indicators
 
-@router.get("/indicators/{indicator_id}")
-async def admin_get_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
-    indicator = services.get_indicator(indicator_id)
-    if not indicator:
-        raise HTTPException(status_code=404, detail="Indicator not found")
-    return indicator
+# @router.get("/indicators/{indicator_id}")
+# async def admin_get_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
+#     indicator = services.get_indicator(indicator_id)
+#     if not indicator:
+#         raise HTTPException(status_code=404, detail="Indicator not found")
+#     return indicator
 
-@router.post("/indicators")
-async def admin_create_indicator(data: schemas.CreateIndicatorRequest, current_user: dict = Depends(admin_required)):
-    indicator = services.create_indicator(data.keyword, data.category, data.weight)
-    if not indicator:
-        raise HTTPException(status_code=500, detail="Failed to create indicator")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "CREATE_INDICATOR", "INDICATOR", indicator.get("indicator_id", ""))
-    return indicator
+# @router.post("/indicators")
+# async def admin_create_indicator(data: schemas.CreateIndicatorRequest, current_user: dict = Depends(admin_required)):
+#     indicator = services.create_indicator(data.keyword, data.category, data.weight)
+#     if not indicator:
+#         raise HTTPException(status_code=500, detail="Failed to create indicator")
+#     admin_id = current_user.get("user_id")
+#     services.create_audit_log(admin_id, "CREATE_INDICATOR", "INDICATOR", indicator.get("indicator_id", ""))
+#     return indicator
 
-@router.put("/indicators/{indicator_id}")
-async def admin_update_indicator(indicator_id: str, data: schemas.UpdateIndicatorRequest, current_user: dict = Depends(admin_required)):
-    update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
-    if not update_fields:
-        raise HTTPException(status_code=400, detail="No fields to update")
-    indicator = services.update_indicator(indicator_id, **update_fields)
-    if not indicator:
-        raise HTTPException(status_code=404, detail="Indicator not found")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "UPDATE_INDICATOR", "INDICATOR", indicator_id)
-    return indicator
+# @router.put("/indicators/{indicator_id}")
+# async def admin_update_indicator(indicator_id: str, data: schemas.UpdateIndicatorRequest, current_user: dict = Depends(admin_required)):
+#     update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
+#     if not update_fields:
+#         raise HTTPException(status_code=400, detail="No fields to update")
+#     indicator = services.update_indicator(indicator_id, **update_fields)
+#     if not indicator:
+#         raise HTTPException(status_code=404, detail="Indicator not found")
+#     admin_id = current_user.get("user_id")
+#     services.create_audit_log(admin_id, "UPDATE_INDICATOR", "INDICATOR", indicator_id)
+#     return indicator
 
-@router.delete("/indicators/{indicator_id}")
-async def admin_delete_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
-    success = services.delete_indicator(indicator_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Indicator not found")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "DELETE_INDICATOR", "INDICATOR", indicator_id)
-    return {"message": "Indicator deleted successfully"}
+# @router.delete("/indicators/{indicator_id}")
+# async def admin_delete_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
+#     success = services.delete_indicator(indicator_id)
+#     if not success:
+#         raise HTTPException(status_code=404, detail="Indicator not found")
+#     admin_id = current_user.get("user_id")
+#     services.create_audit_log(admin_id, "DELETE_INDICATOR", "INDICATOR", indicator_id)
+#     return {"message": "Indicator deleted successfully"}
 
 # ===== COMMUNITY MODERATION =====
 @router.get("/community/posts")

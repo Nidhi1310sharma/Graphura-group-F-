@@ -1,3 +1,374 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Redirecting...</title>
-<meta http-equiv="refresh" content="0;url=index.html"></head>
-<body><script>window.location.href='index.html';<\/script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analyze Job – ScamShield</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .checker-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .checker-layout { grid-template-columns: 1fr; } }
+    .proof-section { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 14px; }
+    .proof-section-title { font-size: 12.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .proof-panel { display: none; margin-top: 12px; animation: fadeIn 0.2s ease; }
+    .proof-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .result-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 360px; color: var(--text-muted); text-align: center; gap: 12px; }
+    .big-icon { font-size: 3.5rem; }
+    .score-section { text-align: center; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sub-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .sub-score-item { background: var(--bg-input); border-radius: var(--radius-sm); padding: 12px; text-align: center; border: 1px solid var(--border); }
+    .sub-score-val { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; }
+    .sub-score-lbl { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .proof-file-preview { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-secondary); margin-top: 8px; }
+    .proof-file-preview .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .proof-file-preview .remove-file { background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+      <button class="back-btn" onclick="history.back()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
+      
+      <div class="page-header">
+        <h1> Analyze Job Posting</h1>
+        <p>Hover over each input field to choose your preferred method of analysis</p>
+      </div>
+
+      <div class="checker-layout">
+        <!-- INPUT PANEL -->
+        <div class="card">
+          <div class="card-title"> Job Details</div>
+
+          <div class="form-group">
+            <label class="form-label">Job Posting URL</label>
+            <input type="url" id="job-url" class="form-control" placeholder="https://example.com/jobs/123">
+          </div>
+          <div class="two-col">
+            <div class="form-group">
+              <label class="form-label">Job Title</label>
+              <input type="text" id="job-title" class="form-control" placeholder="e.g. Data Entry Intern">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Company Name</label>
+              <input type="text" id="company-name" class="form-control" placeholder="e.g. XYZ Solutions">
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="form-group">
+              <label class="form-label">Salary Offered</label>
+              <input type="text" id="salary-text" class="form-control" placeholder="e.g. ₹80,000/month">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Recruiter Email</label>
+              <input type="email" id="recruiter-email" class="form-control" placeholder="hr@company.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company Domain / Website</label>
+            <input type="text" id="domain-name" class="form-control" placeholder="e.g. careers-google-jobs.xyz">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Job Description <span class="text-muted">(paste full text for best results)</span></label>
+            <textarea id="description" class="form-control" rows="5" placeholder="Paste the complete job description here..."></textarea>
+          </div>
+
+          <!-- PROOF ATTACHMENTS SECTION -->
+          <div class="proof-section">
+            <div class="proof-section-title">📎 Attach Proof (optional – hover to choose)</div>
+            <p class="text-xs text-secondary mb-2">Add any evidence to improve accuracy and submit with your report</p>
+            <div class="proof-btns">
+              <button class="proof-btn" id="btn-screenshot" onclick="toggleProof('screenshot')"> Screenshot</button>
+              <button class="proof-btn" id="btn-linkedin" onclick="toggleProof('linkedin')"> LinkedIn Post</button>
+              <button class="proof-btn" id="btn-email" onclick="toggleProof('email')"> Email Proof</button>
+              <button class="proof-btn" id="btn-offer" onclick="toggleProof('offer')"> Offer Letter</button>
+              <button class="proof-btn" id="btn-link" onclick="toggleProof('link')"> Any Link</button>
+            </div>
+
+            <div class="proof-panel" id="proof-screenshot">
+              <label class="form-label">Upload Screenshot</label>
+              <div class="file-upload-area" id="drop-screenshot" onclick="document.getElementById('file-screenshot').click()">
+                <div class="upload-icon"></div>
+                <div class="upload-text">Click or drag & drop a screenshot</div>
+                <div class="upload-hint">PNG, JPG, WEBP — max 5MB</div>
+              </div>
+              <input type="file" id="file-screenshot" accept="image/*" style="display:none" onchange="handleFile(this,'screenshot')">
+              <div id="preview-screenshot"></div>
+            </div>
+
+            <div class="proof-panel" id="proof-linkedin">
+              <label class="form-label">LinkedIn Post URL or Screenshot</label>
+              <input type="url" id="linkedin-url" class="form-control mb-2" placeholder="https://linkedin.com/posts/...">
+              <div style="text-align:center;color:var(--text-muted);font-size:12px;margin:6px 0">— or upload screenshot —</div>
+              <div class="file-upload-area" onclick="document.getElementById('file-linkedin').click()">
+                <div class="upload-icon"></div>
+                <div class="upload-text">Upload LinkedIn job screenshot</div>
+                <div class="upload-hint">PNG, JPG — max 5MB</div>
+              </div>
+              <input type="file" id="file-linkedin" accept="image/*" style="display:none" onchange="handleFile(this,'linkedin')">
+              <div id="preview-linkedin"></div>
+            </div>
+
+            <div class="proof-panel" id="proof-email">
+              <label class="form-label">Upload Email Screenshot / Forward</label>
+              <div class="file-upload-area" onclick="document.getElementById('file-email').click()">
+                <div class="upload-icon"></div>
+                <div class="upload-text">Upload email screenshot or .eml file</div>
+                <div class="upload-hint">PNG, JPG, EML — max 5MB</div>
+              </div>
+              <input type="file" id="file-email" accept="image/*,.eml" style="display:none" onchange="handleFile(this,'email')">
+              <div id="preview-email"></div>
+              <div class="form-group mt-2">
+                <label class="form-label">Sender Email Address</label>
+                <input type="email" id="sender-email" class="form-control" placeholder="recruiter@fake-company.xyz">
+              </div>
+            </div>
+
+            <div class="proof-panel" id="proof-offer">
+              <label class="form-label">Upload Offer Letter (.pdf or .docx)</label>
+              <div class="file-upload-area" onclick="document.getElementById('file-offer').click()">
+                <div class="upload-icon"></div>
+                <div class="upload-text">Upload the offer letter file</div>
+                <div class="upload-hint">PDF, DOCX — max 10MB</div>
+              </div>
+              <input type="file" id="file-offer" accept=".pdf,.docx,application/pdf" style="display:none" onchange="handleFile(this,'offer')">
+              <div id="preview-offer"></div>
+            </div>
+
+            <div class="proof-panel" id="proof-link">
+              <label class="form-label">Paste Any Relevant Link</label>
+              <input type="url" id="proof-url" class="form-control" placeholder="https://scam-site.xyz/job or any link">
+              <p class="text-xs text-muted mt-2">We'll scan this domain for risk signals automatically</p>
+            </div>
+          </div>
+
+          <button class="btn btn-danger btn-full btn-lg mt-3" id="analyze-btn" onclick="analyzeJob()">
+             Analyze for Scam Signals
+          </button>
+          <p class="text-xs text-muted text-center mt-2">Analysis takes 2–5 seconds. No login required.</p>
+        </div>
+
+        <!-- RESULT PANEL -->
+        <div class="card" id="result-panel">
+          <div class="result-placeholder" id="result-placeholder">
+            <div class="big-icon"></div>
+            <div>
+              <p style="font-size:15px;font-weight:600;color:var(--text-secondary);margin-bottom:6px">Results appear here</p>
+              <p class="text-xs text-muted">Fill in job details and click Analyze</p>
+            </div>
+          </div>
+          <div id="result-content" class="hidden">
+            <div class="score-section">
+              <div id="score-display"></div>
+              <div id="risk-badge-wrap" class="mt-2"></div>
+            </div>
+            <div class="sub-scores">
+              <div class="sub-score-item"><div class="sub-score-val" id="kw-score" style="color:var(--accent-red)">-</div><div class="sub-score-lbl">Keyword Score</div></div>
+              <div class="sub-score-item"><div class="sub-score-val" id="domain-score" style="color:var(--accent-orange)">-</div><div class="sub-score-lbl">Domain Risk</div></div>
+              <div class="sub-score-item"><div class="sub-score-val" id="salary-score" style="color:var(--accent-yellow)">-</div><div class="sub-score-lbl">Salary Anomaly</div></div>
+              <div class="sub-score-item"><div class="sub-score-val" id="ssl-status">-</div><div class="sub-score-lbl">SSL Status</div></div>
+            </div>
+            <div class="tabs"><button class="tab-btn active" data-tab="tab-signals">Signals</button><button class="tab-btn" data-tab="tab-keywords">Keywords</button><button class="tab-btn" data-tab="tab-info">Info</button></div>
+            <div id="tab-signals" class="tab-content active"><div id="signals-list"></div></div>
+            <div id="tab-keywords" class="tab-content"><div id="keywords-wrap"></div></div>
+            <div id="tab-info" class="tab-content"><div id="analysis-info"></div></div>
+            <div id="recommendation-box" class="mt-3"></div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+              <a href="report.html" class="btn btn-outline" style="flex:1;justify-content:center">Report This</a>
+              <button class="btn btn-outline" style="flex:1" onclick="resetForm()">Check Another</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Red Flags Info -->
+      <div class="card mt-4">
+        <div class="card-title"> Red Flags to Watch For</div>
+        <div class="three-col" style="gap:14px;margin-top:4px">
+          <div>
+            <p class="text-sm" style="font-weight:600;color:var(--accent-red);margin-bottom:8px">💰 Financial Red Flags</p>
+            <ul style="list-style:none;font-size:13px;color:var(--text-secondary);line-height:2">
+              <li>• Registration or training fees</li><li>• Security/refundable deposits</li>
+              <li>• Unrealistic salary for freshers</li><li>• Kit fee or ID card fee</li>
+            </ul>
+          </div>
+          <div>
+            <p class="text-sm" style="font-weight:600;color:var(--accent-orange);margin-bottom:8px"> Communication Red Flags</p>
+            <ul style="list-style:none;font-size:13px;color:var(--text-secondary);line-height:2">
+              <li>• HR only on WhatsApp/Telegram</li><li>• Gmail/Yahoo recruiter email</li>
+              <li>• No formal interview process</li><li>• Pressure to decide quickly</li>
+            </ul>
+          </div>
+          <div>
+            <p class="text-sm" style="font-weight:600;color:var(--accent-yellow);margin-bottom:8px"> Domain Red Flags</p>
+            <ul style="list-style:none;font-size:13px;color:var(--text-secondary);line-height:2">
+              <li>• Suspicious TLDs (.xyz, .tk)</li><li>• New domain under 90 days old</li>
+              <li>• No SSL certificate</li><li>• Misspelled company names</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  renderNavbar();
+
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  const q = params.get('q') ? decodeURIComponent(params.get('q')) : '';
+
+  // Legacy ?url= param (backwards compat)
+  const legacyUrl = params.get('url');
+  if (legacyUrl) {
+    const decoded = decodeURIComponent(legacyUrl);
+    const el = document.getElementById('job-url');
+    if (el) el.value = decoded;
+    try { const d = document.getElementById('domain-name'); if (d) d.value = new URL(decoded).hostname.replace('www.',''); } catch(_) {}
+  }
+
+  // Handle mode + q from analyzeFromHome()
+  if (mode && q) {
+    if (mode === 'url') {
+      const el = document.getElementById('job-url');
+      if (el) el.value = q;
+      try { const d = document.getElementById('domain-name'); if (d) d.value = new URL(q).hostname.replace('www.',''); } catch(_) {}
+    } else if (mode === 'text') {
+      // Put in job description field if it exists
+      const el = document.getElementById('job-description') || document.getElementById('job-title');
+      if (el) el.value = q;
+    } else if (mode === 'email') {
+      const el = document.getElementById('recruiter-email');
+      if (el) el.value = q;
+    }
+    // Auto-scroll to the form
+    document.getElementById('analyze-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+
+function toggleProof(type) {
+  const panel = document.getElementById('proof-' + type);
+  const btn = document.getElementById('btn-' + type);
+  const isActive = panel.classList.contains('active');
+  document.querySelectorAll('.proof-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.proof-btn').forEach(b => b.classList.remove('active'));
+  if (!isActive) { panel.classList.add('active'); btn.classList.add('active'); }
+}
+
+function handleFile(input, type) {
+  const file = input.files[0]; if (!file) return;
+  const preview = document.getElementById('preview-' + type);
+  preview.innerHTML = `<div class="proof-file-preview"><span>📎</span><span class="file-name">${file.name}</span><span style="font-size:11px;color:var(--text-muted)">${(file.size/1024).toFixed(0)}KB</span><button class="remove-file" onclick="document.getElementById('file-${type}').value='';document.getElementById('preview-${type}').innerHTML=''">✕</button></div>`;
+  showToast(`${file.name} attached`, 'success');
+}
+
+// Drag and drop
+document.querySelectorAll('.file-upload-area').forEach(area => {
+  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
+  area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+  area.addEventListener('drop', e => { e.preventDefault(); area.classList.remove('drag-over'); });
+});
+
+async function analyzeJob() {
+  const btn = document.getElementById("analyze-btn");
+
+  const jobUrl = document.getElementById("job-url")?.value.trim() || '';
+  const companyName = document.getElementById("company-name")?.value.trim() || '';
+  const description = document.getElementById("description")?.value.trim() || '';
+  const recruiterEmail = document.getElementById("recruiter-email")?.value.trim() || '';
+
+  // Validation — at least one meaningful input required
+  const hasInput = jobUrl || companyName || description || recruiterEmail;
+  if (!hasInput) {
+    showToast("Please fill in at least one field — job URL, company name, or description", "error");
+    // Highlight required fields
+    ['job-url','company-name','description'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.add('error'); setTimeout(() => el.classList.remove('error'), 3000); }
+    });
+    document.getElementById("job-url")?.focus();
+    return;
+  }
+
+  // URL format check
+  if (jobUrl && !jobUrl.startsWith('http://') && !jobUrl.startsWith('https://')) {
+    showToast("Please enter a full URL starting with https://", "error");
+    document.getElementById("job-url")?.classList.add('error');
+    setTimeout(() => document.getElementById("job-url")?.classList.remove('error'), 3000);
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = "Analyzing…";
+  const payload = {
+    job_url: jobUrl || null,
+    job_title: document.getElementById("job-title")?.value.trim() || null,
+    company_name: companyName || null,
+    salary_text: document.getElementById("salary-text")?.value.trim() || null,
+    recruiter_email: recruiterEmail || null,
+    domain_name: document.getElementById("domain-name")?.value.trim() || null,
+    description: description || null,
+  };
+  try {
+    const data = await api.post("/analyze", payload);
+    renderResult(data);
+  } catch (e) {
+    // Demo mode fallback
+    renderResult(generateDemoResult(payload));
+    showToast("Demo mode – backend not connected", "warning");
+  }
+  btn.disabled = false; btn.textContent = "🔍 Analyze for Scam Signals";
+}
+
+function generateDemoResult(payload) {
+  const desc = (payload.description || '').toLowerCase();
+  const hasRedFlags = /fee|deposit|registration|security|pay|whatsapp|telegram|urgent/.test(desc);
+  const score = hasRedFlags ? 65 + Math.floor(Math.random() * 20) : 20 + Math.floor(Math.random() * 20);
+  const risk = score >= 70 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
+  return {
+    scam_score: score, risk_level: risk, risk_label: getRiskLabel(risk),
+    keyword_score: score - 10, domain_score: Math.floor(score * 0.7),
+    salary_anomaly: hasRedFlags, ssl_valid: !hasRedFlags,
+    domain_blacklisted: false, impersonation_detected: false,
+    analyzed_at: new Date().toISOString(),
+    recommendation: risk === 'HIGH' ? 'This job shows multiple red flags. Do NOT pay any fees. Report this job immediately.' : risk === 'MEDIUM' ? 'Proceed with caution. Verify company details before sharing personal information.' : 'This job appears relatively safe, but always verify before applying.',
+    fraud_signals: hasRedFlags ? [{ severity: 'high', description: 'Registration/security fee detected in description', signal_type: 'fee_demand', score_contribution: 30 }, { severity: 'medium', description: 'Urgency language detected', signal_type: 'urgency', score_contribution: 15 }] : [{ severity: 'low', description: 'No critical fraud signals detected', signal_type: 'clean', score_contribution: 5 }],
+    suspicious_keywords: hasRedFlags ? ['registration fee', 'security deposit', 'urgent'] : []
+  };
+}
+
+function renderResult(data) {
+  document.getElementById("result-placeholder").classList.add("hidden");
+  document.getElementById("result-content").classList.remove("hidden");
+  renderScoreBar("score-display", data.scam_score, data.risk_level);
+  document.getElementById("risk-badge-wrap").innerHTML = `<span class="risk-badge ${getRiskClass(data.risk_level)}">${getRiskEmoji(data.risk_level)} ${data.risk_label}</span>`;
+  document.getElementById("kw-score").textContent = Math.round(data.keyword_score);
+  document.getElementById("domain-score").textContent = Math.round(data.domain_score);
+  document.getElementById("salary-score").textContent = data.salary_anomaly ? "Yes" : "No";
+  document.getElementById("ssl-status").textContent = data.ssl_valid === true ? "✅" : data.ssl_valid === false ? "❌" : "-";
+  renderSignals("signals-list", data.fraud_signals);
+  renderKeywords("keywords-wrap", data.suspicious_keywords);
+  document.getElementById("analysis-info").innerHTML = `<div style="display:grid;gap:8px;font-size:13px">
+    <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Domain Blacklisted</span><span>${data.domain_blacklisted ? '🚫 Yes' : '✅ No'}</span></div>
+    <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Impersonation Detected</span><span>${data.impersonation_detected ? '⚠️ Yes' : '✅ No'}</span></div>
+    <div class="flex-between" style="padding:6px 0"><span class="text-muted">Analyzed At</span><span class="mono" style="font-size:12px">${formatDate(data.analyzed_at)}</span></div>
+  </div>`;
+  const rColor = { LOW: "success", MEDIUM: "warning", HIGH: "danger", CONFIRMED_SCAM: "danger" };
+  document.getElementById("recommendation-box").innerHTML = `<div class="alert alert-${rColor[data.risk_level] || 'info'}"><span class="alert-icon">${getRiskEmoji(data.risk_level)}</span><span>${data.recommendation}</span></div>`;
+  document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetForm() {
+  document.querySelectorAll(".form-control").forEach(f => f.value = "");
+  document.getElementById("result-placeholder").classList.remove("hidden");
+  document.getElementById("result-content").classList.add("hidden");
+  document.querySelectorAll('.proof-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.proof-btn').forEach(b => b.classList.remove('active'));
+}
+</script>
+</body></html>

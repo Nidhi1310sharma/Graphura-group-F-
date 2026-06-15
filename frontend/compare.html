@@ -1,133 +1,515 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Compare Jobs - ScamShield</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compare Jobs – ScamShield</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    .compare-grid { display:grid;grid-template-columns:1fr 48px 1fr;gap:0;margin-top:20px; }
-    @media(max-width:800px){.compare-grid{grid-template-columns:1fr;gap:16px} .vs-col{display:none}}
-    .compare-col { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden; }
-    .compare-col.fake { border-color:rgba(248,81,73,.35); }
-    .compare-col.real { border-color:rgba(63,185,80,.35); }
-    .chead { padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px; }
-    .chead.fake { background:rgba(248,81,73,.06); }
-    .chead.real { background:rgba(63,185,80,.06); }
-    .crow { display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px; }
-    .crow:last-child { border-bottom:none; }
-    .crow-lbl { color:var(--text-muted);font-size:11.5px;min-width:110px;flex-shrink:0; }
-    .crow-val { font-weight:600; }
-    .crow-val.bad { color:var(--accent-red); }
-    .crow-val.warn { color:var(--accent-orange); }
-    .crow-val.ok { color:var(--accent-green); }
-    .vs-col { display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text-muted);font-size:16px; }
-    .cverdbar { padding:14px 16px;border-top:1px solid var(--border); }
-    .cverdbar.fake { background:rgba(248,81,73,.05);border-color:rgba(248,81,73,.2); }
-    .cverdbar.real { background:rgba(63,185,80,.05);border-color:rgba(63,185,80,.2); }
-    .ai-box { background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:20px; }
-    .ai-box-lbl { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent-blue);margin-bottom:8px; }
-    .unique-badge { background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple));color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:8px; }
+    .compare-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .compare-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .compare-header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    
+    .compare-header p {
+      color: var(--text-secondary);
+    }
+    
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    
+    .job-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    
+    .job-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .job-card-header {
+      padding: 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .job-card-header h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    
+    .job-url {
+      font-size: 12px;
+      color: var(--text-muted);
+      word-break: break-all;
+      font-family: var(--font-mono);
+    }
+    
+    .job-url a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+    
+    .job-url a:hover {
+      text-decoration: underline;
+    }
+    
+    .job-content {
+      padding: 20px;
+    }
+    
+    .risk-score {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    
+    .risk-high {
+      background: rgba(220, 38, 38, 0.15);
+      color: var(--accent-red);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+    }
+    
+    .risk-medium {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-orange);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
+    .risk-low {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    
+    .detail-value {
+      color: var(--text-primary);
+      text-align: right;
+      word-break: break-word;
+      max-width: 60%;
+    }
+    
+    .detail-value.positive {
+      color: var(--accent-green);
+    }
+    
+    .detail-value.negative {
+      color: var(--accent-red);
+    }
+    
+    .warning-list {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(220, 38, 38, 0.05);
+      border-left: 3px solid var(--accent-red);
+      border-radius: var(--radius-sm);
+    }
+    
+    .warning-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 12px;
+      color: var(--accent-red);
+    }
+    
+    .success-list {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(34, 197, 94, 0.05);
+      border-left: 3px solid var(--accent-green);
+      border-radius: var(--radius-sm);
+    }
+    
+    .success-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 12px;
+      color: var(--accent-green);
+    }
+    
+    .input-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .input-wrapper {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .input-wrapper input {
+      flex: 1;
+    }
+    
+    .compare-btn {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .vs-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-muted);
+      position: relative;
+    }
+    
+    @media (max-width: 900px) {
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+      .vs-divider {
+        display: none;
+      }
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .back-btn {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-<div class="page-container wide" style="margin-top:28px">
-  <div style="margin-bottom:20px">
-    <h1 style="margin-bottom:4px">Job Comparison Mode <span class="unique-badge">UNIQUE FEATURE</span></h1>
-    <p style="color:var(--text-secondary);font-size:13.5px">Paste two job URLs side by side — every signal shown with red/green diffs. Perfect for spotting TCS/Infosys fakes.</p>
-  </div>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+      <div class="compare-container">
+        <button class="back-btn" onclick="history.back()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Back
+        </button>
 
-  <div class="card">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      <div>
-        <label class="form-label">Job A — Suspicious URL</label>
-        <input type="url" id="url-a" class="form-control" placeholder="https://tcs-careers-hiring.xyz/job/1">
-      </div>
-      <div>
-        <label class="form-label">Job B — Official / Reference URL</label>
-        <input type="url" id="url-b" class="form-control" placeholder="https://www.tcs.com/careers/india">
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn btn-primary" id="cmp-btn" onclick="runCompare()">Compare Now</button>
-      <button class="btn btn-outline" onclick="loadDemo()">Load Demo</button>
-      <span style="font-size:12px;color:var(--text-muted)">Tip — paste the suspicious URL next to the company official careers page</span>
-    </div>
-  </div>
+        <div class="compare-header">
+          <h1>🔍 Compare Two Jobs</h1>
+          <p>Paste two job URLs to compare and identify which one is safer</p>
+        </div>
 
-  <div id="results" style="display:none">
-    <div class="compare-grid">
-      <div class="compare-col fake">
-        <div class="chead fake">
-          <div style="flex:1"><div style="font-weight:700;font-size:14px" id="a-title">Job A</div><div style="font-size:11px;color:var(--text-muted)" id="a-domain"></div></div>
-          <span class="badge badge-red" id="a-pct">62% scam</span>
+        <!-- Input Section -->
+        <div class="input-section">
+          <div class="compare-grid" style="margin-bottom: 0;">
+            <div class="input-group">
+              <label>📌 Job A URL</label>
+              <input type="url" id="job1-url" class="form-control" placeholder="https://naukri.com/job/...">
+            </div>
+            <div class="input-group">
+              <label>📌 Job B URL</label>
+              <input type="url" id="job2-url" class="form-control" placeholder="https://linkedin.com/jobs/...">
+            </div>
+          </div>
+          <div class="compare-btn">
+            <button class="btn btn-primary btn-lg" onclick="compareJobs()" style="min-width: 200px;">
+              🔄 Compare Jobs
+            </button>
+          </div>
         </div>
-        <div class="crow"><span class="crow-lbl">Domain age</span><span class="crow-val bad" id="a-age">12 days</span></div>
-        <div class="crow"><span class="crow-lbl">SSL cert</span><span class="crow-val bad" id="a-ssl">Invalid</span></div>
-        <div class="crow"><span class="crow-lbl">Registrar</span><span class="crow-val warn" id="a-reg">Unknown</span></div>
-        <div class="crow"><span class="crow-lbl">Recruiter email</span><span class="crow-val bad" id="a-email">Gmail</span></div>
-        <div class="crow"><span class="crow-lbl">Salary offered</span><span class="crow-val warn" id="a-sal">Rs 1L/mo</span></div>
-        <div class="crow"><span class="crow-lbl">Registration fee</span><span class="crow-val bad" id="a-fee">Yes Rs 5000</span></div>
-        <div class="crow"><span class="crow-lbl">Openings listed</span><span class="crow-val bad" id="a-openings">5000+</span></div>
-        <div class="crow"><span class="crow-lbl">Company match</span><span class="crow-val bad" id="a-match">No match</span></div>
-        <div class="cverdbar fake"><div style="color:var(--accent-red);font-weight:700;font-size:13px">Likely fake — do not apply</div></div>
+
+        <!-- Comparison Results -->
+        <div id="results-container"></div>
       </div>
-      <div class="vs-col">vs</div>
-      <div class="compare-col real">
-        <div class="chead real">
-          <div style="flex:1"><div style="font-weight:700;font-size:14px" id="b-title">Job B</div><div style="font-size:11px;color:var(--text-muted)" id="b-domain"></div></div>
-          <span class="badge badge-green" id="b-pct">4% risk</span>
-        </div>
-        <div class="crow"><span class="crow-lbl">Domain age</span><span class="crow-val ok" id="b-age">8 years</span></div>
-        <div class="crow"><span class="crow-lbl">SSL cert</span><span class="crow-val ok" id="b-ssl">Valid</span></div>
-        <div class="crow"><span class="crow-lbl">Registrar</span><span class="crow-val ok" id="b-reg">GoDaddy</span></div>
-        <div class="crow"><span class="crow-lbl">Recruiter email</span><span class="crow-val ok" id="b-email">@tcs.com</span></div>
-        <div class="crow"><span class="crow-lbl">Salary offered</span><span class="crow-val ok" id="b-sal">Rs 3.6 LPA</span></div>
-        <div class="crow"><span class="crow-lbl">Registration fee</span><span class="crow-val ok" id="b-fee">None</span></div>
-        <div class="crow"><span class="crow-lbl">Openings listed</span><span class="crow-val ok" id="b-openings">Specific</span></div>
-        <div class="crow"><span class="crow-lbl">Company match</span><span class="crow-val ok" id="b-match">Verified</span></div>
-        <div class="cverdbar real"><div style="color:var(--accent-green);font-weight:700;font-size:13px">Verified official posting</div></div>
-      </div>
-    </div>
-    <div class="ai-box">
-      <div class="ai-box-lbl">AI Summary of Differences</div>
-      <div id="ai-summary" style="font-size:13.5px;color:var(--text-secondary);line-height:1.75"></div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-      <button class="btn btn-danger" onclick="window.location.href='report.html'">Report Job A as Scam</button>
-      <button class="btn btn-outline" onclick="showToast('Download Trust Card — connect backend for PDF','info')">Download Trust Card</button>
-      <button class="btn btn-outline" onclick="navigator.clipboard?.writeText(location.href).then(()=>showToast('Link copied!','success'))">Share Comparison</button>
     </div>
   </div>
 </div>
+
 <script src="js/main.js"></script>
 <script src="js/nav.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
-function loadDemo() {
-  document.getElementById('url-a').value = 'https://tcs-careers-hiring.xyz/job/1';
-  document.getElementById('url-b').value = 'https://www.tcs.com/careers/india';
-  runCompare();
+// Mock data for demonstration - In production, this would call your backend API
+function analyzeJob(url, jobNumber) {
+  return new Promise((resolve) => {
+    // Simulate API call delay
+    setTimeout(() => {
+      // Generate mock analysis based on URL patterns
+      const isScam = url.includes('suspicious') || url.includes('fake') || url.includes('xyz');
+      const hasHttps = url.startsWith('https://');
+      const domainAge = isScam ? '2 months' : '2 years';
+      const hasValidSSL = hasHttps && !isScam;
+      
+      const warnings = [];
+      const positives = [];
+      
+      if (isScam) {
+        warnings.push('⚠️ Suspicious domain detected');
+        warnings.push('⚠️ Company domain is less than 3 months old');
+        warnings.push('⚠️ No verifiable company information');
+      } else {
+        positives.push('✅ Domain has valid SSL certificate');
+        positives.push('✅ Company domain is established');
+      }
+      
+      if (!hasHttps) {
+        warnings.push('⚠️ Website does not use HTTPS (insecure)');
+      } else if (!isScam) {
+        positives.push('✅ Secure HTTPS connection');
+      }
+      
+      if (url.includes('naukri') || url.includes('linkedin') || url.includes('indeed')) {
+        positives.push('✅ Recognized job platform');
+      } else {
+        warnings.push('⚠️ Unknown or untrusted job platform');
+      }
+      
+      const riskLevel = isScam ? 'high' : (warnings.length > 1 ? 'medium' : 'low');
+      const riskScore = isScam ? 25 : (warnings.length > 1 ? 65 : 85);
+      
+      resolve({
+        url: url,
+        company: extractCompanyName(url),
+        riskLevel: riskLevel,
+        riskScore: riskScore,
+        hasSSL: hasHttps,
+        domainAge: domainAge,
+        warnings: warnings,
+        positives: positives,
+        jobTitle: `Job Position ${jobNumber}`,
+        postedDate: 'Last 7 days',
+        salaryRange: isScam ? '₹50,000 - ₹80,000 (Suspicious)' : '₹25,000 - ₹35,000',
+        isVerified: !isScam
+      });
+    }, 500);
+  });
 }
-function runCompare() {
-  const a = document.getElementById('url-a').value.trim();
-  const b = document.getElementById('url-b').value.trim();
-  if (!a || !b) { showToast('Please enter both URLs to compare', 'warning'); return; }
-  const btn = document.getElementById('cmp-btn'); btn.disabled = true; btn.textContent = 'Analyzing...';
-  let domA = '', domB = '';
-  try { domA = new URL(a).hostname.replace('www.',''); } catch { domA = a; }
-  try { domB = new URL(b).hostname.replace('www.',''); } catch { domB = b; }
-  setTimeout(() => {
-    document.getElementById('a-title').textContent = 'Job A — ' + domA;
-    document.getElementById('a-domain').textContent = domA;
-    document.getElementById('b-title').textContent = 'Job B — ' + domB;
-    document.getElementById('b-domain').textContent = domB;
-    document.getElementById('ai-summary').innerHTML = '<strong>Job A uses a domain registered just 12 days ago</strong>, requests a registration fee, and lists an unrealistically high salary for a fresher role. <strong>Job B is hosted on the official domain (8 years old)</strong>, uses a verified corporate email, and matches the company\'s known salary band. Job A is almost certainly impersonating the brand — it shares the name but none of the trust signals. Do not apply, and report it immediately.';
-    document.getElementById('results').style.display = 'block';
-    document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
-    btn.disabled = false; btn.textContent = 'Compare Now';
-    showToast('Comparison complete — AI summary generated', 'success');
-  }, 1600);
+
+function extractCompanyName(url) {
+  try {
+    const hostname = new URL(url).hostname;
+    const parts = hostname.split('.');
+    if (parts.length > 2) {
+      return parts[parts.length - 2].charAt(0).toUpperCase() + parts[parts.length - 2].slice(1);
+    }
+    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+  } catch(e) {
+    return 'Unknown Company';
+  }
 }
-document.addEventListener('DOMContentLoaded', () => { initTheme(); renderNavbar(); });
+
+async function compareJobs() {
+  const job1Url = document.getElementById('job1-url').value.trim();
+  const job2Url = document.getElementById('job2-url').value.trim();
+  
+  if (!job1Url || !job2Url) {
+    showToast('Please enter both job URLs to compare', 'error');
+    return;
+  }
+  
+  // Validate URLs
+  try {
+    new URL(job1Url);
+    new URL(job2Url);
+  } catch(e) {
+    showToast('Please enter valid URLs (include http:// or https://)', 'error');
+    return;
+  }
+  
+  const resultsContainer = document.getElementById('results-container');
+  resultsContainer.innerHTML = '<div style="text-align: center; padding: 40px;">🔄 Analyzing both jobs...<br><span style="font-size: 12px; color: var(--text-muted);">This may take a few seconds</span></div>';
+  
+  // Analyze both jobs in parallel
+  const [analysis1, analysis2] = await Promise.all([
+    analyzeJob(job1Url, 'A'),
+    analyzeJob(job2Url, 'B')
+  ]);
+  
+  // Determine winner
+  let winnerText = '';
+  let winnerClass = '';
+  if (analysis1.riskScore > analysis2.riskScore) {
+    winnerText = '🎯 Job A appears SAFER';
+    winnerClass = 'risk-low';
+  } else if (analysis2.riskScore > analysis1.riskScore) {
+    winnerText = '🎯 Job B appears SAFER';
+    winnerClass = 'risk-low';
+  } else {
+    winnerText = '🤔 Both jobs have similar risk levels';
+    winnerClass = 'risk-medium';
+  }
+  
+  // Render comparison
+  resultsContainer.innerHTML = `
+    <div class="compare-grid">
+      ${renderJobCard(analysis1, 'A')}
+      <div class="vs-divider">VS</div>
+      ${renderJobCard(analysis2, 'B')}
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+      <div class="risk-score ${winnerClass}" style="display: inline-flex; padding: 10px 24px; font-size: 14px;">
+        ${winnerText}
+      </div>
+    </div>
+  `;
+}
+
+function renderJobCard(analysis, label) {
+  const riskClass = analysis.riskLevel === 'high' ? 'risk-high' : (analysis.riskLevel === 'medium' ? 'risk-medium' : 'risk-low');
+  const riskText = analysis.riskLevel === 'high' ? '⚠️ HIGH RISK' : (analysis.riskLevel === 'medium' ? '⚠️ MEDIUM RISK' : '✅ LOW RISK');
+  
+  return `
+    <div class="job-card">
+      <div class="job-card-header">
+        <h3>Job ${label}: ${analysis.company}</h3>
+        <div class="job-url">
+          <a href="${analysis.url}" target="_blank">${analysis.url.substring(0, 60)}${analysis.url.length > 60 ? '...' : ''}</a>
+        </div>
+      </div>
+      <div class="job-content">
+        <div class="risk-score ${riskClass}">
+          ${riskText} (Score: ${analysis.riskScore}/100)
+        </div>
+        
+        <div class="detail-row">
+          <span class="detail-label">Job Title:</span>
+          <span class="detail-value">${analysis.jobTitle}</span>
+        </div>
+        
+        <div class="detail-row">
+          <span class="detail-label">Company Domain Age:</span>
+          <span class="detail-value ${analysis.domainAge === '2 months' ? 'negative' : 'positive'}">${analysis.domainAge}</span>
+        </div>
+        
+        <div class="detail-row">
+          <span class="detail-label">SSL Certificate:</span>
+          <span class="detail-value ${analysis.hasSSL ? 'positive' : 'negative'}">${analysis.hasSSL ? '✅ Valid' : '❌ Invalid/Missing'}</span>
+        </div>
+        
+        <div class="detail-row">
+          <span class="detail-label">Salary Range:</span>
+          <span class="detail-value">${analysis.salaryRange}</span>
+        </div>
+        
+        <div class="detail-row">
+          <span class="detail-label">Posted:</span>
+          <span class="detail-value">${analysis.postedDate}</span>
+        </div>
+        
+        <div class="detail-row">
+          <span class="detail-label">Verified Platform:</span>
+          <span class="detail-value ${analysis.isVerified ? 'positive' : 'negative'}">${analysis.isVerified ? '✅ Yes' : '❌ No'}</span>
+        </div>
+        
+        ${analysis.warnings.length > 0 ? `
+          <div class="warning-list">
+            ${analysis.warnings.map(w => `<div class="warning-item">${w}</div>`).join('')}
+          </div>
+        ` : ''}
+        
+        ${analysis.positives.length > 0 ? `
+          <div class="success-list">
+            ${analysis.positives.map(p => `<div class="success-item">${p}</div>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function showToast(message, type) {
+  // Simple toast implementation
+  const toast = document.createElement('div');
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.left = '50%';
+  toast.style.transform = 'translateX(-50%)';
+  toast.style.backgroundColor = type === 'error' ? 'var(--accent-red)' : 'var(--accent-green)';
+  toast.style.color = 'white';
+  toast.style.padding = '12px 24px';
+  toast.style.borderRadius = '8px';
+  toast.style.fontSize = '14px';
+  toast.style.zIndex = '9999';
+  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// Load saved URLs from localStorage if any
+document.addEventListener('DOMContentLoaded', () => {
+  renderNavbar();
+  if (!_getUser()) { 
+    _showLoginRequired("access compare feature"); 
+    setTimeout(()=>window.location.href="login.html",2000); 
+    return; 
+  }
+  
+  // Check if URLs were passed via query params
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('job1')) {
+    document.getElementById('job1-url').value = params.get('job1');
+  }
+  if (params.has('job2')) {
+    document.getElementById('job2-url').value = params.get('job2');
+  }
+});
 </script>
-</body></html>
+</body>
+</html>

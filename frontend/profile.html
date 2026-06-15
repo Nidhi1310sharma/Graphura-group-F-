@@ -2,117 +2,291 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile - ScamShield</title>
+  <title>My Profile – ScamShield</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: var(--bg-input); }
+    .activity-body { flex: 1; }
+    .activity-title { font-size: 13.5px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+    .activity-meta { font-size: 11.5px; color: var(--text-muted); }
+    .edit-mode { display: none; }
+    .view-mode { display: block; }
+    body.editing .edit-mode { display: block; }
+    body.editing .view-mode { display: none; }
+    .profile-completion { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+    .completion-bar { height: 6px; border-radius: 99px; background: var(--bg-input); margin: 8px 0; overflow: hidden; }
+    .completion-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)); }
+  </style>
 </head>
 <body>
-<div class="page-container" style="max-width:860px;margin-top:28px">
-  <div style="display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start">
-    <div>
-      <div class="card" style="text-align:center;padding:24px">
-        <div id="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;margin:0 auto 14px">?</div>
-        <div id="profile-name" style="font-size:18px;font-weight:700;margin-bottom:3px">Loading</div>
-        <div id="profile-email" style="font-size:12px;color:var(--text-muted);margin-bottom:10px"></div>
-        <div id="profile-bio" style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6"></div>
-        <div style="display:flex;gap:20px;justify-content:center;margin-bottom:16px">
-          <div style="text-align:center"><div id="stat-reports" style="font-size:20px;font-weight:800;font-family:var(--font-mono)">0</div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Reports</div></div>
-          <div style="text-align:center"><div id="stat-checks" style="font-size:20px;font-weight:800;font-family:var(--font-mono)">0</div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase">Checks</div></div>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner" style="max-width:900px">
+      <button class="back-btn" onclick="history.back()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
+      
+
+      <!-- Profile Completion -->
+      <div class="profile-completion" id="completion-card">
+        <div class="flex-between">
+          <span style="font-size:13.5px;font-weight:600">Profile Completion</span>
+          <span id="completion-pct" style="font-size:13px;color:var(--accent-blue);font-weight:700">0%</span>
         </div>
-        <button class="btn btn-outline btn-full" onclick="showEdit()">Edit Profile</button>
-        <button class="btn btn-ghost btn-full mt-2" onclick="auth.logout()">Sign Out</button>
+        <div class="completion-bar"><div class="completion-fill" id="completion-fill" style="width:0%"></div></div>
+        <p class="text-xs text-muted" id="completion-hint">Add your photo and skills to improve your profile</p>
       </div>
-      <div class="card mt-3" id="edit-form" style="display:none">
-        <div class="card-title">Edit Profile</div>
-        <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="edit-name" class="form-control"></div>
-        <div class="form-group"><label class="form-label">City</label><input type="text" id="edit-city" class="form-control" placeholder="Pune, Maharashtra"></div>
-        <div class="form-group"><label class="form-label">Bio</label><textarea id="edit-bio" class="form-control" rows="3"></textarea></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" onclick="saveProfile()">Save</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('edit-form').style.display='none'">Cancel</button>
+
+      <!-- Profile Hero -->
+      <div class="profile-hero">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profile-avatar-display">U</div>
+          <div class="profile-avatar-edit" onclick="document.getElementById('profile-avatar-input').click()" title="Change photo">✏️</div>
+          <input type="file" id="profile-avatar-input" accept="image/*" style="display:none" onchange="updateAvatar(this)">
+        </div>
+        <div class="profile-info">
+          <div class="view-mode">
+            <div class="profile-name" id="display-name">Loading...</div>
+            <div class="profile-role" id="display-role">Member</div>
+            <div id="display-bio" class="text-sm text-secondary" style="margin-bottom:8px"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--text-muted);margin-bottom:10px">
+              <span id="display-email"> —</span>
+              <span id="display-mobile"> —</span>
+              <span id="display-city">📍 —</span>
+            </div>
+            <div class="skill-tags" id="display-skills"></div>
+          </div>
+          <div class="edit-mode">
+            <div class="two-col" style="gap:10px">
+              <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="edit-name" class="form-control"></div>
+              <div class="form-group"><label class="form-label">Mobile</label><input type="tel" id="edit-mobile" class="form-control"></div>
+            </div>
+            <div class="two-col" style="gap:10px">
+              <div class="form-group"><label class="form-label">City</label><input type="text" id="edit-city" class="form-control"></div>
+              <div class="form-group"><label class="form-label">Profession</label><select id="edit-profession" class="form-control"><option>Student</option><option>Fresher</option><option>Working Professional</option><option>Job Seeker</option><option>Freelancer</option><option>Other</option></select></div>
+            </div>
+            <div class="form-group"><label class="form-label">Bio</label><textarea id="edit-bio" class="form-control" rows="2"></textarea></div>
+            <div class="form-group">
+              <label class="form-label">Skills</label>
+              <div style="display:flex;gap:8px"><input type="text" id="edit-skill-input" class="form-control" placeholder="Add skill..." onkeydown="if(event.key==='Enter'){addEditSkill();event.preventDefault()}"><button class="btn btn-outline btn-sm" onclick="addEditSkill()">Add</button></div>
+              <div class="skills-preview" id="edit-skills-preview" style="margin-top:8px"></div>
+            </div>
+          </div>
+          <div class="profile-stats mt-3" id="profile-stats">
+            <div class="profile-stat"><div class="profile-stat-val" id="stat-reports">0</div><div class="profile-stat-lbl">Reports</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="stat-checks">0</div><div class="profile-stat-lbl">Checks</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="stat-upvotes">0</div><div class="profile-stat-lbl">Upvotes</div></div>
+            <div class="profile-stat"><div class="profile-stat-val" id="stat-joined">—</div><div class="profile-stat-lbl">Joined</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-self:flex-start">
+          <button class="btn btn-primary" id="edit-toggle-btn" onclick="toggleEditMode()">✏️ Edit Profile</button>
+          <button class="btn btn-danger hidden" id="save-btn" onclick="saveProfile()">💾 Save Changes</button>
+          <button class="btn btn-outline hidden" id="cancel-btn" onclick="cancelEdit()">Cancel</button>
+          <button class="btn btn-outline" onclick="auth.logout()">Sign Out</button>
         </div>
       </div>
-    </div>
-    <div>
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="filter-chip active" onclick="showTab('reports',this)">My Reports</button>
-        <button class="filter-chip" onclick="showTab('activity',this)">My Activity</button>
+
+      <!-- Tabs -->
+      <div class="tabs" data-section="profile-content">
+        <button class="tab-btn active" data-tab="tab-activity"> Activity</button>
+        <button class="tab-btn" data-tab="tab-my-reports"> My Reports</button>
+        <button class="tab-btn" data-tab="tab-settings">⚙️ Settings</button>
       </div>
-      <div id="tab-reports">
-        <div id="user-reports-list"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div></div>
-      </div>
-      <div id="tab-activity" style="display:none">
+
+      <div id="tab-activity" class="tab-content active">
         <div class="card">
           <div class="card-title">Recent Activity</div>
-          <div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">Activity tracking connects to Supabase audit logs. Demo mode shows static data.</div>
-          <div style="display:flex;flex-direction:column;gap:0">
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px"><span>🔍</span><span style="flex:1">Analyzed tcs-careers-hiring.xyz</span><span style="color:var(--text-muted);font-size:11px">2 days ago</span></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px"><span>🚩</span><span style="flex:1">Reported Career Solutions Ltd</span><span style="color:var(--text-muted);font-size:11px">7 days ago</span></div>
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13px"><span>👍</span><span style="flex:1">Upvoted 3 community posts</span><span style="color:var(--text-muted);font-size:11px">1 week ago</span></div>
+          <div id="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon"></div>
+              <div class="activity-body"><div class="activity-title">Analyzed: "Data Entry Intern at XYZ Solutions"</div><div class="activity-meta">Result: High Risk (87/100) · 2 days ago</div></div>
+              <span class="risk-badge risk-scam" style="align-self:center">Scam</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon"></div>
+              <div class="activity-body"><div class="activity-title">Reported: Career Solutions Ltd — fee demand</div><div class="activity-meta">Status: Confirmed · 5 days ago</div></div>
+              <span class="badge badge-green" style="align-self:center">Confirmed</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon"></div>
+              <div class="activity-body"><div class="activity-title">Domain scan: careers-google-jobs.xyz</div><div class="activity-meta">Risk: Critical — blacklisted · 1 week ago</div></div>
+              <span class="risk-badge risk-critical" style="align-self:center">Blacklisted</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon"></div>
+              <div class="activity-body"><div class="activity-title">Upvoted Rahul S.'s report on Career Solutions</div><div class="activity-meta">Community · 1 week ago</div></div>
+            </div>
           </div>
         </div>
       </div>
+
+      <div id="tab-my-reports" class="tab-content">
+        <div class="card">
+          <div class="card-title flex-between">
+            <span>My Scam Reports</span>
+            <a href="report.html" class="btn btn-danger btn-sm">+ New Report</a>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Company</th><th>Type</th><th>Status</th><th>Date</th><th>Upvotes</th></tr></thead>
+              <tbody id="my-reports-tbody">
+                <tr><td><strong>Career Solutions Ltd</strong></td><td><span class="badge badge-red">Fee Demand</span></td><td><span class="badge badge-green">Confirmed</span></td><td>5d ago</td><td>14</td></tr>
+                <tr><td><strong>DigiWork India</strong></td><td><span class="badge badge-orange">Fake Offer</span></td><td><span class="badge badge-yellow">Pending</span></td><td>2d ago</td><td>3</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-settings" class="tab-content">
+        <div class="card">
+          <div class="card-title">⚙️ Account Settings</div>
+          <div class="form-group">
+            <label class="form-label">Email Notifications</label>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" checked style="accent-color:var(--accent-blue)"> New scam alerts matching my skills</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" checked style="accent-color:var(--accent-blue)"> Updates on my reports</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="accent-color:var(--accent-blue)"> Community replies to my posts</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="accent-color:var(--accent-blue)"> Weekly scam digest</label>
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="form-group">
+            <label class="form-label">Change Password</label>
+            <input type="password" class="form-control mb-2" placeholder="Current password">
+            <input type="password" class="form-control mb-2" placeholder="New password">
+            <input type="password" class="form-control" placeholder="Confirm new password">
+          </div>
+          <button class="btn btn-primary mt-3" onclick="showToast('Settings saved!','success')">Save Settings</button>
+          <hr class="divider">
+          <div>
+            <p style="font-size:13.5px;font-weight:600;color:var(--accent-red);margin-bottom:8px">Danger Zone</p>
+            <button class="btn btn-outline" style="border-color:var(--accent-red);color:var(--accent-red)" onclick="if(confirm('Delete account? This cannot be undone.'))auth.logout()">Delete Account</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 <script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
 <script src="js/nav.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+let editSkills = [];
+let originalUser = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderNavbar();
+  if (!_getUser()) { _showLoginRequired("access this page"); setTimeout(()=>window.location.href="login.html",2000); return; }
+  
+  loadProfile();
+});
+
 function loadProfile() {
   const user = auth.getUser();
   if (!user) { window.location.href = 'login.html'; return; }
-  document.getElementById('profile-avatar').textContent = (user.full_name || 'U')[0].toUpperCase();
-  document.getElementById('profile-name').textContent = user.full_name || 'User';
-  document.getElementById('profile-email').textContent = user.email || '';
-  document.getElementById('profile-bio').textContent = user.bio || 'No bio added yet.';
+  originalUser = { ...user };
+  editSkills = [...(user.skills || [])];
+  renderProfileView(user);
+  updateCompletion(user);
+}
+
+function renderProfileView(user) {
+  const avatar = document.getElementById('profile-avatar-display');
+  if (user.avatar) avatar.innerHTML = `<img src="${user.avatar}" alt="${user.full_name}">`;
+  else avatar.textContent = (user.full_name || 'U')[0].toUpperCase();
+  document.getElementById('display-name').textContent = user.full_name || 'User';
+  document.getElementById('display-role').textContent = user.profession || (user.role === 'admin' ? 'Administrator' : 'Community Member');
+  document.getElementById('display-bio').textContent = user.bio || '';
+  document.getElementById('display-email').textContent = ' ' + (user.email || '—');
+  document.getElementById('display-mobile').textContent = ' ' + (user.mobile || '—');
+  document.getElementById('display-city').textContent = '📍 ' + (user.city || '—');
+  const skillsEl = document.getElementById('display-skills');
+  skillsEl.innerHTML = (user.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('');
   document.getElementById('stat-reports').textContent = user.reports_count || 0;
   document.getElementById('stat-checks').textContent = user.checks_count || 0;
+  document.getElementById('stat-upvotes').textContent = user.upvotes || 0;
+  document.getElementById('stat-joined').textContent = user.created_at ? formatDate(user.created_at) : 'Recently';
+}
+
+function updateCompletion(user) {
+  let score = 0;
+  if (user.full_name) score += 20;
+  if (user.avatar) score += 20;
+  if (user.mobile) score += 15;
+  if (user.bio) score += 15;
+  if (user.skills?.length) score += 15;
+  if (user.city) score += 15;
+  document.getElementById('completion-pct').textContent = score + '%';
+  document.getElementById('completion-fill').style.width = score + '%';
+  document.getElementById('completion-hint').textContent = score < 100 ? 'Add more details to complete your profile' : '🎉 Profile complete!';
+}
+
+function toggleEditMode() {
+  const user = auth.getUser();
+  document.body.classList.add('editing');
+  document.getElementById('edit-toggle-btn').classList.add('hidden');
+  document.getElementById('save-btn').classList.remove('hidden');
+  document.getElementById('cancel-btn').classList.remove('hidden');
   document.getElementById('edit-name').value = user.full_name || '';
-  document.getElementById('edit-bio').value = user.bio || '';
+  document.getElementById('edit-mobile').value = user.mobile || '';
   document.getElementById('edit-city').value = user.city || '';
-  loadUserReports(user.user_id);
+  document.getElementById('edit-bio').value = user.bio || '';
+  // Render edit skills
+  editSkills = [...(user.skills || [])];
+  renderEditSkills();
 }
-async function loadUserReports(userId) {
-  try {
-    const reports = await DB.getUserReports(userId);
-    const el = document.getElementById('user-reports-list');
-    if (!reports.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No reports submitted yet. <a href="report.html" class="link">Report a scam</a></div>'; return; }
-    const sevColor = { critical:'badge-red', high:'badge-orange', medium:'badge-yellow', low:'badge-gray' };
-    el.innerHTML = reports.map(r => `
-      <div class="card" style="margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <strong>${r.company_name}</strong>
-          <span class="badge ${sevColor[r.severity]||'badge-gray'}" style="font-size:10px">${r.severity}</span>
-          <span class="badge ${r.status==='confirmed'?'badge-green':r.status==='rejected'?'badge-gray':'badge-yellow'}" style="font-size:10px">${r.status}</span>
-          <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">${new Date(r.reported_at).toLocaleDateString('en-IN')}</span>
-        </div>
-        <div style="font-size:12.5px;color:var(--text-secondary)">${r.description.slice(0,120)}${r.description.length>120?'...':''}</div>
-      </div>`).join('');
-  } catch(e) {
-    document.getElementById('user-reports-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Connect Supabase to load your reports</div>';
-  }
+
+function cancelEdit() {
+  document.body.classList.remove('editing');
+  document.getElementById('edit-toggle-btn').classList.remove('hidden');
+  document.getElementById('save-btn').classList.add('hidden');
+  document.getElementById('cancel-btn').classList.add('hidden');
 }
-function showTab(tab, btn) {
-  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-reports').style.display = tab === 'reports' ? 'block' : 'none';
-  document.getElementById('tab-activity').style.display = tab === 'activity' ? 'block' : 'none';
+
+function addEditSkill() {
+  const input = document.getElementById('edit-skill-input');
+  const val = input.value.trim();
+  if (!val || editSkills.includes(val)) { input.value = ''; return; }
+  editSkills.push(val); input.value = '';
+  renderEditSkills();
 }
-function showEdit() { document.getElementById('edit-form').style.display = 'block'; }
+
+function renderEditSkills() {
+  const preview = document.getElementById('edit-skills-preview');
+  preview.innerHTML = editSkills.map(s => `<span class="skill-tag" style="cursor:pointer" onclick="removeEditSkill('${s}')">${s} <span style="opacity:0.6">✕</span></span>`).join('');
+}
+
+function removeEditSkill(s) { editSkills = editSkills.filter(x => x !== s); renderEditSkills(); }
+
 function saveProfile() {
   const user = auth.getUser();
-  if (!user) return;
   user.full_name = document.getElementById('edit-name').value.trim() || user.full_name;
-  user.bio = document.getElementById('edit-bio').value.trim();
+  user.mobile = document.getElementById('edit-mobile').value.trim();
   user.city = document.getElementById('edit-city').value.trim();
-  localStorage.setItem('ss_user', JSON.stringify(user));
-  showToast('Profile updated', 'success');
-  document.getElementById('edit-form').style.display = 'none';
-  loadProfile();
+  user.bio = document.getElementById('edit-bio').value.trim();
+  user.skills = [...editSkills];
+  localStorage.setItem('gr_user', JSON.stringify(user));
+  renderProfileView(user); updateCompletion(user); cancelEdit();
+  showToast('Profile updated!', 'success');
 }
-document.addEventListener('DOMContentLoaded', () => { initTheme(); renderNavbar(); loadProfile(); });
+
+function updateAvatar(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const user = auth.getUser();
+    user.avatar = e.target.result;
+    localStorage.setItem('gr_user', JSON.stringify(user));
+    const avatar = document.getElementById('profile-avatar-display');
+    avatar.innerHTML = `<img src="${e.target.result}" alt="Avatar">`;
+    updateCompletion(user);
+    showToast('Profile photo updated!', 'success');
+  };
+  reader.readAsDataURL(file);
+}
 </script>
 </body></html>
-

@@ -24,3 +24,11 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY or not SUPABASE_SERVICE_KEY:
 
 supabase =create_client(SUPABASE_URL,SUPABASE_SERVICE_KEY)
 # supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+def ping():
+    """Check if Supabase is reachable."""
+    try:
+        supabase.table("admin_users").select("id").limit(1).execute()
+        return True
+    except Exception:
+        return False

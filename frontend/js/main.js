@@ -1,13 +1,12 @@
 // ============================================================
-// main.js – ScamShield v5 Core Utilities
-// Handles: API calls, Auth, Theme, Toast, Sidebar interactions
+// main.js – ScamShield Core Utilities
 // ============================================================
-const BASE_URL = "";
+const BASE_URL = "http://localhost:8000";
 
 // ── API Client ──
 const api = {
   async request(method, path, body = null) {
-    const token = localStorage.getItem('ss_token');
+    const token = localStorage.getItem('gr_token');
     const opts = { method, headers: { "Content-Type": "application/json" } };
     if (token) opts.headers["Authorization"] = "Bearer " + token;
     if (body) opts.body = JSON.stringify(body);
@@ -20,49 +19,71 @@ const api = {
       throw e;
     }
   },
-  get: p => api.request("GET", p),
-  post: (p, b) => api.request("POST", p, b),
-  put: (p, b) => api.request("PUT", p, b),
-  delete: p => api.request("DELETE", p),
+  get:    p    => api.request("GET",    p),
+  post:   (p,b)=> api.request("POST",   p, b),
+  put:    (p,b)=> api.request("PUT",    p, b),
+  delete: p    => api.request("DELETE", p),
 };
 
 // ── Theme ──
 function initTheme() {
-  const saved = localStorage.getItem('ss_theme') || 'dark';
+  const saved = localStorage.getItem('gr_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
+  // updateThemeBtn is safe to call even before nav renders – it queries DOM at call time
   updateThemeBtn(saved);
 }
+
 function toggleTheme() {
-  const curr = document.documentElement.getAttribute('data-theme');
+  const curr = document.documentElement.getAttribute('data-theme') || 'dark';
   const next = curr === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('ss_theme', next);
+  localStorage.setItem('gr_theme', next);
   updateThemeBtn(next);
 }
+
 function updateThemeBtn(theme) {
+  const isDark = theme === 'dark';
   document.querySelectorAll('.theme-toggle').forEach(btn => {
     const icon = btn.querySelector('.theme-toggle-icon');
     const text = btn.querySelector('.theme-toggle-text');
-    if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
-    if (text) text.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    // icon-only buttons: just show ☀ (go light) or ☾ (go dark)
+    if (icon) icon.textContent = isDark ? '☀' : '☾';
+    if (text) text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    btn.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
   });
 }
 
 // ── Auth ──
 const auth = {
-  getUser() { try { return JSON.parse(localStorage.getItem('ss_user') || 'null'); } catch { return null; } },
-  isLoggedIn() { return !!localStorage.getItem('ss_token'); },
-  isAdmin() { const u = this.getUser(); return u?.role === 'admin'; },
+  getUser()    { try { return JSON.parse(localStorage.getItem('gr_user') || 'null'); } catch { return null; } },
+  isLoggedIn() { return !!localStorage.getItem('gr_token'); },
+  isAdmin()    { const u = this.getUser(); return u?.role === 'admin'; },
   logout() {
-    localStorage.removeItem('ss_token');
-    localStorage.removeItem('ss_user');
+    localStorage.removeItem('gr_token');
+    localStorage.removeItem('gr_user');
     window.location.href = 'login.html';
   },
 };
 
-// ── Sidebar init ──
+// ── Guards ──
+function requireAdmin() {
+  const user = auth.getUser();
+  if (!user || user.role !== 'admin') {
+    showToast('Admin access required', 'error');
+    setTimeout(() => window.location.href = 'login.html', 800);
+    return false;
+  }
+  return true;
+}
+
+function requireUser() {
+  const user = auth.getUser();
+  if (user && user.role === 'admin') window.location.href = 'admin.html';
+}
+
+// ── Sidebar init (legacy sidebar pages) ──
 function initSidebar() {
-  const toggle = document.querySelector('.sidebar-toggle');
+  const toggle  = document.querySelector('.sidebar-toggle');
   const sidebar = document.querySelector('.sidebar');
   if (toggle && sidebar) {
     toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
@@ -87,7 +108,11 @@ function initSidebar() {
 }
 
 // ── Toast ──
-const toastEl = () => { let c = document.querySelector('.toast-container'); if (!c) { c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); } return c; };
+const toastEl = () => {
+  let c = document.querySelector('.toast-container');
+  if (!c) { c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); }
+  return c;
+};
 function showToast(msg, type = "info", duration = 4000) {
   const t = document.createElement('div');
   t.className = `toast ${type}`;
@@ -96,10 +121,21 @@ function showToast(msg, type = "info", duration = 4000) {
   setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.4s'; setTimeout(() => t.remove(), 400); }, duration);
 }
 
-// ── Risk Helpers ──
-function getRiskClass(r) { return { LOW: "risk-low", MEDIUM: "risk-medium", HIGH: "risk-high", CONFIRMED_SCAM: "risk-scam" }[r] || "risk-low"; }
-function getRiskEmoji(r) { return { LOW: "✅", MEDIUM: "⚠️", HIGH: "❌", CONFIRMED_SCAM: "🚫" }[r] || "❓"; }
-function getRiskLabel(r) { return { LOW: "Low Risk", MEDIUM: "Medium Risk", HIGH: "High Risk", CONFIRMED_SCAM: "Confirmed Scam" }[r] || "Unknown"; }
+// ── Modal helpers ──
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) {
+  if (id) document.getElementById(id)?.classList.remove('open');
+  else document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+}
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay'))   e.target.classList.remove('open');
+  if (e.target.classList.contains('modal-close'))     e.target.closest('.modal-overlay')?.classList.remove('open');
+});
+
+// ── Risk helpers ──
+function getRiskClass(r) { return { LOW:"risk-low", MEDIUM:"risk-medium", HIGH:"risk-high", CONFIRMED_SCAM:"risk-scam" }[r] || "risk-low"; }
+function getRiskEmoji(r) { return { LOW:"✅", MEDIUM:"⚠️", HIGH:"❌", CONFIRMED_SCAM:"🚫" }[r] || "❓"; }
+function getRiskLabel(r) { return { LOW:"Low Risk", MEDIUM:"Medium Risk", HIGH:"High Risk", CONFIRMED_SCAM:"Confirmed Scam" }[r] || "Unknown"; }
 
 function renderScoreBar(containerId, score, riskLevel) {
   const el = document.getElementById(containerId); if (!el) return;
@@ -107,28 +143,7 @@ function renderScoreBar(containerId, score, riskLevel) {
   el.innerHTML = `<div style="width:100%;height:8px;background:var(--bg-input);border-radius:4px;overflow:hidden"><div style="height:100%;width:${score}%;background:${color};border-radius:4px;transition:width 1s ease"></div></div>`;
 }
 
-// ── Admin Guard ──
-// Call on admin pages to redirect non-admins
-function requireAdmin() {
-  const user = auth.getUser();
-  if (!user || user.role !== 'admin') {
-    showToast('Admin access required', 'error');
-    setTimeout(() => window.location.href = 'login.html', 1000);
-    return false;
-  }
-  return true;
-}
-
-// ── User Guard ──
-// Redirect logged-in admin away from user pages
-function requireUser() {
-  const user = auth.getUser();
-  if (user && user.role === 'admin') {
-    window.location.href = 'admin.html';
-  }
-}
-
-// Init on load
+// ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initSidebar();

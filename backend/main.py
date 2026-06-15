@@ -31,6 +31,14 @@ app.include_router(routes.router, prefix="/api")
 app.include_router(analyze.router, prefix="/api")
 app.include_router(domains.router, prefix="/api")
 
+
+#health check endpoint
+@app.get("/health")
+async def health():
+    return {
+        "status": "ok"
+    }
+
 # frontend routes
 @app.get("/")
 async def serve_home():
@@ -43,5 +51,4 @@ async def serve_frontend(file_path: str):
     if file.exists() and file.is_file():
         return FileResponse(file)
 
-    return FileResponse(FRONTEND_DIR / "index.html")
-
+    return FileResponse(FRONTEND_DIR / "404.html")

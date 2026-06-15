@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Redirecting…</title>
-  <link rel="stylesheet" href="css/style.css">
-  <meta http-equiv="refresh" content="1;url=admin.html">
+  <meta http-equiv="refresh" content="0;url=checker.html">
+  <title>ScamShield – Redirecting…</title>
+  <script>
+    // dashboard is now part of the unified checker flow
+    const map = {
+      'domain-scanner': '?mode=url',
+      'recruiter':      '?mode=email',
+      'compare':        '?compare=1',
+      'offer-letter':   '?mode=offer',
+      'dashboard':      ''
+    };
+    const key = 'dashboard';
+    window.location.replace('checker.html' + (map[key] || ''));
+  </script>
 </head>
-<body>
-<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#8b949e">
-  <div style="text-align:center"><div style="font-size:3rem;margin-bottom:12px">🛡️</div><p>Redirecting to admin dashboard…</p></div>
-</div>
-<script>
-  const u = JSON.parse(localStorage.getItem('ss_user') || 'null');
-  window.location.href = (u?.role === 'admin') ? 'admin.html' : 'index.html';
-</script>
-</body></html>
+<body><p>Redirecting to <a href="checker.html">ScamShield Checker</a>…</p></body>
+</html>

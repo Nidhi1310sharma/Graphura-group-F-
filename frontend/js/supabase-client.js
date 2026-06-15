@@ -11,8 +11,11 @@
 // ============================================================
 
 // ── YOUR SUPABASE CREDENTIALS (replace these) ──
-const SUPABASE_URL  = 'https://YOUR_PROJECT_REF.supabase.co';
-const SUPABASE_ANON = 'YOUR_ANON_PUBLIC_KEY';
+const SUPABASE_URL  = 'https://qvsdepksjqkjpliovvty.supabase.co';
+// Backend API URL – change for production
+const API_BASE = 'http://localhost:8000';
+
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2c2RlcGtzanFranBsaW92dnR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTg3NDIsImV4cCI6MjA5NjI3NDc0Mn0.XFsh4M0I3EdDpmUzdoS9ngCuIfx1tIekwH2dNhsojB4';
 
 // Create the Supabase client (available globally as `supabase`)
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;

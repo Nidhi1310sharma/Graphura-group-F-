@@ -49,7 +49,7 @@ def cleanup_report_upload(
 
 """create a report of a scam company, which will be stored in the user_reports table. 
 The report will be associated with the user who created it, and it will include details about the company, 
-the job title (if applicable), a description of the scam, and any relevant metadata such as the type of scam and its severity. 
+the job title (if applicable), a description of the scam, and any relevant metadata such as the type of scam. 
 The report will initially be marked as "pending" for review by moderators."""
 
 @router.post("/")
@@ -59,7 +59,6 @@ async def create_report(
     job_title: Optional[str] = Form(None),
     description: str = Form(...),
     scam_type: str = Form(...),
-    severity: str = Form(...),
     files: Optional[List[UploadFile]] = File(None),
     urls: Optional[List[str]] = Form(None),
 ):
@@ -103,7 +102,6 @@ async def create_report(
             "job_title": job_title,
             "description": description,
             "scam_type": scam_type,
-            "severity": severity,
             "status": "pending",
             "created_at": created_at
         })
@@ -254,7 +252,7 @@ async def get_my_reports(current_user: dict = Depends(get_current_user)):
 
     response = (
         supabase.table("user_reports")
-        .select("report_id, company_name, job_title, scam_type, severity, status, created_at")
+        .select("report_id, company_name, job_title, scam_type, status, created_at")
         .eq("user_id", str(user_id))
         .order("created_at", desc=True)
         .execute()

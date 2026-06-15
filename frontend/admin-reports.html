@@ -2,94 +2,208 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reports – ScamShield Admin</title>
+  <title>Manage Reports – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
-    <nav class="admin-nav">
-      <a href="admin.html"><span>📊</span> Overview</a>
-      <a href="admin-reports.html" class="active" class="active" class="active"><span>🚩</span> Reports</a>
-      <a href="admin-community.html" class="reportscommunity"><span>👥</span> Community</a>
-      <a href="admin-listings.html" class="reportslistings"><span>💼</span> Listings</a>
-      <div class="admin-nav-group">Knowledge Base</div>
-      <a href="admin-companies.html" class="reportscompanies"><span>🏢</span> Companies</a>
-      <a href="admin-domains.html" class="reportsdomains"><span>🌐</span> Domains</a>
-      <a href="admin-indicators.html" class="reportsindicators"><span>⚡</span> Scam Indicators</a>
-      <div class="admin-nav-group">System</div>
-      <a href="admin-users.html" class="reportsadmins"><span>👤</span> Admins & Logs</a>
-    </nav>
-    <div class="admin-sidebar-footer">
-      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
-    </div>
-  </aside>
-  <div class="admin-main"><div class="admin-page">
-    
-      <div class="page-header"><h1>🚩 Reports</h1><p>Review, confirm, or reject user-submitted scam reports</p></div>
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <button class="filter-chip active" onclick="setFilter(null,this)">All</button>
-        <button class="filter-chip" onclick="setFilter(\"pending\",this)">⏳ Pending</button>
-        <button class="filter-chip" onclick="setFilter(\"under_review\",this)">🔍 Under Review</button>
-        <button class="filter-chip" onclick="setFilter(\"confirmed\",this)">✅ Confirmed</button>
-        <button class="filter-chip" onclick="setFilter(\"rejected\",this)">❌ Rejected</button>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+    </button>
+      <div class="page-header"><h1> Manage Reports</h1><p>Review, approve, and moderate community scam reports</p></div>
+
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card" style="--stat-accent:var(--accent-yellow)"><div class="stat-value">67</div><div class="stat-label">Pending Review</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-green)"><div class="stat-value">148</div><div class="stat-label">Confirmed</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-gray, #484f58)"><div class="stat-value">21</div><div class="stat-label">Rejected</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-red)"><div class="stat-value">89</div><div class="stat-label">Blacklisted</div></div>
       </div>
-      <div class="card">
+
+      <div class="card mt-4">
+        <div class="flex-between mb-3" style="gap:10px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" class="form-control" placeholder="Search reports..." style="max-width:250px">
+            <select class="form-control" style="max-width:160px" id="report-status-filter" onchange="filterReports()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <select class="form-control" style="max-width:180px">
+              <option value="">All Scam Types</option>
+              <option>Fee Demand</option>
+              <option>Phishing</option>
+              <option>Fake Company</option>
+              <option>Impersonation</option>
+            </select>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="showToast('Exporting reports...','info')">️ Export CSV</button>
+        </div>
         <div class="table-wrap">
-          <table><thead><tr><th>Report ID</th><th>Company</th><th>Job Title</th><th>Severity</th><th>Status</th><th>Reporter</th><th>Date</th><th>Actions</th></tr></thead>
-          <tbody id="reports-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+          <table id="reports-table">
+            <thead><tr><th>Company</th><th>Type</th><th>Description</th><th>Reporter</th><th>Date</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="reports-tbody">
+              <tr data-status="pending">
+                <td><strong>Career Solutions Ltd</strong></td>
+                <td><span class="badge badge-red">Fee Demand</span></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Asked for ₹5000 security deposit after interview">Asked for ₹5000 security deposit...</td>
+                <td>Rahul S.</td><td>7d ago</td>
+                <td><span class="badge badge-red">Critical</span></td>
+                <td><span class="badge badge-yellow">Pending</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="markUnderReview(this)" title="Mark Under Review">📋</button><button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button></div></td>
+              </tr>
+              <tr data-status="pending">
+                <td><strong>DigiWork India</strong></td>
+                <td><span class="badge badge-orange">Fake Offer</span></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Promised ₹800/hr WFH, no payment received">Promised ₹800/hr WFH, no payment...</td>
+                <td>Priya M.</td><td>3d ago</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td><span class="badge badge-yellow">Pending</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="markUnderReview(this)" title="Mark Under Review">📋</button><button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button></div></td>
+              </tr>
+              <tr data-status="pending">
+                <td><strong>TCS Impersonator</strong></td>
+                <td><span class="badge badge-purple">Impersonation</span></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fake TCS HR from tcs-hr@gmail.com</td>
+                <td>Ankit R.</td><td>1d ago</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td><span class="badge badge-yellow">Pending</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="markUnderReview(this)" title="Mark Under Review">📋</button><button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button></div></td>
+              </tr>
+              <tr data-status="confirmed">
+                <td><strong>GlobalWork</strong></td>
+                <td><span class="badge badge-red">Fee Demand</span></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Kit fee of ₹1500 required before start</td>
+                <td>Neha S.</td><td>2wk ago</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td><span class="badge badge-green">Confirmed</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)">Revoke</button></div></td>
+              </tr>
+              <tr data-status="rejected">
+                <td><strong>Freelance Hub</strong></td>
+                <td><span class="badge badge-yellow">Suspicious</span></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Slow payment but legitimate company</td>
+                <td>Unknown</td><td>3wk ago</td>
+                <td><span class="badge badge-yellow">Low</span></td>
+                <td><span class="badge badge-gray">Rejected</span></td>
+                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button></div></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-
-  </div></div>
+    </div>
+  </div>
 </div>
+
+<!-- View Report Modal -->
+<div class="modal-overlay" id="view-report-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header"><div class="modal-title"> Report Details</div><button class="modal-close">✕</button></div>
+    <div id="report-modal-body"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-outline" onclick="closeModal('view-report-modal')">Close</button>
+      <button class="btn btn-primary" onclick="approveFromModal()"> Approve & Blacklist</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = auth.getUser();
+  if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
+  requireAdmin();
+  renderSidebar('admin-reports.html', true);
+  document.getElementById('page-title').textContent = 'Manage Reports';
+});
 
-let currentFilter = null;
-async function loadReports(status) {
-  try {
-    const reports = await DB.getAllReports(status ? { status } : {});
-    const tbody = document.getElementById("reports-tbody");
-    const sevColor = { critical:"badge-red", high:"badge-orange", medium:"badge-yellow", low:"badge-gray" };
-    const stColor = { pending:"badge-yellow", under_review:"badge-blue", confirmed:"badge-green", rejected:"badge-gray" };
-    tbody.innerHTML = reports.map(r => `
-      <tr>
-        <td class="mono" style="font-size:11px">${r.report_id?.slice(0,8)||"—"}…</td>
-        <td><strong>${r.company_name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${r.domain||""}</span></td>
-        <td>${r.job_title||"—"}</td>
-        <td><span class="badge ${sevColor[r.severity]||"badge-gray"}">${r.severity||"medium"}</span></td>
-        <td><span class="badge ${stColor[r.status]||"badge-gray"}">${r.status}</span></td>
-        <td style="font-size:12px">${r.users?.full_name||"—"}</td>
-        <td style="font-size:12px">${new Date(r.reported_at).toLocaleDateString("en-IN")}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="setStatus(\"${r.report_id}\",\"under_review\",this)">🔍 Review</button>
-          <button class="btn btn-primary btn-sm" onclick="setStatus(\"${r.report_id}\",\"confirmed\",this)">✓ Confirm</button>
-          <button class="btn btn-ghost btn-sm" onclick="setStatus(\"${r.report_id}\",\"rejected\",this)">✗ Reject</button>
-        </td>
-      </tr>`).join("") || "<tr><td colspan=\"8\" style=\"text-align:center;color:var(--text-muted)\">No reports</td></tr>";
-  } catch(e) { console.error(e); }
+function filterReports() {
+  const status = document.getElementById('report-status-filter').value;
+  document.querySelectorAll('#reports-tbody tr').forEach(row => {
+    row.style.display = (!status || row.dataset.status === status) ? '' : 'none';
+  });
 }
-async function setStatus(id, status, btn) {
-  try {
-    await DB.updateReportStatus(id, status);
-    await DB.logAction({ admin_id: null, action: status === "confirmed" ? "CONFIRM_REPORT" : status === "rejected" ? "REJECT_REPORT" : "REVIEW_REPORT", target_type: "REPORT", target_id: id });
-    showToast("Report marked as " + status, "success");
-    btn.closest("tr").style.opacity = "0.5";
-    setTimeout(() => loadReports(currentFilter), 800);
-  } catch(e) { showToast("Updated (demo)", "info"); btn.closest("tr").style.opacity="0.5"; }
-}
-function setFilter(status, btn) {
-  currentFilter = status;
-  document.querySelectorAll(".filter-chip").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  loadReports(status);
-}
-document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadReports(); });
 
+function markUnderReview(btn) {
+  const row = btn.closest('tr');
+  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-blue'; b.textContent = 'Under Review'; });
+  row.dataset.status = 'under_review';
+  const btnWrap = btn.closest('div');
+  btnWrap.innerHTML = `
+    <button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button>
+    <button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button>
+    <button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button>`;
+  showToast('Report marked as Under Review', 'info');
+  logAdminAction('MARK_UNDER_REVIEW', row.cells[0]?.textContent || 'Report');
+}
+
+function approveReport(btn) {
+  const row = btn.closest('tr');
+  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-green'; b.textContent = 'Confirmed'; });
+  row.dataset.status = 'confirmed';
+  btn.closest('div').innerHTML = `<button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><span class="badge badge-green" style="margin-left:4px">✓ Confirmed</span>`;
+  showToast('Report confirmed. Company flagged in knowledge base.', 'success');
+  logAdminAction('CONFIRM_SCAM', row.cells[0]?.textContent || 'Report');
+}
+
+function rejectReport(btn) {
+  const row = btn.closest('tr');
+  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-gray'; b.textContent = 'Rejected'; });
+  row.dataset.status = 'rejected';
+  btn.closest('div').innerHTML = `<button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button>`;
+  showToast('Report rejected', 'info');
+  logAdminAction('REJECT_REPORT', row.cells[0]?.textContent || 'Report');
+}
+
+function logAdminAction(action, target) {
+  // Persist to localStorage for audit log demo
+  try {
+    const logs = JSON.parse(localStorage.getItem('ss_audit_logs') || '[]');
+    const user = _getUser();
+    logs.unshift({ ts: new Date().toISOString(), admin: user?.full_name || 'Admin', action, target });
+    localStorage.setItem('ss_audit_logs', JSON.stringify(logs.slice(0, 50)));
+  } catch(_) {}
+}
+
+function viewReport(btn) {
+  const row = btn.closest('tr');
+  const cells = row.querySelectorAll('td');
+  const status = row.dataset.status || 'pending';
+  const isPending = status === 'pending';
+  const isUnderReview = status === 'under_review';
+  document.getElementById('report-modal-body').innerHTML = `
+    <div class="alert alert-warning"><span class="alert-icon">⚠️</span><span>Review this report carefully before taking action</span></div>
+    <div style="display:grid;gap:8px;font-size:13px">
+      <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Company</span><strong>${cells[0]?.textContent}</strong></div>
+      <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Scam Type</span><span>${cells[1]?.textContent?.trim()}</span></div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Description</span><p style="margin-top:4px;color:var(--text-primary)">${cells[2]?.getAttribute('title') || cells[2]?.textContent}</p></div>
+      <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Reporter</span><span>${cells[3]?.textContent}</span></div>
+      <div class="flex-between" style="padding:6px 0"><span class="text-muted">Date</span><span>${cells[4]?.textContent}</span></div>
+    </div>
+    ${isPending || isUnderReview ? `
+    <div style="display:flex;gap:8px;margin-top:16px">
+      ${isPending ? `<button class="btn btn-outline btn-sm" onclick="closeModal('view-report-modal');markUnderReview(document.querySelector('[data-status=pending] .btn-primary'))">Mark Under Review</button>` : ''}
+      <button class="btn btn-primary" onclick="approveFromModal()" style="flex:1">✓ Confirm Scam</button>
+      <button class="btn btn-outline" onclick="rejectFromModal()" style="color:var(--accent-red)">✗ Reject</button>
+    </div>` : ''}`;
+  openModal('view-report-modal');
+}
+
+function approveFromModal() {
+  closeModal('view-report-modal');
+  showToast('Report confirmed from detail view', 'success');
+  logAdminAction('CONFIRM_SCAM', 'Report (modal)');
+}
+
+function rejectFromModal() {
+  closeModal('view-report-modal');
+  showToast('Report rejected', 'info');
+  logAdminAction('REJECT_REPORT', 'Report (modal)');
+}
 </script>
 </body></html>
