@@ -13,17 +13,21 @@ router = APIRouter(prefix="/community", tags=["Community"])
 @router.post("/posts")
 async def create_post(data: CreatePostRequest, current_user: dict = Depends(get_current_user)):
     try:
+        post_data = {
+            "user_id": str(current_user.get("user_id")),
+            "post_title": data.post_title,
+            "content": data.content,
+            "post_type": data.post_type,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        if data.company is not None:
+            post_data["company"] = data.company
+        if data.domain is not None:
+            post_data["domain"] = data.domain
+
         response = (
             supabase.table("community_posts")
-            .insert({
-                "user_id": str(current_user.get("user_id")),
-                "post_title": data.post_title,
-                "content": data.content,
-                "post_type": data.post_type,
-                "created_at": datetime.now(
-                    timezone.utc
-                ).isoformat()
-            })
+            .insert(post_data)
             .execute()
         )
 
@@ -39,7 +43,7 @@ async def create_post(data: CreatePostRequest, current_user: dict = Depends(get_
 
 # to retrieve all posts in the community forum, with optional filtering by post type (e.g., discussion, question, report) (and pagination support not yet implemented).
 @router.get("/posts")
-async def get_all_posts(filter: Optional[str] = None):
+async def get_all_posts(filter: Optional[str] = None, search: Optional[str] = None):
     """Return community posts filtered by `filter`.
 
     Supported filters (case-insensitive):
@@ -52,76 +56,43 @@ async def get_all_posts(filter: Optional[str] = None):
     """
 
     f = filter.strip().lower() if filter and filter.strip() else None
+    s = search.strip() if search and search.strip() else None
 
-    # map straightforward filters to DB queries
+    base_query = supabase.table("community_posts").select("*, users(full_name, avatar_url), community_votes(vote_type)").eq("status", "active")
+
+    # add optional search
+    if s:
+        base_query = base_query or(f"post_title.ilike.%{s}%,content.ilike.%{s}%,company.ilike.%{s}%,domain.ilike.%{s}%")
+
     if f in ("discussion", "discussions"):
-        response = (
-            supabase.table("community_posts")
-            .select("*")
-            .eq("status", "active")
-            .eq("post_type", "discussion")
-            .order("created_at", desc=True)
-            .execute()
-        )
+        response = base_query.eq("post_type", "discussion").order("created_at", desc=True).execute()
         posts = response.data or []
 
     elif f in ("question", "questions"):
-        response = (
-            supabase.table("community_posts")
-            .select("*")
-            .eq("status", "active")
-            .eq("post_type", "question")
-            .order("created_at", desc=True)
-            .execute()
-        )
+        response = base_query.eq("post_type", "question").order("created_at", desc=True).execute()
+        posts = response.data or []
+
+    elif f and ("warning" in f or f in ("warning", "warnings")):
+        response = base_query.eq("post_type", "warning").order("created_at", desc=True).execute()
         posts = response.data or []
 
     elif f and ("scam" in f or f in ("report", "reports", "scam reports", "scam_report", "scam_reports")):
-        response = (
-            supabase.table("community_posts")
-            .select("*")
-            .eq("status", "active")
-            .eq("post_type", "report")
-            .order("created_at", desc=True)
-            .execute()
-        )
+        response = base_query.eq("post_type", "report").order("created_at", desc=True).execute()
         posts = response.data or []
 
     elif f == "popular":
-        # fetch all active posts then compute net votes per post and sort
-        response = (
-            supabase.table("community_posts")
-            .select("*")
-            .eq("status", "active")
-            .execute()
-        )
+        response = base_query.execute()
         posts = response.data or []
-
-        # attach net_votes to each post
         for p in posts:
-            votes_resp = (
-                supabase.table("community_votes")
-                .select("vote_type")
-                .eq("post_id", p.get("post_id"))
-                .execute()
-            )
             net = 0
-            if votes_resp.data:
-                for v in votes_resp.data:
+            if p.get("community_votes"):
+                for v in p["community_votes"]:
                     net += v.get("vote_type", 0)
             p["net_votes"] = net
-
         posts.sort(key=lambda x: x.get("net_votes", 0), reverse=True)
 
     else:
-        # default / recent
-        response = (
-            supabase.table("community_posts")
-            .select("*")
-            .eq("status", "active")
-            .order("created_at", desc=True)
-            .execute()
-        )
+        response = base_query.order("created_at", desc=True).execute()
         posts = response.data or []
 
     # return posts (may be empty) so frontend can render an empty feed instead of receiving 404
@@ -204,12 +175,12 @@ async def get_comments(post_id: str):
         )
     response=(
         supabase.table("community_comments")
-        .select("*")
+        .select("*, users(full_name, avatar_url)")
         .eq("post_id", post_id)
         .order("created_at", desc=False)
         .execute()
     )
-    return response.data
+    return response.data or []
 
 
 #vote on a post, allowing users to upvote or downvote posts in the community forum. 
