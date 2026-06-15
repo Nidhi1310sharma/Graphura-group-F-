@@ -291,7 +291,7 @@ SECRET_KEY=
 Run backend:
 
 ```bash
-uvicorn main:app --reload --port 8000
+python -m uvicorn backend.main:app --reload
 ```
 
 Backend API:
@@ -314,13 +314,13 @@ Option 2: Use local server
 
 ```bash
 cd frontend
-python -m http.server 5500
+python -m http.server 3000
 ```
 
 Visit:
 
 ```text
-http://localhost:5500
+http://localhost:3000
 ```
 
 ---
