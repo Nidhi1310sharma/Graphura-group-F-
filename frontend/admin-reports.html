@@ -119,26 +119,26 @@
             </select>
             <select class="form-control" style="max-width:180px" id="scam-type-filter" onchange="filterReports()">
               <option value="">All Scam Types</option>
-              <option>Fee Demand</option>
-              <option>Phishing</option>
-              <option>Fake Company</option>
-              <option>Impersonation</option>
-              <option>Fake Offer</option>
-              <option>Suspicious</option>
+              <option value="fee demand">Fee Demand</option>
+              <option value="phishing">Phishing</option>
+              <option value="fake company">Fake Company</option>
+              <option value="impersonation">Impersonation</option>
+              <option value="fake offer">Fake Offer</option>
+              <option value="suspicious">Suspicious</option>
+              <option value="other">Other</option>
             </select>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="showToast('Exporting reports...','info')">Export CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="exportReportsCSV()">📥 Export CSV</button>
         </div>
         <div class="table-wrap">
-          <table id="reports-table">
+          <table class="table">
             <thead>
               <tr><th>Company</th><th>Job Title</th><th>Scam Type</th><th>Status</th><th>Date</th><th>Actions</th></tr>
             </thead>
             <tbody id="reports-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:30px">Loading...</div> -
-              </tr>
+              <tr><td colspan="6" style="text-align:center;padding:30px">Loading...</td></tr>
             </tbody>
-        
+          </table>
         </div>
       </div>
     </div>
@@ -188,37 +188,131 @@ async function loadReports() {
     });
     if (res.ok) {
       allReports = await res.json();
+      console.log('Reports loaded:', allReports);
       renderReportsTable(allReports);
+    } else {
+      console.error('Failed to load reports:', await res.text());
     }
   } catch(e) { console.error('Error loading reports:', e); }
 }
 
 function renderReportsTable(reports) {
   const tbody = document.getElementById('reports-tbody');
-  if (!reports.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px">No reports found</div> -</tr>';
+  if (!reports || !reports.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No reports found</td></tr>';
     return;
   }
   tbody.innerHTML = reports.map(r => `
-    <tr data-status="${r.status}" data-report-id="${r.report_id}" class="report-row" onclick="openReportDrawer('${r.report_id}')">
-      <td><strong>${escapeHtml(r.company_name)}</strong></div> -
-      <td class="text-secondary mono">${escapeHtml(r.job_title || '—')}</div> -
-      <td class="text-secondary mono"><span class="badge badge-red">${escapeHtml(r.scam_type || 'Scam')}</span></div> -
-      
-      <td class="text-secondary mono"><span class="badge ${getStatusBadgeClass(r.status)}">${r.status}</span></div> -
-      <td class="text-secondary mono">${new Date(r.created_at).toLocaleDateString()}</div> -
-      <td class="text-secondary mono"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openReportDrawer('${r.report_id}')">View</button></div> -
+    <tr data-status="${r.status || 'pending'}" data-report-id="${r.report_id}" class="report-row" onclick="openReportDrawer('${r.report_id}')">
+      <td><strong>${escapeHtml(r.company_name || 'Unknown')}</strong></td>
+      <td class="text-secondary mono">${escapeHtml(r.job_title || '—')}</td>
+      <td><span class="badge badge-red">${escapeHtml(r.scam_type || 'Scam')}</span></td>
+      <td><span class="badge ${getStatusBadgeClass(r.status)}">${r.status || 'pending'}</span></td>
+      <td class="text-secondary mono">${r.created_at ? new Date(r.created_at).toLocaleDateString() : 'N/A'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openReportDrawer('${r.report_id}')">View</button></td>
     </tr>
   `).join('');
 }
 
 function getStatusBadgeClass(status) {
+  if (!status) return 'badge-yellow';
   if (status === 'confirmed') return 'badge-green';
   if (status === 'rejected') return 'badge-gray';
   if (status === 'reviewed') return 'badge-blue';
   return 'badge-yellow';
 }
 
+// ============ EXPORT CSV ============
+async function exportReportsCSV() {
+  try {
+    const token = localStorage.getItem('gr_token');
+    
+    // Show loading state
+    const btn = document.querySelector('.btn-primary');
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Exporting...';
+    btn.disabled = true;
+    
+    // Fetch the CSV file
+    const res = await fetch(`${API_BASE}/admin/reports/export`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    btn.textContent = originalText;
+    btn.disabled = false;
+    
+    if (!res.ok) {
+      const error = await res.text();
+      console.error('Export error:', error);
+      showToast('Failed to export: ' + error, 'error');
+      return;
+    }
+    
+    // Get the filename from Content-Disposition header
+    const contentDisposition = res.headers.get('Content-Disposition');
+    let filename = 'reports.csv';
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (match) filename = match[1];
+    }
+    
+    // Create blob and download
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showToast('Reports exported successfully!', 'success');
+  } catch(e) {
+    console.error('Export error:', e);
+    showToast('Failed to export reports', 'error');
+    const btn = document.querySelector('.btn-primary');
+    btn.textContent = '📥 Export CSV';
+    btn.disabled = false;
+  }
+}
+
+// ============ FILTER REPORTS ============
+function filterReports() {
+  const searchTerm = document.getElementById('search-reports')?.value.toLowerCase()?.trim() || '';
+  const statusFilter = document.getElementById('report-status-filter')?.value || '';
+  const typeFilter = document.getElementById('scam-type-filter')?.value || '';
+  
+  let filtered = [...allReports];
+  
+  // Search filter
+  if (searchTerm) {
+    filtered = filtered.filter(r => {
+      const company = (r.company_name || '').toLowerCase();
+      const job = (r.job_title || '').toLowerCase();
+      return company.includes(searchTerm) || job.includes(searchTerm);
+    });
+  }
+  
+  // Status filter
+  if (statusFilter) {
+    filtered = filtered.filter(r => (r.status || '').toLowerCase() === statusFilter.toLowerCase());
+  }
+  
+  // Scam Type filter - case-insensitive, whitespace-insensitive
+  if (typeFilter) {
+    const selectedType = typeFilter.trim().toLowerCase();
+    filtered = filtered.filter(r => {
+      const reportType = (r.scam_type || '').trim().toLowerCase();
+      return reportType === selectedType;
+    });
+  }
+  
+  console.log(`Filtered: ${filtered.length} reports (search: "${searchTerm}", status: "${statusFilter}", type: "${typeFilter}")`);
+  renderReportsTable(filtered);
+}
+
+// ============ REPORT DRAWER ============
 async function openReportDrawer(reportId) {
   currentReportId = reportId;
   try {
@@ -228,6 +322,7 @@ async function openReportDrawer(reportId) {
     });
     if (!res.ok) throw new Error('Failed to load report');
     const report = await res.json();
+    console.log('Report details:', report);
     
     const drawer = document.getElementById('report-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -238,21 +333,21 @@ async function openReportDrawer(reportId) {
     if (report.evidence && report.evidence.length) {
       evidenceHTML = `<div class="evidence-section"><div class="evidence-title">Evidence</div>`;
       report.evidence.forEach(ev => {
-        const typeClass = ev.type === 'PDF' ? 'pdf' : (ev.type === 'Image' ? 'image' : 'url');
-        const statusClass = ev.status || 'pending';
+        const typeClass = ev.file_type === 'PDF' ? 'pdf' : (ev.file_type === 'Image' ? 'image' : 'url');
+        const statusClass = ev.verification_status || 'pending';
         const statusText = statusClass === 'pending' ? 'Pending' : (statusClass === 'verified' ? 'Verified' : (statusClass === 'fake' ? 'Fake Report' : 'Neutral'));
         evidenceHTML += `
           <div class="evidence-item">
             <div class="evidence-header">
-              <span class="evidence-type ${typeClass}">${ev.type}</span>
+              <span class="evidence-type ${typeClass}">${ev.file_type || 'URL'}</span>
               <span class="evidence-status ${statusClass}">${statusText}</span>
             </div>
-            <div class="evidence-value">${ev.value}</div>
+            <div class="evidence-value">${escapeHtml(ev.file_url || ev.value || '—')}</div>
             <div class="evidence-actions">
-              <button class="evidence-btn verify" onclick="updateEvidenceStatus('${report.report_id}', '${ev.id}', 'verified', this)">Verify</button>
-              <button class="evidence-btn fake" onclick="updateEvidenceStatus('${report.report_id}', '${ev.id}', 'fake', this)">Fake Report</button>
-              <button class="evidence-btn neutral" onclick="updateEvidenceStatus('${report.report_id}', '${ev.id}', 'neutral', this)">Neutral</button>
-              <button class="evidence-btn" onclick="window.open('${ev.url}', '_blank')">View</button>
+              <button class="evidence-btn verify" onclick="updateEvidenceStatus('${report.report_id}', '${ev.evidence_id || ev.id}', 'verified', this)">Verify</button>
+              <button class="evidence-btn fake" onclick="updateEvidenceStatus('${report.report_id}', '${ev.evidence_id || ev.id}', 'fake', this)">Fake Report</button>
+              <button class="evidence-btn neutral" onclick="updateEvidenceStatus('${report.report_id}', '${ev.evidence_id || ev.id}', 'neutral', this)">Neutral</button>
+              ${ev.view_url ? `<button class="evidence-btn" onclick="window.open('${ev.view_url}', '_blank')">View</button>` : ''}
             </div>
           </div>
         `;
@@ -263,14 +358,13 @@ async function openReportDrawer(reportId) {
     }
     
     drawerBody.innerHTML = `
-      <div class="detail-row"><div class="detail-label">Company Name</div><div class="detail-value"><strong>${escapeHtml(report.company_name)}</strong></div></div>
+      <div class="detail-row"><div class="detail-label">Company Name</div><div class="detail-value"><strong>${escapeHtml(report.company_name || 'Unknown')}</strong></div></div>
       <div class="detail-row"><div class="detail-label">Job Title</div><div class="detail-value">${escapeHtml(report.job_title || '—')}</div></div>
-      <div class="detail-row"><div class="detail-label">Description</div><div class="detail-value">${escapeHtml(report.description)}</div></div>
+      <div class="detail-row"><div class="detail-label">Description</div><div class="detail-value">${escapeHtml(report.description || 'No description')}</div></div>
       <div class="detail-row"><div class="detail-label">Scam Type</div><div class="detail-value">${escapeHtml(report.scam_type || '—')}</div></div>
-      
-      <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value" id="report-status-value">${report.status}</div></div>
-      <div class="detail-row"><div class="detail-label">Created At</div><div class="detail-value">${new Date(report.created_at).toLocaleDateString()}</div></div>
-      <div class="detail-row"><div class="detail-label">Reporter</div><div class="detail-value">${escapeHtml(report.reporter_name || 'Anonymous')} (${escapeHtml(report.reporter_email || '—')})</div></div>
+      <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value" id="report-status-value">${report.status || 'pending'}</div></div>
+      <div class="detail-row"><div class="detail-label">Created At</div><div class="detail-value">${report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}</div></div>
+      <div class="detail-row"><div class="detail-label">Reporter</div><div class="detail-value">${escapeHtml(report.reporter_name || 'Anonymous')} ${report.reporter_email ? '(' + escapeHtml(report.reporter_email) + ')' : ''}</div></div>
       ${evidenceHTML}
     `;
     
@@ -282,7 +376,10 @@ async function openReportDrawer(reportId) {
     
     drawer.classList.add('open');
     overlay.classList.add('open');
-  } catch(e) { showToast('Failed to load report details', 'error'); }
+  } catch(e) { 
+    console.error('Error loading report details:', e);
+    showToast('Failed to load report details', 'error'); 
+  }
 }
 
 function closeReportDrawer() {
@@ -294,55 +391,83 @@ function closeReportDrawer() {
 async function updateEvidenceStatus(reportId, evidenceId, status, btn) {
   try {
     const token = localStorage.getItem('gr_token');
-    await fetch(`${API_BASE}/admin/reports/${reportId}/evidence/${evidenceId}`, {
+    const res = await fetch(`${API_BASE}/admin/evidence/${evidenceId}/verification`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ status: status })
+      body: JSON.stringify({ verification_status: status })
     });
-    const evidenceItem = btn.closest('.evidence-item');
-    const statusSpan = evidenceItem.querySelector('.evidence-status');
-    statusSpan.className = `evidence-status ${status}`;
-    statusSpan.textContent = status === 'verified' ? 'Verified' : (status === 'fake' ? 'Fake Report' : 'Neutral');
-    showToast(`Evidence marked as ${status}`, 'success');
+    if (res.ok) {
+      const evidenceItem = btn.closest('.evidence-item');
+      const statusSpan = evidenceItem.querySelector('.evidence-status');
+      statusSpan.className = `evidence-status ${status}`;
+      const statusText = status === 'verified' ? 'Verified' : (status === 'fake' ? 'Fake Report' : 'Neutral');
+      statusSpan.textContent = statusText;
+      showToast(`Evidence marked as ${status}`, 'success');
+    } else {
+      showToast('Failed to update evidence', 'error');
+    }
   } catch(e) { showToast('Failed to update evidence', 'error'); }
 }
 
 async function updateReportStatus(reportId, newStatus) {
   try {
     const token = localStorage.getItem('gr_token');
-    await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
+    const res = await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ status: newStatus })
     });
-    showToast(`Report ${newStatus === 'confirmed' ? 'accepted' : (newStatus === 'rejected' ? 'rejected' : 'marked as reviewed')}`, 'success');
-    closeReportDrawer();
-    loadStats();
-    loadReports();
+    if (res.ok) {
+      const msg = newStatus === 'confirmed' ? 'accepted' : (newStatus === 'rejected' ? 'rejected' : 'marked as reviewed');
+      showToast(`Report ${msg}`, 'success');
+      closeReportDrawer();
+      loadStats();
+      loadReports();
+    } else {
+      showToast('Failed to update report', 'error');
+    }
   } catch(e) { showToast('Failed to update report', 'error'); }
 }
 
-function filterReports() {
-  const searchTerm = document.getElementById('search-reports')?.value.toLowerCase() || '';
-  const statusFilter = document.getElementById('report-status-filter')?.value || '';
-  const typeFilter = document.getElementById('scam-type-filter')?.value || '';
-  
-  let filtered = [...allReports];
-  if (searchTerm) filtered = filtered.filter(r => r.company_name.toLowerCase().includes(searchTerm) || (r.job_title && r.job_title.toLowerCase().includes(searchTerm)));
-  if (statusFilter) filtered = filtered.filter(r => r.status === statusFilter);
-  if (typeFilter) filtered = filtered.filter(r => r.scam_type === typeFilter);
-  
-  renderReportsTable(filtered);
+function escapeHtml(text) { 
+  if (!text) return ''; 
+  const div = document.createElement('div'); 
+  div.textContent = text; 
+  return div.innerHTML; 
 }
 
-function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-function showToast(msg, type) { const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#f85149':'#3fb950')+';color:white;padding:12px 24px;border-radius:8px;z-index:9999'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+function showToast(msg, type) { 
+  const t = document.createElement('div'); 
+  const bgColor = type === 'error' ? '#f85149' : (type === 'info' ? '#58a6ff' : '#3fb950');
+  t.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${bgColor};color:white;padding:14px 28px;border-radius:8px;z-index:9999;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90%;text-align:center;transition:all 0.3s ease;`;
+  t.textContent = msg; 
+  document.body.appendChild(t); 
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(20px)';
+    setTimeout(() => t.remove(), 300);
+  }, 3000); 
+}
+
+function _getUser() {
+  try {
+    const data = localStorage.getItem('gr_user');
+    return data ? JSON.parse(data) : null;
+  } catch(e) { return null; }
+}
+
+function requireAdmin() {
+  const user = _getUser();
+  if (!user || user.role !== 'admin') {
+    window.location.href = 'login.html';
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-  const user = auth.getUser();
-  if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
   requireAdmin();
-  renderSidebar('admin-reports.html', true);
+  if (typeof renderSidebar === 'function') {
+    renderSidebar('admin-reports.html', true);
+  }
   document.getElementById('page-title').textContent = 'Manage Reports';
   loadStats();
   loadReports();

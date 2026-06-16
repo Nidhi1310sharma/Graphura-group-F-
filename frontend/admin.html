@@ -113,15 +113,15 @@
       <div class="card-title mb-2">Quick Actions</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
         <a href="admin-reports.html" class="action-card">
-          <div class="action-card-icon" style="background:rgba(248,81,73,.1)"></div>
+          <div class="action-card-icon" style="background:rgba(248,81,73,.1)">📋</div>
           <div class="action-card-text"><div class="action-card-title">Review Reports <span class="nav-badge" id="pending-badge">--</span></div><div class="action-card-sub">Pending moderation</div></div>
         </a>
         <a href="admin-users.html" class="action-card">
-          <div class="action-card-icon" style="background:rgba(88,166,255,.1)"></div>
+          <div class="action-card-icon" style="background:rgba(88,166,255,.1)">👤</div>
           <div class="action-card-text"><div class="action-card-title">Manage Users</div><div class="action-card-sub" id="users-sub">-- registered</div></div>
         </a>
         <a href="admin-community.html" class="action-card">
-          <div class="action-card-icon" style="background:rgba(188,140,255,.1)"></div>
+          <div class="action-card-icon" style="background:rgba(188,140,255,.1)">💬</div>
           <div class="action-card-text"><div class="action-card-title">Community Posts</div><div class="action-card-sub" id="posts-sub">-- total</div></div>
         </a>
       </div>
@@ -136,7 +136,7 @@
           <table class="table">
             <thead><tr><th>Company</th><th>Type</th><th>Reporter</th><th>Date</th><th>Severity</th><th>Actions</th></tr></thead>
             <tbody id="reports-tbody"><tr><td colspan="6" style="text-align:center;padding:30px">Loading...</td></tr></tbody>
-          ~
+          </table>
         </div>
       </div>
 
@@ -150,7 +150,7 @@
           <table class="table">
             <thead><tr><th>User</th><th>Email</th><th>Joined</th><th>Reports</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="users-tbody"><tr><td colspan="6" style="text-align:center;padding:30px">Loading...</td></tr></tbody>
-          ~
+          </table>
         </div>
       </div>
     </div>
@@ -166,14 +166,22 @@ const API_BASE = 'http://localhost:8000/api';
 async function loadDashboardData() {
   try {
     const token = localStorage.getItem('gr_token');
-    if (!token) return;
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+    
+    console.log('Loading dashboard data...');
     
     // Get stats from backend
     const statsRes = await fetch(`${API_BASE}/admin/stats`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    
     if (statsRes.ok) {
       const stats = await statsRes.json();
+      console.log('Stats data:', stats);
+      
       document.getElementById('kpi-users').textContent = stats.total_users || 0;
       document.getElementById('a-pending').textContent = stats.pending_reports || 0;
       document.getElementById('kpi-confirmed').textContent = stats.confirmed_scams || stats.confirmed_reports || 0;
@@ -181,6 +189,10 @@ async function loadDashboardData() {
       document.getElementById('pending-badge').textContent = stats.pending_reports || 0;
       document.getElementById('users-sub').textContent = (stats.total_users || 0) + ' registered';
       document.getElementById('posts-sub').textContent = (stats.community_posts || 0) + ' total';
+      document.getElementById('kpi-users-delta').textContent = 'Active users';
+      document.getElementById('kpi-posts-delta').textContent = 'Community posts';
+    } else {
+      console.error('Failed to load stats:', await statsRes.text());
     }
     
     // Get pending reports
@@ -189,21 +201,27 @@ async function loadDashboardData() {
     });
     if (reportsRes.ok) {
       const reports = await reportsRes.json();
+      console.log('Pending reports:', reports);
       const tbody = document.getElementById('reports-tbody');
-      if (reports.length) {
+      if (reports && reports.length) {
         tbody.innerHTML = reports.map(r => `
           <tr>
-            <td><strong>${escapeHtml(r.company_name)}</strong></td>
+            <td><strong>${escapeHtml(r.company_name || 'Unknown')}</strong></td>
             <td><span class="badge badge-red">${escapeHtml(r.scam_type || 'Scam')}</span></td>
             <td>${escapeHtml(r.reporter_name || 'Anonymous')}</td>
-            <td>${new Date(r.created_at).toLocaleDateString()}</div> -
-            <td class="text-secondary mono"><span class="badge badge-red">${escapeHtml(r.severity || 'High')}</span></div> -
-            <td class="text-secondary mono"><button class="btn btn-primary btn-sm" onclick="approveReport(this, '${r.report_id}')">Approve</button><button class="btn btn-outline btn-sm" onclick="rejectReport(this, '${r.report_id}')">Reject</button></div> -
+            <td>${new Date(r.created_at).toLocaleDateString()}</td>
+            <td><span class="badge badge-red">${escapeHtml(r.severity || 'High')}</span></td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="approveReport(this, '${r.report_id}')">Approve</button>
+              <button class="btn btn-outline btn-sm" onclick="rejectReport(this, '${r.report_id}')">Reject</button>
+            </td>
           </tr>
         `).join('');
       } else {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No pending reports</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No pending reports</td></tr>';
       }
+    } else {
+      console.error('Failed to load reports:', await reportsRes.text());
     }
     
     // Get recent users
@@ -212,23 +230,28 @@ async function loadDashboardData() {
     });
     if (usersRes.ok) {
       const users = await usersRes.json();
+      console.log('Recent users:', users);
       const tbody = document.getElementById('users-tbody');
-      if (users.length) {
+      if (users && users.length) {
         tbody.innerHTML = users.map(u => `
           <tr>
-            <td><strong>${escapeHtml(u.full_name || u.name)}</strong></td>
-            <td class="text-secondary mono">${escapeHtml(u.email)}</div> -
-            <td class="text-secondary mono">${new Date(u.created_at).toLocaleDateString()}</div> -
-            <td class="text-secondary mono">${u.reports_count || 0}</div> -
-            <td class="text-secondary mono"><span class="badge badge-green">Active</span></div> -
-            <td class="text-secondary mono"><button class="btn btn-outline btn-sm" onclick="showToast('View user details','info')">View</button></div> -
+            <td><strong>${escapeHtml(u.name || u.full_name || 'Unknown')}</strong></td>
+            <td class="text-secondary mono">${escapeHtml(u.email)}</td>
+            <td class="text-secondary mono">${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
+            <td class="text-secondary mono">${u.reports_count || 0}</td>
+            <td><span class="badge badge-green">Active</span></td>
+            <td><button class="btn btn-outline btn-sm" onclick="showToast('View user details','info')">View</button></td>
           </tr>
         `).join('');
       } else {
-        tbody.innerHTML = '<td><td colspan="6" style="text-align:center">No users found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No users found</td></tr>';
       }
+    } else {
+      console.error('Failed to load users:', await usersRes.text());
     }
-  } catch(e) { console.error('Error loading dashboard:', e); }
+  } catch(e) { 
+    console.error('Error loading dashboard:', e); 
+  }
 }
 
 async function approveReport(btn, reportId) {
@@ -236,16 +259,21 @@ async function approveReport(btn, reportId) {
   row.style.opacity = '0.5';
   try {
     const token = localStorage.getItem('gr_token');
-    await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
+    const res = await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ status: 'confirmed' })
     });
-    const p = document.getElementById('a-pending');
-    p.textContent = Math.max(0, parseInt(p.textContent) - 1);
-    showToast('Report approved', 'success');
-    setTimeout(() => row.remove(), 600);
-    loadDashboardData();
+    if (res.ok) {
+      const p = document.getElementById('a-pending');
+      p.textContent = Math.max(0, parseInt(p.textContent) - 1);
+      showToast('Report approved', 'success');
+      setTimeout(() => row.remove(), 600);
+      loadDashboardData();
+    } else {
+      showToast('Failed to approve report', 'error');
+      row.style.opacity = '1';
+    }
   } catch(e) { showToast('Failed to approve', 'error'); row.style.opacity = '1'; }
 }
 
@@ -254,19 +282,31 @@ async function rejectReport(btn, reportId) {
   row.style.opacity = '0.5';
   try {
     const token = localStorage.getItem('gr_token');
-    await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
+    const res = await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ status: 'rejected' })
     });
-    showToast('Report rejected', 'info');
-    setTimeout(() => row.remove(), 600);
-    loadDashboardData();
+    if (res.ok) {
+      showToast('Report rejected', 'info');
+      setTimeout(() => row.remove(), 600);
+      loadDashboardData();
+    } else {
+      showToast('Failed to reject report', 'error');
+      row.style.opacity = '1';
+    }
   } catch(e) { showToast('Failed to reject', 'error'); row.style.opacity = '1'; }
 }
 
 function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-function showToast(msg, type) { const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#f85149':'#3fb950')+';color:white;padding:12px 24px;border-radius:8px;z-index:9999'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+
+function showToast(msg, type) { 
+  const t=document.createElement('div'); 
+  t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#f85149':'#3fb950')+';color:white;padding:12px 24px;border-radius:8px;z-index:9999'; 
+  t.textContent=msg; 
+  document.body.appendChild(t); 
+  setTimeout(()=>t.remove(),3000); 
+}
 
 function openAdminProfileModal() {
   const user = _getUser();
@@ -280,14 +320,25 @@ function openAdminProfileModal() {
   setTimeout(() => modal.classList.add('open'), 10);
   // Load stats for modal
   const token = localStorage.getItem('gr_token');
-  fetch(`${API_BASE}/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()).then(s=>{
-    document.getElementById('modal-users').textContent = s.total_users || 0;
-    document.getElementById('modal-pending').textContent = s.pending_reports || 0;
-    document.getElementById('modal-posts').textContent = s.community_posts || 0;
-  }).catch(e=>{});
+  fetch(`${API_BASE}/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(r=>r.json())
+    .then(s=>{
+      document.getElementById('modal-users').textContent = s.total_users || 0;
+      document.getElementById('modal-pending').textContent = s.pending_reports || 0;
+      document.getElementById('modal-posts').textContent = s.community_posts || 0;
+    })
+    .catch(e=>{});
 }
-function closeAdminProfileModal() { const modal = document.getElementById('admin-profile-modal'); if(modal){ modal.classList.remove('open'); setTimeout(()=>modal.remove(),300); } }
-function handleAdminLogout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+function closeAdminProfileModal() { 
+  const modal = document.getElementById('admin-profile-modal'); 
+  if(modal){ modal.classList.remove('open'); setTimeout(()=>modal.remove(),300); } 
+}
+
+function handleAdminLogout() { 
+  localStorage.clear(); 
+  window.location.href = 'login.html'; 
+}
 
 function initCharts() {
   new Chart(document.getElementById('admin-trend').getContext('2d'), {
@@ -302,9 +353,25 @@ function initCharts() {
   });
 }
 
+function _getUser() {
+  try {
+    const data = localStorage.getItem('gr_user');
+    return data ? JSON.parse(data) : null;
+  } catch(e) { return null; }
+}
+
+function requireAdmin() {
+  const user = _getUser();
+  if (!user || user.role !== 'admin') {
+    window.location.href = 'login.html';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   requireAdmin();
-  renderSidebar('admin.html', true);
+  if (typeof renderSidebar === 'function') {
+    renderSidebar('admin.html', true);
+  }
   document.getElementById('page-title').textContent = 'Admin Dashboard';
   initCharts();
   loadDashboardData();
