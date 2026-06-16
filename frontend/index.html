@@ -649,7 +649,19 @@ function renderSingleTrustCard(result){
 //{% comment %} Single Trust Card {% endcomment %}
 function buildTrustCard(result){
 
-const metrics = result.card_metrics || {};
+let metrics = result.card_metrics || {};
+
+if (
+    Object.keys(metrics).length === 0 &&
+    result.raw_url_analysis
+) {
+    metrics = {
+        "Domain": 100 - (result.raw_url_analysis.domain_risk_score || 0),
+        "Content": 100 - (result.raw_url_analysis.content_risk_score || 0),
+        "HTTPS": result.raw_url_analysis.https_enabled ? 100 : 20,
+        "Reputation": result.raw_url_analysis.website_reachable ? 90 : 10
+    };
+}
 
 const badgeColor =
     result.risk_level === "HIGH"
@@ -785,7 +797,43 @@ return `
 
     </div>
 
+    
     ${metricBars}
+
+${
+result.raw_url_analysis
+? `
+<div style="
+margin-top:16px;
+padding:12px;
+background:var(--bg-secondary);
+border-radius:10px;
+font-size:13px;
+">
+
+<div><strong>Domain:</strong>
+${result.raw_url_analysis.full_domain || "Unknown"}
+</div>
+
+<div>
+<strong>HTTPS:</strong>
+${result.raw_url_analysis.https_enabled ? "Yes" : "No"}
+</div>
+
+<div>
+<strong>Domain Age:</strong>
+${result.raw_url_analysis.domain_age_days || "Unknown"} days
+</div>
+
+<div>
+<strong>Status:</strong>
+${result.raw_url_analysis.website_reachable ? "Reachable" : "Unreachable"}
+</div>
+
+</div>
+`
+: ""
+}
 
     <div style="
         margin-top:18px;
@@ -818,7 +866,11 @@ Detected Issues
 </div>
 
 ${
-(result.fraud_reasons || [])
+(
+Array.isArray(result.fraud_reasons)
+? result.fraud_reasons
+: [result.fraud_reasons]
+)
 .map(reason => `
 <div class="trust-flag bad">
 ✖ ${reason}

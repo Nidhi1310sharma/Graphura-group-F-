@@ -39,9 +39,34 @@ async def analyze_content(
 
     elif source_type == "URL":
 
-        result = analyze_url(url)
+        url_result = analyze_url(url)
 
-
+        result = {
+            "risk_score": url_result["final_url_risk_score"],
+            "risk_level": url_result["final_risk_level"],
+            "trust_score":max(0, 100 - url_result["final_url_risk_score"]),
+            "trust_level":
+                "HIGH"
+                if url_result["final_url_risk_score"] < 30
+                else "MEDIUM"
+                if url_result["final_url_risk_score"] < 70
+                else "LOW",
+            "fraud_reasons":url_result["url_risk_reasons"],
+            "recommended_action":url_result["recommended_action"],
+            "raw_url_analysis":url_result,
+            "raw_url_analysis": url_result,
+            "url_card_metrics": {
+                "Domain Security":max( 0, 100 - url_result["domain_risk_score"]),
+                "HTTPS":100 if url_result["https_enabled"] 
+                            else 0,
+                "Domain Age":100 if url_result["domain_age_days"] > 365
+                    else int(
+                        (url_result["domain_age_days"] / 365) * 100 )
+                            if url_result["domain_age_days"] > 0
+                            else 0,
+                "Content Safety":max(0,100 - url_result["content_risk_score"])
+            }
+        }
     else:
         raise ValueError(f"Unsupported source type: {source_type}")
     # save
