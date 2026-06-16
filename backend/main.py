@@ -62,12 +62,12 @@ async def startup_event():
 
 # ── Static frontend ──────────────────────────────────────────
 @app.get("/")
-async def serve_home():
-    return FileResponse(FRONTEND_DIR / "index.html")
-
-@app.get("/{file_path:path}")
-async def serve_frontend(file_path: str):
-    file = FRONTEND_DIR / file_path
-    if file.exists() and file.is_file():
-        return FileResponse(file)
-    return FileResponse(FRONTEND_DIR / "index.html")
+def root():
+    return {"message": "API Running"}
+    
+if __name__ == "__main__":
+        import uvicorn
+        import os
+        port = int(os.environ.get("PORT", 10000))
+        uvicorn.run("backend.main:app", host="0.0.0.0", port=port)
+   
