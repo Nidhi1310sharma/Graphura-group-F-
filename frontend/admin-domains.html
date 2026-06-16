@@ -4,39 +4,101 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Domain Blacklist – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .domain-row {
+      transition: opacity 0.3s ease;
+    }
+    .severity-critical { background: rgba(220,38,38,0.15); color: var(--accent-red); }
+    .severity-high { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+    .severity-medium { background: rgba(139,148,158,0.15); color: #8b949e; }
+  </style>
 </head>
 <body>
 <div class="app-shell" id="app-shell">
   <div class="main-content">
     <div class="page-inner">
-    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
-    </button>
+      <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
       <div class="page-header">
-        <h1> Domain Blacklist</h1>
+        <h1>Domain Blacklist</h1>
         <p>Manage flagged and blacklisted domains across the platform</p>
       </div>
       <div class="card mb-3">
         <div class="flex-between mb-3">
           <div style="display:flex;gap:8px;flex:1">
             <input type="text" class="form-control" id="domain-search" placeholder="Search domain…" style="max-width:280px" oninput="filterDomains(this.value)">
-            <select class="form-control" style="max-width:140px" onchange="filterDomains(document.getElementById('domain-search').value)">
-              <option>All severity</option><option>Critical</option><option>High</option><option>Medium</option>
+            <select class="form-control" id="severity-filter" style="max-width:140px" onchange="filterDomains(document.getElementById('domain-search').value)">
+              <option value="">All severity</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
             </select>
           </div>
           <button class="btn btn-primary" onclick="addDomainForm()">+ Add Domain</button>
         </div>
         <div class="table-wrap">
           <table id="domains-table">
-            <thead><tr><th>Domain</th><th>Severity</th><th>Reports</th><th>Added</th><th>Reason</th><th>Action</th></tr></thead>
+            <thead>
+              <tr><th>Domain</th><th>Severity</th><th>Reports</th><th>Added</th><th>Reason</th><th>Action</th></tr>
+            </thead>
             <tbody>
-              <tr><td class="mono">careers-google-jobs.xyz</td><td><span class="badge badge-red">Critical</span></td><td>14</td><td>5d ago</td><td>Fee demand, brand impersonation</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
-              <tr><td class="mono">infosys-hr-jobs.tk</td><td><span class="badge badge-red">Critical</span></td><td>9</td><td>1w ago</td><td>Infosys impersonation, phishing</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
-              <tr><td class="mono">tcs-careers2025.in</td><td><span class="badge badge-red">Critical</span></td><td>11</td><td>2d ago</td><td>TCS impersonation, fake offer letters</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
-              <tr><td class="mono">workfromhome-india.net</td><td><span class="badge badge-orange">High</span></td><td>6</td><td>2w ago</td><td>Data theft, advance fee fraud</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
-              <tr><td class="mono">netjob-india.xyz</td><td><span class="badge badge-orange">High</span></td><td>8</td><td>3d ago</td><td>Registration fee, MLM structure</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
-              <tr><td class="mono">digiwork-india.net</td><td><span class="badge badge-orange">High</span></td><td>9</td><td>4d ago</td><td>Unpaid work, disappeared</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
-              <tr><td class="mono">quickearnings-jobs.in</td><td><span class="badge badge-yellow">Medium</span></td><td>4</td><td>1w ago</td><td>MLM, advance salary request</td><td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td></tr>
+              <tr class="domain-row">
+                <td class="mono">careers-google-jobs.xyz</td>
+                <td><span class="badge badge-red">Critical</span></td>
+                <td>14</td>
+                <td>5d ago</td>
+                <td>Fee demand, brand impersonation</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">infosys-hr-jobs.tk</td>
+                <td><span class="badge badge-red">Critical</span></td>
+                <td>9</td>
+                <td>1w ago</td>
+                <td>Infosys impersonation, phishing</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">tcs-careers2025.in</td>
+                <td><span class="badge badge-red">Critical</span></td>
+                <td>11</td>
+                <td>2d ago</td>
+                <td>TCS impersonation, fake offer letters</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">workfromhome-india.net</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td>6</td>
+                <td>2w ago</td>
+                <td>Data theft, advance fee fraud</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">netjob-india.xyz</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td>8</td>
+                <td>3d ago</td>
+                <td>Registration fee, MLM structure</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">digiwork-india.net</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td>9</td>
+                <td>4d ago</td>
+                <td>Unpaid work, disappeared</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">quickearnings-jobs.in</td>
+                <td><span class="badge badge-yellow">Medium</span></td>
+                <td>4</td>
+                <td>1w ago</td>
+                <td>MLM, advance salary request</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -44,13 +106,25 @@
     </div>
   </div>
 </div>
+
 <script src="js/main.js"></script>
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
 function filterDomains(q) {
+  const searchTerm = q.toLowerCase();
+  const severityFilter = document.getElementById('severity-filter')?.value || '';
+  
   document.querySelectorAll('#domains-table tbody tr').forEach(row => {
-    row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+    const text = row.textContent.toLowerCase();
+    const severityCell = row.querySelector('td:nth-child(2) .badge');
+    const severity = severityCell ? severityCell.textContent : '';
+    
+    let show = true;
+    if (searchTerm && !text.includes(searchTerm)) show = false;
+    if (severityFilter && severity !== severityFilter) show = false;
+    
+    row.style.display = show ? '' : 'none';
   });
 }
 
@@ -59,64 +133,28 @@ function addDomainForm() {
   if (!d) return;
   const clean = d.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
   if (!clean.includes('.')) { showToast('Please enter a valid domain (e.g. scam-site.xyz)', 'error'); return; }
+  
   const tbody = document.querySelector('#domains-table tbody');
   const tr = document.createElement('tr');
-  tr.dataset.status = 'blacklisted';
+  tr.className = 'domain-row';
   tr.innerHTML = `
-    <td>${clean}</td>
-    <td>–</td><td>–</td><td>Unknown</td><td>Just now</td>
-    <td><span class="badge badge-red">Blacklisted</span></td>
-    <td><div style="display:flex;gap:4px">
-      <button class="btn btn-outline btn-sm" onclick="whitelistDomain(this)" title="Whitelist">✓ Safe</button>
-      <button class="btn btn-outline btn-sm" onclick="refreshDomain(this)" title="Re-analyze">🔄</button>
-      <button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="removeDomain(this)" title="Remove">✗</button>
-    </div></td>`;
+    <td>${clean}</div> -
+    <td class="text-secondary mono"><span class="badge badge-yellow">Pending</span></div> -
+    <td class="text-secondary mono">0</div> -
+    <td class="text-secondary mono">Just now</div> -
+    <td class="text-secondary mono">Manually added by admin</div> -
+    <td class="text-secondary mono"><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></div> -
+  表`;
   tbody.prepend(tr);
-  showToast(`Domain "${clean}" blacklisted`, 'success');
-  logAdminAction('BLACKLIST_DOMAIN', clean);
-}
-
-function blacklistDomain(btn) {
-  const row = btn.closest('tr');
-  row.dataset.status = 'blacklisted';
-  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-red'; b.textContent = 'Blacklisted'; });
-  btn.closest('div').innerHTML = `
-    <button class="btn btn-outline btn-sm" onclick="whitelistDomain(this)">✓ Safe</button>
-    <button class="btn btn-outline btn-sm" onclick="refreshDomain(this)">🔄</button>
-    <button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="removeDomain(this)">✗</button>`;
-  showToast('Domain blacklisted', 'success');
-  logAdminAction('BLACKLIST_DOMAIN', row.cells[0]?.textContent || 'Domain');
-}
-
-function whitelistDomain(btn) {
-  const row = btn.closest('tr');
-  row.dataset.status = 'safe';
-  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-green'; b.textContent = 'Safe'; });
-  btn.closest('div').innerHTML = `
-    <button class="btn btn-outline btn-sm" onclick="blacklistDomain(this)" style="color:var(--accent-red)">🚫 Blacklist</button>
-    <button class="btn btn-outline btn-sm" onclick="refreshDomain(this)">🔄</button>
-    <button class="btn btn-outline btn-sm" onclick="removeDomain(this)">✗</button>`;
-  showToast('Domain marked as safe', 'success');
-  logAdminAction('WHITELIST_DOMAIN', row.cells[0]?.textContent || 'Domain');
-}
-
-function refreshDomain(btn) {
-  const row = btn.closest('tr');
-  const domain = row.cells[0]?.textContent || 'Domain';
-  btn.textContent = '⟳'; btn.disabled = true;
-  setTimeout(() => {
-    btn.textContent = '🔄'; btn.disabled = false;
-    if (row.cells[4]) row.cells[4].textContent = 'Just now';
-    showToast(`Re-analyzed ${domain}`, 'info');
-    logAdminAction('REFRESH_DOMAIN', domain);
-  }, 1200);
+  showToast(`Domain "${clean}" added`, 'success');
+  logAdminAction('ADD_DOMAIN', clean);
 }
 
 function removeDomain(btn) {
   const row = btn.closest('tr');
   const domain = row.cells[0]?.textContent || 'Domain';
   if (!confirm(`Remove "${domain}" from the list?`)) return;
-  row.style.opacity = '0.4'; row.style.transition = 'opacity .3s';
+  row.style.opacity = '0.4';
   setTimeout(() => row.remove(), 300);
   showToast('Domain removed', 'info');
   logAdminAction('REMOVE_DOMAIN', domain);
@@ -131,10 +169,28 @@ function logAdminAction(action, target) {
   } catch(_) {}
 }
 
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.left = '50%';
+  toast.style.transform = 'translateX(-50%)';
+  toast.style.backgroundColor = type === 'error' ? 'var(--accent-red)' : (type === 'success' ? 'var(--accent-green)' : 'var(--accent-blue)');
+  toast.style.color = 'white';
+  toast.style.padding = '12px 24px';
+  toast.style.borderRadius = '8px';
+  toast.style.fontSize = '14px';
+  toast.style.zIndex = '9999';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   requireAdmin();
   renderSidebar('admin-domains.html', true);
   document.getElementById('page-title').textContent = 'Domain Management';
 });
 </script>
-</body></html>
+</body>
+</html>

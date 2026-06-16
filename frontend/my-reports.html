@@ -4,6 +4,24 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Reports – ScamShield</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    @media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; position: relative; overflow: hidden; }
+    .stat-card::after { content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: var(--stat-accent, var(--accent-blue)); border-radius: 0 12px 12px 0; }
+    .stat-value { font-size: 28px; font-weight: 800; font-family: monospace; color: var(--text-primary); }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: rgba(34,197,94,0.15); color: #3fb950; }
+    .badge-yellow { background: rgba(245,158,11,0.15); color: #f0883e; }
+    .badge-red { background: rgba(220,38,38,0.15); color: #f85149; }
+    .badge-gray { background: rgba(139,148,158,0.15); color: #8b949e; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    .table th { color: var(--text-muted); font-weight: 600; font-size: 12px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .btn-danger { background: #f85149; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; }
+  </style>
 </head>
 <body>
 <div class="app-shell" id="app-shell">
@@ -12,11 +30,11 @@
       <button class="back-btn" onclick="history.back()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
       
       <div class="page-header flex-between" style="align-items:flex-end">
-        <div><h1> My Reports</h1><p>All scam reports you've submitted</p></div>
-        <a href="report.html" class="btn btn-danger">+ New Report</a>
+        <div><h1>My Reports</h1><p>All scam reports you've submitted</p></div>
+        <a href="report.html" class="btn-danger" style="background:#f85149;color:white;padding:8px 16px;border-radius:8px;text-decoration:none">+ New Report</a>
       </div>
 
-      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stats-grid">
         <div class="stat-card" style="--stat-accent:var(--accent-blue)"><div class="stat-value" id="my-total">0</div><div class="stat-label">Total Reports</div></div>
         <div class="stat-card" style="--stat-accent:var(--accent-green)"><div class="stat-value" id="my-confirmed">0</div><div class="stat-label">Confirmed</div></div>
         <div class="stat-card" style="--stat-accent:var(--accent-yellow)"><div class="stat-value" id="my-pending">0</div><div class="stat-label">Pending</div></div>
@@ -25,7 +43,7 @@
 
       <div class="card mt-4">
         <div class="table-wrap">
-          <table>
+          <table class="table">
             <thead><tr><th>Company</th><th>Job Title</th><th>Type</th><th>Status</th><th>Upvotes</th><th>Date</th></tr></thead>
             <tbody id="my-reports-body">
               <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">Loading your reports...</td></tr>
@@ -41,40 +59,97 @@
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
-const DEMO_REPORTS = [
-  { company_name: 'Career Solutions Ltd', job_title: 'Data Entry Intern', scam_type: 'fee_demand', status: 'confirmed', upvotes: 14, reported_at: new Date(Date.now() - 7*24*3600000).toISOString() },
-  { company_name: 'DigiWork India', job_title: 'WFH Data Entry', scam_type: 'fake_offer', status: 'pending', upvotes: 3, reported_at: new Date(Date.now() - 2*24*3600000).toISOString() },
-];
-document.addEventListener('DOMContentLoaded', () => {
-  const user = auth.getUser();
-  if (!user) { window.location.href = 'login.html'; return; }
+const API_BASE = 'http://localhost:8000/api';
+
+document.addEventListener('DOMContentLoaded', async () => {
   renderNavbar();
-  if (!_getUser()) { _showLoginRequired("access this page"); setTimeout(()=>window.location.href="login.html",2000); return; }
-  
-  loadReports();
+  const user = _getUser();
+  if (!user) { 
+    _showLoginRequired("access this page"); 
+    setTimeout(()=>window.location.href="login.html",2000); 
+    return; 
+  }
+  await loadReports();
 });
 
 async function loadReports() {
-  let reports = DEMO_REPORTS;
   try {
-    const data = await api.get('/reports');
-    if (data.reports?.length) reports = data.reports;
-  } catch(e) {}
-  document.getElementById('my-total').textContent = reports.length;
-  document.getElementById('my-confirmed').textContent = reports.filter(r => r.status === 'confirmed').length;
-  document.getElementById('my-pending').textContent = reports.filter(r => r.status === 'pending').length;
-  document.getElementById('my-upvotes').textContent = reports.reduce((s, r) => s + (r.upvotes || 0), 0);
-  const tbody = document.getElementById('my-reports-body');
-  if (!reports.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">No reports yet. <a href="report.html" class="link">Submit your first report</a></td></tr>'; return; }
-  const statusBadge = s => ({ confirmed: 'badge-green', pending: 'badge-yellow', rejected: 'badge-gray' }[s] || 'badge-gray');
-  tbody.innerHTML = reports.map(r => `<tr>
-    <td><strong>${r.company_name}</strong></td>
-    <td class="text-secondary">${r.job_title || '—'}</td>
-    <td><span class="badge badge-red">${r.scam_type?.replace(/_/g,' ') || '—'}</span></td>
-    <td><span class="badge ${statusBadge(r.status)}">${r.status}</span></td>
-    <td>${r.upvotes || 0}</td>
-    <td class="text-muted">${timeAgo(r.reported_at)}</td>
-  </tr>`).join('');
+    const token = localStorage.getItem('gr_token');
+    const response = await fetch(`${API_BASE}/reports/my-reports`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
+    
+    if (!response.ok) throw new Error('Failed to fetch reports');
+    
+    const data = await response.json();
+    const reports = Array.isArray(data) ? data : (data.reports || data.data || []);
+    
+    // Update stats
+    const total = reports.length;
+    const confirmed = reports.filter(r => r.status === 'confirmed').length;
+    const pending = reports.filter(r => r.status === 'pending').length;
+    const totalUpvotes = reports.reduce((sum, r) => sum + (r.upvotes || 0), 0);
+    
+    document.getElementById('my-total').textContent = total;
+    document.getElementById('my-confirmed').textContent = confirmed;
+    document.getElementById('my-pending').textContent = pending;
+    document.getElementById('my-upvotes').textContent = totalUpvotes;
+    
+    const tbody = document.getElementById('my-reports-body');
+    if (!reports.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">No reports yet. <a href="report.html" class="link">Submit your first report</a></td></tr>';
+      return;
+    }
+    
+    const statusBadge = (status) => {
+      if (status === 'confirmed') return 'badge-green';
+      if (status === 'pending') return 'badge-yellow';
+      if (status === 'rejected') return 'badge-gray';
+      return 'badge-gray';
+    };
+    
+    tbody.innerHTML = reports.map(r => `
+      <tr>
+        <td><strong>${escapeHtml(r.company_name || r.company || '—')}</strong></div> -
+        <td class="text-secondary mono">${escapeHtml(r.job_title || '—')}</div> -
+        <td><span class="badge badge-red">${escapeHtml((r.scam_type || r.type || '—').replace(/_/g, ' '))}</span></div> -
+        <td><span class="badge ${statusBadge(r.status)}">${r.status || 'pending'}</span></div> -
+        <td class="text-secondary mono">${r.upvotes || 0}</div> -
+        <td class="text-secondary mono">${formatDate(r.created_at || r.reported_at)}</div> -
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error('Error loading reports:', error);
+    document.getElementById('my-reports-body').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">Failed to load reports. Please try again later.</td></tr>';
+    showToast('Failed to load reports', 'error');
+  }
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'yesterday';
+  if (diff < 7) return `${diff} days ago`;
+  return date.toLocaleDateString();
+}
+
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:' + (type === 'error' ? '#f85149' : '#3fb950') + ';color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-size:14px';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 </script>
-</body></html>
+</body>
+</html>

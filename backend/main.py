@@ -1,21 +1,20 @@
-# # backend/main.py
-# # to run: python -m uvicorn backend.main:app --reload
-
+# backend/main.py
+# Run: uvicorn backend.main:app --reload
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
-from backend.routes import analyze, auth, community, reports, domains
-from backend.admin import routes
 
-app = FastAPI()
+from backend.routes import analyze, auth, community, reports, domains, user
+from backend.admin import routes as admin_routes
+
+app = FastAPI(title="ScamShield API")
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
+# ── CORS (allow all for local dev) ──────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,22 +23,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/api")
-app.include_router(community.router, prefix="/api")
-app.include_router(reports.router, prefix="/api")
-app.include_router(routes.router, prefix="/api")
-app.include_router(analyze.router, prefix="/api")
-app.include_router(domains.router, prefix="/api")
+# ── API routers ──────────────────────────────────────────────
+app.include_router(auth.router,         prefix="/api")
+app.include_router(community.router,    prefix="/api")
+app.include_router(reports.router,      prefix="/api")
+app.include_router(admin_routes.router, prefix="/api")
+app.include_router(analyze.router,      prefix="/api")
+app.include_router(domains.router,      prefix="/api")
+app.include_router(user.router,         prefix="/api")
 
+# ── Startup: seed demo accounts ─────────────────────────────
+@app.on_event("startup")
+async def startup_event():
+    try:
+        from backend.supabase_client import supabase
+        from backend.auth import hash_password
+        from datetime import datetime, timezone
 
-#health check endpoint
-@app.get("/health")
-async def health():
-    return {
-        "status": "ok"
-    }
+        DEMO = [
+            {"email": "admin@scamshield.in", "password": "Admin@2026", "name": "ScamShield Admin", "role": "admin"},
+            {"email": "demo@scamshield.in",  "password": "Demo@2026",  "name": "Demo User",         "role": "user"},
+        ]
+        for acc in DEMO:
+            existing = supabase.table("admin_users").select("id").eq("email", acc["email"]).execute()
+            if not existing.data:
+                supabase.table("admin_users").insert({
+                    "name":          acc["name"],
+                    "email":         acc["email"],
+                    "password_hash": hash_password(acc["password"]),
+                    "role":          acc["role"],
+                    "created_at":    datetime.now(timezone.utc).isoformat(),
+                }).execute()
+                print(f"[seed] Created demo account: {acc['email']}")
+            else:
+                print(f"[seed] OK: {acc['email']}")
+    except Exception as e:
+        print(f"[seed] Warning: {e}")
 
-# frontend routes
+# ── Static frontend ──────────────────────────────────────────
 @app.get("/")
 async def serve_home():
     return FileResponse(FRONTEND_DIR / "index.html")
@@ -47,8 +68,6 @@ async def serve_home():
 @app.get("/{file_path:path}")
 async def serve_frontend(file_path: str):
     file = FRONTEND_DIR / file_path
-
     if file.exists() and file.is_file():
         return FileResponse(file)
-
-    return FileResponse(FRONTEND_DIR / "404.html")
+    return FileResponse(FRONTEND_DIR / "index.html")

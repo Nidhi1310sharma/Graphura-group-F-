@@ -4,206 +4,349 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Reports – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .report-drawer {
+      position: fixed;
+      top: 0;
+      right: -500px;
+      width: 500px;
+      max-width: 90vw;
+      height: 100vh;
+      background: var(--bg-card);
+      box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+      z-index: 10000;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+    }
+    .report-drawer.open { right: 0; }
+    .report-drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .report-drawer-overlay.open { opacity: 1; visibility: visible; }
+    .drawer-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-secondary);
+    }
+    .drawer-header h3 { font-size: 18px; font-weight: 700; }
+    .drawer-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .drawer-close:hover { background: rgba(220,38,38,0.2); color: var(--accent-red); }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
+    .detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .detail-label { width: 120px; flex-shrink: 0; color: var(--text-muted); font-size: 13px; }
+    .detail-value { flex: 1; color: var(--text-primary); font-size: 13px; word-break: break-word; }
+    .evidence-section { margin-top: 20px; padding-top: 16px; border-top: 2px solid var(--border); }
+    .evidence-title { font-weight: 700; margin-bottom: 12px; font-size: 14px; }
+    .evidence-item { background: var(--bg-input); border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
+    .evidence-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .evidence-type { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .evidence-type.pdf { background: rgba(220,38,38,0.15); color: var(--accent-red); }
+    .evidence-type.image { background: rgba(88,166,255,0.15); color: #58a6ff; }
+    .evidence-type.url { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+    .evidence-status { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+    .evidence-status.pending { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+    .evidence-status.verified { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+    .evidence-status.fake { background: rgba(220,38,38,0.15); color: var(--accent-red); }
+    .evidence-status.neutral { background: rgba(139,148,158,0.15); color: #8b949e; }
+    .evidence-value { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; word-break: break-all; }
+    .evidence-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .evidence-btn { padding: 4px 10px; font-size: 11px; border-radius: 6px; background: transparent; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+    .evidence-btn.verify:hover { background: rgba(34,197,94,0.15); border-color: var(--accent-green); color: var(--accent-green); }
+    .evidence-btn.fake:hover { background: rgba(220,38,38,0.15); border-color: var(--accent-red); color: var(--accent-red); }
+    .evidence-btn.neutral:hover { background: rgba(139,148,158,0.15); border-color: #8b949e; }
+    .drawer-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; background: var(--bg-secondary); }
+    .btn-status { flex: 1; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-accept { background: rgba(34,197,94,0.15); border: 1px solid var(--accent-green); color: var(--accent-green); }
+    .btn-accept:hover { background: var(--accent-green); color: white; }
+    .btn-reject { background: rgba(220,38,38,0.15); border: 1px solid var(--accent-red); color: var(--accent-red); }
+    .btn-reject:hover { background: var(--accent-red); color: white; }
+    .btn-review { background: rgba(245,158,11,0.15); border: 1px solid var(--accent-orange); color: var(--accent-orange); }
+    .btn-review:hover { background: var(--accent-orange); color: white; }
+    .report-row { cursor: pointer; }
+    .report-row:hover { background: var(--bg-card-hover); }
+  </style>
 </head>
 <body>
 <div class="app-shell" id="app-shell">
   <div class="main-content">
     <div class="page-inner">
-    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
-    </button>
-      <div class="page-header"><h1> Manage Reports</h1><p>Review, approve, and moderate community scam reports</p></div>
+      <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
+      <div class="page-header"><h1>Manage Reports</h1><p>Review, approve, and moderate community scam reports</p></div>
 
       <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat-card" style="--stat-accent:var(--accent-yellow)"><div class="stat-value">67</div><div class="stat-label">Pending Review</div></div>
-        <div class="stat-card" style="--stat-accent:var(--accent-green)"><div class="stat-value">148</div><div class="stat-label">Confirmed</div></div>
-        <div class="stat-card" style="--stat-accent:var(--accent-gray, #484f58)"><div class="stat-value">21</div><div class="stat-label">Rejected</div></div>
-        <div class="stat-card" style="--stat-accent:var(--accent-red)"><div class="stat-value">89</div><div class="stat-label">Blacklisted</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-yellow)"><div class="stat-value" id="stat-pending">--</div><div class="stat-label">Pending Review</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-green)"><div class="stat-value" id="stat-confirmed">--</div><div class="stat-label">Confirmed</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-gray, #484f58)"><div class="stat-value" id="stat-rejected">--</div><div class="stat-label">Rejected</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-red)"><div class="stat-value" id="stat-blacklisted">--</div><div class="stat-label">Blacklisted</div></div>
       </div>
 
       <div class="card mt-4">
         <div class="flex-between mb-3" style="gap:10px;flex-wrap:wrap">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input type="text" class="form-control" placeholder="Search reports..." style="max-width:250px">
+            <input type="text" class="form-control" id="search-reports" placeholder="Search reports..." style="max-width:250px" oninput="filterReports()">
             <select class="form-control" style="max-width:160px" id="report-status-filter" onchange="filterReports()">
               <option value="">All Status</option>
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="rejected">Rejected</option>
+              <option value="reviewed">Reviewed</option>
             </select>
-            <select class="form-control" style="max-width:180px">
+            <select class="form-control" style="max-width:180px" id="scam-type-filter" onchange="filterReports()">
               <option value="">All Scam Types</option>
               <option>Fee Demand</option>
               <option>Phishing</option>
               <option>Fake Company</option>
               <option>Impersonation</option>
+              <option>Fake Offer</option>
+              <option>Suspicious</option>
             </select>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="showToast('Exporting reports...','info')">️ Export CSV</button>
+          <button class="btn btn-outline btn-sm" onclick="showToast('Exporting reports...','info')">Export CSV</button>
         </div>
         <div class="table-wrap">
           <table id="reports-table">
-            <thead><tr><th>Company</th><th>Type</th><th>Description</th><th>Reporter</th><th>Date</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead>
+              <tr><th>Company</th><th>Job Title</th><th>Scam Type</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+            </thead>
             <tbody id="reports-tbody">
-              <tr data-status="pending">
-                <td><strong>Career Solutions Ltd</strong></td>
-                <td><span class="badge badge-red">Fee Demand</span></td>
-                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Asked for ₹5000 security deposit after interview">Asked for ₹5000 security deposit...</td>
-                <td>Rahul S.</td><td>7d ago</td>
-                <td><span class="badge badge-red">Critical</span></td>
-                <td><span class="badge badge-yellow">Pending</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="markUnderReview(this)" title="Mark Under Review">📋</button><button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button></div></td>
-              </tr>
-              <tr data-status="pending">
-                <td><strong>DigiWork India</strong></td>
-                <td><span class="badge badge-orange">Fake Offer</span></td>
-                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Promised ₹800/hr WFH, no payment received">Promised ₹800/hr WFH, no payment...</td>
-                <td>Priya M.</td><td>3d ago</td>
-                <td><span class="badge badge-orange">High</span></td>
-                <td><span class="badge badge-yellow">Pending</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="markUnderReview(this)" title="Mark Under Review">📋</button><button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button></div></td>
-              </tr>
-              <tr data-status="pending">
-                <td><strong>TCS Impersonator</strong></td>
-                <td><span class="badge badge-purple">Impersonation</span></td>
-                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fake TCS HR from tcs-hr@gmail.com</td>
-                <td>Ankit R.</td><td>1d ago</td>
-                <td><span class="badge badge-orange">High</span></td>
-                <td><span class="badge badge-yellow">Pending</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="markUnderReview(this)" title="Mark Under Review">📋</button><button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button></div></td>
-              </tr>
-              <tr data-status="confirmed">
-                <td><strong>GlobalWork</strong></td>
-                <td><span class="badge badge-red">Fee Demand</span></td>
-                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Kit fee of ₹1500 required before start</td>
-                <td>Neha S.</td><td>2wk ago</td>
-                <td><span class="badge badge-orange">High</span></td>
-                <td><span class="badge badge-green">Confirmed</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)">Revoke</button></div></td>
-              </tr>
-              <tr data-status="rejected">
-                <td><strong>Freelance Hub</strong></td>
-                <td><span class="badge badge-yellow">Suspicious</span></td>
-                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Slow payment but legitimate company</td>
-                <td>Unknown</td><td>3wk ago</td>
-                <td><span class="badge badge-yellow">Low</span></td>
-                <td><span class="badge badge-gray">Rejected</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button></div></td>
+              <tr><td colspan="7" style="text-align:center;padding:30px">Loading...</div> -
               </tr>
             </tbody>
-          </table>
+        
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- View Report Modal -->
-<div class="modal-overlay" id="view-report-modal">
-  <div class="modal" style="max-width:600px">
-    <div class="modal-header"><div class="modal-title"> Report Details</div><button class="modal-close">✕</button></div>
-    <div id="report-modal-body"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
-      <button class="btn btn-outline" onclick="closeModal('view-report-modal')">Close</button>
-      <button class="btn btn-primary" onclick="approveFromModal()"> Approve & Blacklist</button>
-    </div>
+<!-- Report Detail Drawer -->
+<div class="report-drawer-overlay" id="drawer-overlay" onclick="closeReportDrawer()"></div>
+<div class="report-drawer" id="report-drawer">
+  <div class="drawer-header">
+    <h3>Report Details</h3>
+    <button class="drawer-close" onclick="closeReportDrawer()">✕</button>
   </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-footer" id="drawer-footer"></div>
 </div>
 
 <script src="js/main.js"></script>
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+const API_BASE = 'http://localhost:8000/api';
+let currentReportId = null;
+let allReports = [];
+
+async function loadStats() {
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/reports/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const stats = await res.json();
+      document.getElementById('stat-pending').textContent = stats.pending || 0;
+      document.getElementById('stat-confirmed').textContent = stats.confirmed || 0;
+      document.getElementById('stat-rejected').textContent = stats.rejected || 0;
+      document.getElementById('stat-blacklisted').textContent = stats.blacklisted || 0;
+    }
+  } catch(e) { console.error('Error loading stats:', e); }
+}
+
+async function loadReports() {
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/reports`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      allReports = await res.json();
+      renderReportsTable(allReports);
+    }
+  } catch(e) { console.error('Error loading reports:', e); }
+}
+
+function renderReportsTable(reports) {
+  const tbody = document.getElementById('reports-tbody');
+  if (!reports.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px">No reports found</div> -</tr>';
+    return;
+  }
+  tbody.innerHTML = reports.map(r => `
+    <tr data-status="${r.status}" data-report-id="${r.report_id}" class="report-row" onclick="openReportDrawer('${r.report_id}')">
+      <td><strong>${escapeHtml(r.company_name)}</strong></div> -
+      <td class="text-secondary mono">${escapeHtml(r.job_title || '—')}</div> -
+      <td class="text-secondary mono"><span class="badge badge-red">${escapeHtml(r.scam_type || 'Scam')}</span></div> -
+      
+      <td class="text-secondary mono"><span class="badge ${getStatusBadgeClass(r.status)}">${r.status}</span></div> -
+      <td class="text-secondary mono">${new Date(r.created_at).toLocaleDateString()}</div> -
+      <td class="text-secondary mono"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openReportDrawer('${r.report_id}')">View</button></div> -
+    </tr>
+  `).join('');
+}
+
+function getStatusBadgeClass(status) {
+  if (status === 'confirmed') return 'badge-green';
+  if (status === 'rejected') return 'badge-gray';
+  if (status === 'reviewed') return 'badge-blue';
+  return 'badge-yellow';
+}
+
+async function openReportDrawer(reportId) {
+  currentReportId = reportId;
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to load report');
+    const report = await res.json();
+    
+    const drawer = document.getElementById('report-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    const drawerBody = document.getElementById('drawer-body');
+    const drawerFooter = document.getElementById('drawer-footer');
+    
+    let evidenceHTML = '';
+    if (report.evidence && report.evidence.length) {
+      evidenceHTML = `<div class="evidence-section"><div class="evidence-title">Evidence</div>`;
+      report.evidence.forEach(ev => {
+        const typeClass = ev.type === 'PDF' ? 'pdf' : (ev.type === 'Image' ? 'image' : 'url');
+        const statusClass = ev.status || 'pending';
+        const statusText = statusClass === 'pending' ? 'Pending' : (statusClass === 'verified' ? 'Verified' : (statusClass === 'fake' ? 'Fake Report' : 'Neutral'));
+        evidenceHTML += `
+          <div class="evidence-item">
+            <div class="evidence-header">
+              <span class="evidence-type ${typeClass}">${ev.type}</span>
+              <span class="evidence-status ${statusClass}">${statusText}</span>
+            </div>
+            <div class="evidence-value">${ev.value}</div>
+            <div class="evidence-actions">
+              <button class="evidence-btn verify" onclick="updateEvidenceStatus('${report.report_id}', '${ev.id}', 'verified', this)">Verify</button>
+              <button class="evidence-btn fake" onclick="updateEvidenceStatus('${report.report_id}', '${ev.id}', 'fake', this)">Fake Report</button>
+              <button class="evidence-btn neutral" onclick="updateEvidenceStatus('${report.report_id}', '${ev.id}', 'neutral', this)">Neutral</button>
+              <button class="evidence-btn" onclick="window.open('${ev.url}', '_blank')">View</button>
+            </div>
+          </div>
+        `;
+      });
+      evidenceHTML += `</div>`;
+    } else {
+      evidenceHTML = `<div class="evidence-section"><div class="evidence-title">Evidence</div><p class="text-muted">No evidence attached</p></div>`;
+    }
+    
+    drawerBody.innerHTML = `
+      <div class="detail-row"><div class="detail-label">Company Name</div><div class="detail-value"><strong>${escapeHtml(report.company_name)}</strong></div></div>
+      <div class="detail-row"><div class="detail-label">Job Title</div><div class="detail-value">${escapeHtml(report.job_title || '—')}</div></div>
+      <div class="detail-row"><div class="detail-label">Description</div><div class="detail-value">${escapeHtml(report.description)}</div></div>
+      <div class="detail-row"><div class="detail-label">Scam Type</div><div class="detail-value">${escapeHtml(report.scam_type || '—')}</div></div>
+      
+      <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value" id="report-status-value">${report.status}</div></div>
+      <div class="detail-row"><div class="detail-label">Created At</div><div class="detail-value">${new Date(report.created_at).toLocaleDateString()}</div></div>
+      <div class="detail-row"><div class="detail-label">Reporter</div><div class="detail-value">${escapeHtml(report.reporter_name || 'Anonymous')} (${escapeHtml(report.reporter_email || '—')})</div></div>
+      ${evidenceHTML}
+    `;
+    
+    drawerFooter.innerHTML = `
+      <button class="btn-status btn-accept" onclick="updateReportStatus('${report.report_id}', 'confirmed')">Accept</button>
+      <button class="btn-status btn-review" onclick="updateReportStatus('${report.report_id}', 'reviewed')">Reviewed</button>
+      <button class="btn-status btn-reject" onclick="updateReportStatus('${report.report_id}', 'rejected')">Reject</button>
+    `;
+    
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+  } catch(e) { showToast('Failed to load report details', 'error'); }
+}
+
+function closeReportDrawer() {
+  document.getElementById('report-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  currentReportId = null;
+}
+
+async function updateEvidenceStatus(reportId, evidenceId, status, btn) {
+  try {
+    const token = localStorage.getItem('gr_token');
+    await fetch(`${API_BASE}/admin/reports/${reportId}/evidence/${evidenceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ status: status })
+    });
+    const evidenceItem = btn.closest('.evidence-item');
+    const statusSpan = evidenceItem.querySelector('.evidence-status');
+    statusSpan.className = `evidence-status ${status}`;
+    statusSpan.textContent = status === 'verified' ? 'Verified' : (status === 'fake' ? 'Fake Report' : 'Neutral');
+    showToast(`Evidence marked as ${status}`, 'success');
+  } catch(e) { showToast('Failed to update evidence', 'error'); }
+}
+
+async function updateReportStatus(reportId, newStatus) {
+  try {
+    const token = localStorage.getItem('gr_token');
+    await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ status: newStatus })
+    });
+    showToast(`Report ${newStatus === 'confirmed' ? 'accepted' : (newStatus === 'rejected' ? 'rejected' : 'marked as reviewed')}`, 'success');
+    closeReportDrawer();
+    loadStats();
+    loadReports();
+  } catch(e) { showToast('Failed to update report', 'error'); }
+}
+
+function filterReports() {
+  const searchTerm = document.getElementById('search-reports')?.value.toLowerCase() || '';
+  const statusFilter = document.getElementById('report-status-filter')?.value || '';
+  const typeFilter = document.getElementById('scam-type-filter')?.value || '';
+  
+  let filtered = [...allReports];
+  if (searchTerm) filtered = filtered.filter(r => r.company_name.toLowerCase().includes(searchTerm) || (r.job_title && r.job_title.toLowerCase().includes(searchTerm)));
+  if (statusFilter) filtered = filtered.filter(r => r.status === statusFilter);
+  if (typeFilter) filtered = filtered.filter(r => r.scam_type === typeFilter);
+  
+  renderReportsTable(filtered);
+}
+
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+function showToast(msg, type) { const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#f85149':'#3fb950')+';color:white;padding:12px 24px;border-radius:8px;z-index:9999'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+
 document.addEventListener('DOMContentLoaded', () => {
   const user = auth.getUser();
   if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
   requireAdmin();
   renderSidebar('admin-reports.html', true);
   document.getElementById('page-title').textContent = 'Manage Reports';
+  loadStats();
+  loadReports();
 });
-
-function filterReports() {
-  const status = document.getElementById('report-status-filter').value;
-  document.querySelectorAll('#reports-tbody tr').forEach(row => {
-    row.style.display = (!status || row.dataset.status === status) ? '' : 'none';
-  });
-}
-
-function markUnderReview(btn) {
-  const row = btn.closest('tr');
-  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-blue'; b.textContent = 'Under Review'; });
-  row.dataset.status = 'under_review';
-  const btnWrap = btn.closest('div');
-  btnWrap.innerHTML = `
-    <button class="btn btn-primary btn-sm" onclick="approveReport(this)" title="Confirm Scam">✓</button>
-    <button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button>
-    <button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="rejectReport(this)" title="Reject">✗</button>`;
-  showToast('Report marked as Under Review', 'info');
-  logAdminAction('MARK_UNDER_REVIEW', row.cells[0]?.textContent || 'Report');
-}
-
-function approveReport(btn) {
-  const row = btn.closest('tr');
-  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-green'; b.textContent = 'Confirmed'; });
-  row.dataset.status = 'confirmed';
-  btn.closest('div').innerHTML = `<button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button><span class="badge badge-green" style="margin-left:4px">✓ Confirmed</span>`;
-  showToast('Report confirmed. Company flagged in knowledge base.', 'success');
-  logAdminAction('CONFIRM_SCAM', row.cells[0]?.textContent || 'Report');
-}
-
-function rejectReport(btn) {
-  const row = btn.closest('tr');
-  row.querySelectorAll('.badge').forEach(b => { b.className = 'badge badge-gray'; b.textContent = 'Rejected'; });
-  row.dataset.status = 'rejected';
-  btn.closest('div').innerHTML = `<button class="btn btn-outline btn-sm" onclick="viewReport(this)">👁</button>`;
-  showToast('Report rejected', 'info');
-  logAdminAction('REJECT_REPORT', row.cells[0]?.textContent || 'Report');
-}
-
-function logAdminAction(action, target) {
-  // Persist to localStorage for audit log demo
-  try {
-    const logs = JSON.parse(localStorage.getItem('ss_audit_logs') || '[]');
-    const user = _getUser();
-    logs.unshift({ ts: new Date().toISOString(), admin: user?.full_name || 'Admin', action, target });
-    localStorage.setItem('ss_audit_logs', JSON.stringify(logs.slice(0, 50)));
-  } catch(_) {}
-}
-
-function viewReport(btn) {
-  const row = btn.closest('tr');
-  const cells = row.querySelectorAll('td');
-  const status = row.dataset.status || 'pending';
-  const isPending = status === 'pending';
-  const isUnderReview = status === 'under_review';
-  document.getElementById('report-modal-body').innerHTML = `
-    <div class="alert alert-warning"><span class="alert-icon">⚠️</span><span>Review this report carefully before taking action</span></div>
-    <div style="display:grid;gap:8px;font-size:13px">
-      <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Company</span><strong>${cells[0]?.textContent}</strong></div>
-      <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Scam Type</span><span>${cells[1]?.textContent?.trim()}</span></div>
-      <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Description</span><p style="margin-top:4px;color:var(--text-primary)">${cells[2]?.getAttribute('title') || cells[2]?.textContent}</p></div>
-      <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Reporter</span><span>${cells[3]?.textContent}</span></div>
-      <div class="flex-between" style="padding:6px 0"><span class="text-muted">Date</span><span>${cells[4]?.textContent}</span></div>
-    </div>
-    ${isPending || isUnderReview ? `
-    <div style="display:flex;gap:8px;margin-top:16px">
-      ${isPending ? `<button class="btn btn-outline btn-sm" onclick="closeModal('view-report-modal');markUnderReview(document.querySelector('[data-status=pending] .btn-primary'))">Mark Under Review</button>` : ''}
-      <button class="btn btn-primary" onclick="approveFromModal()" style="flex:1">✓ Confirm Scam</button>
-      <button class="btn btn-outline" onclick="rejectFromModal()" style="color:var(--accent-red)">✗ Reject</button>
-    </div>` : ''}`;
-  openModal('view-report-modal');
-}
-
-function approveFromModal() {
-  closeModal('view-report-modal');
-  showToast('Report confirmed from detail view', 'success');
-  logAdminAction('CONFIRM_SCAM', 'Report (modal)');
-}
-
-function rejectFromModal() {
-  closeModal('view-report-modal');
-  showToast('Report rejected', 'info');
-  logAdminAction('REJECT_REPORT', 'Report (modal)');
-}
 </script>
-</body></html>
+</body>
+</html>

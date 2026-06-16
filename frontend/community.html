@@ -44,7 +44,6 @@
     .feed-tag-report { background:rgba(248,81,73,.15); color:var(--accent-red); border:1px solid rgba(248,81,73,.25); }
     .feed-tag-discussion { background:rgba(88,166,255,.15); color:var(--accent-blue); border:1px solid rgba(88,166,255,.25); }
     .feed-tag-question { background:rgba(245,158,11,.15); color:var(--accent-orange); border:1px solid rgba(245,158,11,.25); }
-    .feed-tag-warning { background:rgba(227,112,42,.15); color:var(--accent-orange); border:1px solid rgba(227,112,42,.25); }
     .feed-detail-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px; }
     .feed-detail-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-muted); }
     .replies-section { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); display:none; }
@@ -362,7 +361,6 @@ function getTagClass(type) {
         case 'report': return 'feed-tag-report';
         case 'discussion': return 'feed-tag-discussion';
         case 'question': return 'feed-tag-question';
-        case 'warning': return 'feed-tag-warning';
         default: return 'feed-tag-report';
     }
 }
@@ -372,7 +370,6 @@ function getTagText(type) {
         case 'report': return '🚨 Scam Report';
         case 'discussion': return '💬 Discussion';
         case 'question': return '❓ Question';
-        case 'warning': return '⚠️ Warning';
         default: return type;
     }
 }
@@ -480,15 +477,10 @@ async function renderPosts() {
 function highlightText(text, query) {
     if (!query || !text) return escapeHtml(text);
     const safeText = escapeHtml(text);
-    const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\function highlightText(text, query) {
-    if (!query || !text) return text;
     const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
-    return text.replace(re, '<mark class="search-highlight">$1</mark>');
-}
-
-function escapeHtml')})`, 'gi');
     return safeText.replace(re, '<mark class="search-highlight">$1</mark>');
 }
+
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');

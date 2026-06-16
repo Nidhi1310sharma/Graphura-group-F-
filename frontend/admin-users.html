@@ -4,17 +4,41 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Users – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .modal {
+      max-width: 500px;
+    }
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      color: white;
+    }
+  </style>
 </head>
 <body>
 <div class="app-shell" id="app-shell">
   <div class="main-content">
     <div class="page-inner">
-    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
-    </button>
+      <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
       <div class="page-header flex-between" style="align-items:flex-end">
-        <div><h1> Manage Users</h1><p>View, edit, and moderate registered users</p></div>
+        <div><h1>Manage Users</h1><p>View, edit, and moderate registered users</p></div>
         <button class="btn btn-primary" onclick="openModal('add-user-modal')">+ Add User</button>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:20px">
+        <div class="stat-card" style="--stat-accent:var(--accent-blue)"><div class="stat-value" id="stat-total">--</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-green)"><div class="stat-value" id="stat-active">--</div><div class="stat-label">Active</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-red)"><div class="stat-value" id="stat-banned">--</div><div class="stat-label">Banned</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-orange)"><div class="stat-value" id="stat-admins">--</div><div class="stat-label">Admins</div></div>
       </div>
 
       <div class="card mb-4">
@@ -28,7 +52,6 @@
           <select class="form-control" id="status-filter" style="max-width:150px" onchange="filterUsers()">
             <option value="">All Status</option>
             <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
             <option value="banned">Banned</option>
           </select>
         </div>
@@ -39,49 +62,16 @@
           <table id="users-table">
             <thead><tr><th>User</th><th>Email</th><th>Mobile</th><th>Role</th><th>Reports</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="users-tbody">
-              <tr data-role="user" data-status="active">
-                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px">RS</div><strong>Rahul S.</strong></div></td>
-                <td class="text-secondary">rahul@gmail.com</td><td class="text-secondary">9876543210</td>
-                <td><span class="badge badge-blue">User</span></td><td>14</td><td>2mo ago</td>
-                <td><span class="badge badge-green">Active</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
-              </tr>
-              <tr data-role="user" data-status="active">
-                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#bc8cff,#f778ba)">PM</div><strong>Priya M.</strong></div></td>
-                <td class="text-secondary">priya@outlook.com</td><td class="text-secondary">9123456789</td>
-                <td><span class="badge badge-blue">User</span></td><td>8</td><td>1mo ago</td>
-                <td><span class="badge badge-green">Active</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
-              </tr>
-              <tr data-role="user" data-status="active">
-                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#e3702a,#d29922)">AR</div><strong>Ankit R.</strong></div></td>
-                <td class="text-secondary">ankit@gmail.com</td><td class="text-secondary">9001234567</td>
-                <td><span class="badge badge-blue">User</span></td><td>3</td><td>3wk ago</td>
-                <td><span class="badge badge-green">Active</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
-              </tr>
-              <tr data-role="admin" data-status="active">
-                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#f85149,#e3702a)">AD</div><strong>Admin Demo</strong></div></td>
-                <td class="text-secondary">admin@scamshield.in</td><td class="text-secondary">9999999999</td>
-                <td><span class="badge badge-red">Admin</span></td><td>—</td><td>6mo ago</td>
-                <td><span class="badge badge-green">Active</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button></div></td>
-              </tr>
-              <tr data-role="user" data-status="inactive">
-                <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:12px;background:linear-gradient(135deg,#3fb950,#06d6a0)">NS</div><strong>Neha S.</strong></div></td>
-                <td class="text-secondary">neha@gmail.com</td><td class="text-secondary">—</td>
-                <td><span class="badge badge-blue">User</span></td><td>1</td><td>5d ago</td>
-                <td><span class="badge badge-gray">Inactive</span></td>
-                <td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="viewUser(this)">View</button><button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="banUser(this)">Ban</button></div></td>
+              <tr><td colspan="8" style="text-align:center;padding:30px">Loading...</div> -
               </tr>
             </tbody>
-          </table>
+          </div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px;color:var(--text-muted)">
-          <span>Showing <span id="user-count">5</span> users</span>
+        <div class="flex-between" style="margin-top:14px;font-size:13px;color:var(--text-muted)">
+          <span>Showing <span id="user-count">0</span> users</span>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-outline btn-sm">← Prev</button>
-            <button class="btn btn-outline btn-sm">Next →</button>
+            <button class="btn btn-outline btn-sm" id="prev-page" onclick="changePage(-1)">← Prev</button>
+            <button class="btn btn-outline btn-sm" id="next-page" onclick="changePage(1)">Next →</button>
           </div>
         </div>
       </div>
@@ -98,13 +88,13 @@
       <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="new-user-email" placeholder="email@domain.com"></div>
     </div>
     <div class="two-col">
-      <div class="form-group"><label class="form-label">Mobile</label><input type="tel" class="form-control" placeholder="Phone number"></div>
-      <div class="form-group"><label class="form-label">Role</label><select class="form-control"><option>user</option><option>admin</option></select></div>
+      <div class="form-group"><label class="form-label">Mobile</label><input type="tel" class="form-control" id="new-user-mobile" placeholder="Phone number"></div>
+      <div class="form-group"><label class="form-label">Role</label><select class="form-control" id="new-user-role"><option>user</option><option>admin</option></select></div>
     </div>
-    <div class="form-group"><label class="form-label">Temporary Password</label><input type="password" class="form-control" placeholder="Set temp password"></div>
+    <div class="form-group"><label class="form-label">Temporary Password</label><input type="password" class="form-control" id="new-user-password" placeholder="Set temp password"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
       <button class="btn btn-outline" onclick="closeModal('add-user-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addUser()">Create User</button>
+      <button class="btn btn-primary" onclick="createUser()">Create User</button>
     </div>
   </div>
 </div>
@@ -113,61 +103,214 @@
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+const API_BASE = 'http://localhost:8000/api';
+let allUsers = [];
+let currentPage = 0;
+const pageSize = 10;
+
+async function loadStats() {
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/users/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const stats = await res.json();
+      document.getElementById('stat-total').textContent = stats.total || 0;
+      document.getElementById('stat-active').textContent = stats.active || 0;
+      document.getElementById('stat-banned').textContent = stats.banned || 0;
+      document.getElementById('stat-admins').textContent = stats.admins || 0;
+    }
+  } catch(e) { console.error('Error loading stats:', e); }
+}
+
+async function loadUsers() {
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/users`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const raw = await res.json();
+      allUsers = raw.map(u => ({ ...u, user_id: u.id || u.user_id, full_name: u.name || u.full_name, status: u.status || 'active' }));
+      renderUsersTable();
+    }
+  } catch(e) { console.error('Error loading users:', e); }
+}
+
+function renderUsersTable() {
+  const searchTerm = document.getElementById('user-search')?.value.toLowerCase() || '';
+  const roleFilter = document.getElementById('role-filter')?.value || '';
+  const statusFilter = document.getElementById('status-filter')?.value || '';
+  
+  let filtered = [...allUsers];
+  if (searchTerm) filtered = filtered.filter(u => u.full_name?.toLowerCase().includes(searchTerm) || u.email?.toLowerCase().includes(searchTerm));
+  if (roleFilter) filtered = filtered.filter(u => u.role === roleFilter);
+  if (statusFilter) filtered = filtered.filter(u => u.status === statusFilter);
+  
+  document.getElementById('user-count').textContent = filtered.length;
+  
+  const start = currentPage * pageSize;
+  const paginated = filtered.slice(start, start + pageSize);
+  
+  const tbody = document.getElementById('users-tbody');
+  if (!paginated.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px">No users found</div> -</td>';
+    return;
+  }
+  
+  tbody.innerHTML = paginated.map(u => {
+    // backend returns id/name — normalise both shapes
+    const uid    = u.id || u.user_id || '';
+    const uname  = u.name || u.full_name || '—';
+    const ustatus = u.status || 'active';
+    const avatarLetter = (uname !== '—' ? uname : u.email || 'U')[0].toUpperCase();
+    const roleClass   = u.role === 'admin' ? 'badge-red' : 'badge-blue';
+    const statusClass = ustatus === 'active' ? 'badge-green' : (ustatus === 'banned' ? 'badge-red' : 'badge-gray');
+    return `
+      <tr data-user-id="${uid}" data-role="${u.role}" data-status="${ustatus}">
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar">${avatarLetter}</div><strong>${escapeHtml(uname)}</strong></div></td>
+        <td class="text-secondary mono">${escapeHtml(u.email || '—')}</td>
+        <td class="text-secondary mono">${escapeHtml(u.mobile || '—')}</td>
+        <td><span class="badge ${roleClass}">${u.role || '—'}</span></td>
+        <td class="text-secondary mono">${u.reports_count || 0}</td>
+        <td class="text-secondary mono">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+        <td><span class="badge ${statusClass}">${ustatus}</span></td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-outline btn-sm" onclick="viewUser('${uid}')">View</button>
+            ${u.role !== 'admin' ? `<button class="btn btn-outline btn-sm" style="color:var(--accent-red)" onclick="toggleBan('${uid}', this)">${ustatus === 'banned' ? 'Unban' : 'Ban'}</button>` : ''}
+            <button class="btn btn-sm" style="background:var(--accent-red,#e05252);color:#fff;border:none" onclick="deleteUser('${uid}', '${escapeHtml(uname)}')">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function toggleBan(userId, btn) {
+  const user = allUsers.find(u => (u.id || u.user_id) === userId);
+  if (!user) return;
+  const newStatus = user.status === 'banned' ? 'active' : 'banned';
+  if (!confirm(`${newStatus === 'banned' ? 'Ban' : 'Unban'} this user?`)) return;
+  
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (res.ok) {
+      user.status = newStatus;
+      renderUsersTable();
+      loadStats();
+      showToast(`User ${newStatus === 'banned' ? 'banned' : 'unbanned'} successfully`, 'success');
+    } else {
+      throw new Error('Failed to update');
+    }
+  } catch(e) { showToast('Failed to update user status', 'error'); }
+}
+
+async function deleteUser(userId, userName) {
+  if (!confirm(`Permanently delete user "${userName}"?\n\nThis cannot be undone.`)) return;
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      allUsers = allUsers.filter(u => (u.id || u.user_id) !== userId);
+      renderUsersTable();
+      showToast('User deleted successfully', 'success');
+      // refresh stats
+      loadStats();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.detail || 'Failed to delete user', 'error');
+    }
+  } catch (e) {
+    showToast('Error deleting user', 'error');
+  }
+}
+
+async function viewUser(userId) {
+  showToast('User details coming soon', 'info');
+}
+
+async function createUser() {
+  const name = document.getElementById('new-user-name').value.trim();
+  const email = document.getElementById('new-user-email').value.trim();
+  const mobile = document.getElementById('new-user-mobile').value.trim();
+  const role = document.getElementById('new-user-role').value;
+  const password = document.getElementById('new-user-password').value;
+  
+  if (!name || !email || !password) {
+    showToast('Name, email and password are required', 'error');
+    return;
+  }
+  
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ full_name: name, email, mobile, role, password })
+    });
+    if (res.ok) {
+      closeModal('add-user-modal');
+      document.getElementById('new-user-name').value = '';
+      document.getElementById('new-user-email').value = '';
+      document.getElementById('new-user-mobile').value = '';
+      document.getElementById('new-user-password').value = '';
+      showToast('User created successfully', 'success');
+      loadStats();
+      loadUsers();
+    } else {
+      const err = await res.json();
+      showToast(err.detail || 'Failed to create user', 'error');
+    }
+  } catch(e) { showToast('Failed to create user', 'error'); }
+}
+
+function filterUsers() {
+  currentPage = 0;
+  renderUsersTable();
+}
+
+function changePage(delta) {
+  const searchTerm = document.getElementById('user-search')?.value.toLowerCase() || '';
+  const roleFilter = document.getElementById('role-filter')?.value || '';
+  const statusFilter = document.getElementById('status-filter')?.value || '';
+  
+  let filtered = [...allUsers];
+  if (searchTerm) filtered = filtered.filter(u => u.full_name?.toLowerCase().includes(searchTerm) || u.email?.toLowerCase().includes(searchTerm));
+  if (roleFilter) filtered = filtered.filter(u => u.role === roleFilter);
+  if (statusFilter) filtered = filtered.filter(u => u.status === statusFilter);
+  
+  const maxPage = Math.ceil(filtered.length / pageSize) - 1;
+  const newPage = currentPage + delta;
+  if (newPage >= 0 && newPage <= maxPage) {
+    currentPage = newPage;
+    renderUsersTable();
+  }
+}
+
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+function showToast(msg, type) { const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#f85149':'#3fb950')+';color:white;padding:12px 24px;border-radius:8px;z-index:9999'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
 document.addEventListener('DOMContentLoaded', () => {
   const user = auth.getUser();
   if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
   requireAdmin();
   renderSidebar('admin-users.html', true);
   document.getElementById('page-title').textContent = 'Manage Users';
+  loadStats();
+  loadUsers();
 });
-
-function filterUsers() {
-  const search = document.getElementById('user-search').value.toLowerCase();
-  const role = document.getElementById('role-filter').value;
-  const status = document.getElementById('status-filter').value;
-  let count = 0;
-  document.querySelectorAll('#users-tbody tr').forEach(row => {
-    const text = row.textContent.toLowerCase();
-    const rowRole = row.dataset.role;
-    const rowStatus = row.dataset.status;
-    const show = text.includes(search) && (!role || rowRole === role) && (!status || rowStatus === status);
-    row.style.display = show ? '' : 'none';
-    if (show) count++;
-  });
-  document.getElementById('user-count').textContent = count;
-}
-
-function banUser(btn) {
-  if (!confirm('Ban this user?')) return;
-  const row = btn.closest('tr');
-  row.querySelector('[class*="badge-green"]').className = 'badge badge-red';
-  row.querySelector('[class*="badge-green"]').textContent = 'Banned';
-  row.dataset.status = 'banned';
-  btn.textContent = 'Unban'; btn.onclick = unbanUser;
-  showToast('User banned', 'warning');
-}
-
-function unbanUser(btn) {
-  const row = btn.closest('tr');
-  row.querySelector('[class*="badge-red"]:not(.badge-blue):not(.badge-red:first-child)').className = 'badge badge-green';
-  row.querySelector('.badge-green').textContent = 'Active';
-  row.dataset.status = 'active';
-  btn.textContent = 'Ban'; btn.onclick = banUser;
-  showToast('User unbanned', 'success');
-}
-
-function viewUser(btn) {
-  const row = btn.closest('tr');
-  const name = row.querySelector('strong').textContent;
-  showToast('Viewing ' + name + ' (profile view coming soon)', 'info');
-}
-
-function addUser() {
-  const name = document.getElementById('new-user-name').value.trim();
-  const email = document.getElementById('new-user-email').value.trim();
-  if (!name || !email) { showToast('Fill in name and email', 'warning'); return; }
-  closeModal('add-user-modal');
-  showToast('User ' + name + ' created successfully', 'success');
-}
 </script>
-</body></html>
+</body>
+</html>

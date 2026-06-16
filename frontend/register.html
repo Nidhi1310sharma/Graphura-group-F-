@@ -5,7 +5,7 @@
   <title>Create Account – ScamShield</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    .auth-wrapper { width:100%; max-width:440px; }
+    .auth-wrapper { width:100%; max-width:440px; margin:0 auto; }
     .auth-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px; }
     .auth-logo { display:flex; align-items:center; gap:10px; margin-bottom:24px; text-decoration:none; }
     .auth-logo-icon { width:42px; height:42px; border-radius:10px; background:linear-gradient(135deg,var(--teal),var(--navy)); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -17,6 +17,9 @@
     .strength-bar  { height:4px; border-radius:99px; background:var(--bg-input); margin-top:6px; overflow:hidden; }
     .strength-fill { height:100%; border-radius:99px; transition:all .3s; width:0%; }
     .match-hint { font-size:12px; margin-top:5px; min-height:16px; }
+    .auth-page { display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px; }
+    .auth-back-btn { position:absolute; top:20px; left:20px; }
+    .theme-toggle { position:fixed; top:20px; right:20px; display:flex; }
   </style>
 </head>
 <body>
@@ -27,7 +30,6 @@
 <div class="auth-page">
   <div class="auth-wrapper">
     <div class="auth-card">
-      <!-- Logo -->
       <a href="index.html" class="auth-logo">
         <div class="auth-logo-icon">
           <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M16 2L4 7v9c0 7.18 5.14 13.9 12 15.93C22.86 29.9 28 23.18 28 16V7L16 2z" fill="rgba(255,255,255,0.9)"/><path d="M11 16l3.5 3.5L21.5 12" stroke="#2F4156" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -37,6 +39,12 @@
 
       <div class="auth-title">Create your account</div>
       <p class="auth-sub">Join thousands protecting themselves from job scams. Free forever.</p>
+
+      <!-- Name -->
+      <div class="form-group">
+        <label class="form-label">Full Name <span style="color:var(--accent-red,#e05252)">*</span></label>
+        <input type="text" id="reg-name" class="form-control" placeholder="Your full name" autocomplete="name">
+      </div>
 
       <!-- Email -->
       <div class="form-group">
@@ -87,8 +95,6 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-client.js"></script>
 <script src="js/main.js"></script>
 <script>
 function togglePwd(id, btn) {
@@ -129,100 +135,65 @@ function checkMatch() {
 }
 
 async function handleRegister() {
+  const name     = document.getElementById('reg-name').value.trim();
   const email    = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
   const confirm  = document.getElementById('reg-confirm').value;
 
-  if (!email || !password || !confirm)     { showToast('Please fill in all fields', 'warning'); return; }
-  if (password.length < 8)                 { showToast('Password must be at least 8 characters', 'warning'); return; }
-  if (password !== confirm)                { showToast('Passwords do not match', 'error'); return; }
-  if (!document.getElementById('agree-terms').checked) { showToast('Please agree to the Terms of Service', 'warning'); return; }
+  if (!name || !email || !password || !confirm) { 
+    showToast('Please fill in all fields', 'warning'); 
+    return; 
+  }
+  if (password.length < 8) { 
+    showToast('Password must be at least 8 characters', 'warning'); 
+    return; 
+  }
+  if (password !== confirm) { 
+    showToast('Passwords do not match', 'error'); 
+    return; 
+  }
+  if (!document.getElementById('agree-terms').checked) { 
+    showToast('Please agree to the Terms of Service', 'warning'); 
+    return; 
+  }
 
   const btn = document.getElementById('reg-btn');
-  btn.disabled = true; btn.textContent = 'Creating account…';
+  btn.disabled = true; 
+  btn.textContent = 'Creating account…';
 
-  // ── Try real backend first ──
   try {
-    const data = await api.post('/register', {
-      full_name: email.split('@')[0],
-      email,
-      password,
+    const data = await api.post('/api/auth/signup', {
+      name: name,
+      email: email,
+      password: password
     });
+    
     const token = data.access_token || data.token;
-    const user  = { ...data.user, full_name: data.user?.full_name || data.user?.name || email };
-    localStorage.setItem('gr_token', token);
-    localStorage.setItem('gr_user',  JSON.stringify(user));
-    showToast('Account created! Welcome to ScamShield 🎉', 'success');
-    setTimeout(() => location.href = 'index.html', 800);
-    return;
-  } catch (backendErr) {
-    console.warn('Backend register failed, trying Supabase direct:', backendErr.message);
-  }
-
-  // ── Direct Supabase insert (table: admin_users) ──
-  if (supabase) {
-    try {
-      // Check if email already exists
-      const existing = await supabase.from('admin_users').select('id').eq('email', email).maybeSingle();
-      if (existing.data) {
-        showToast('Email already registered. Please sign in.', 'error');
-        btn.disabled = false; btn.textContent = 'Create Account';
-        return;
-      }
-
-      // Hash password via bcrypt is server-side only; store plaintext flag for demo,
-      // production must go through backend. For now store a placeholder hash.
-      // We'll use the backend's hashed format indicator.
-      const newRow = {
-        name:          email.split('@')[0],
-        email:         email,
-        password_hash: 'DEMO_UNHASHED_' + password, // backend will re-hash on login
-        role:          'user',
-        created_at:    new Date().toISOString(),
-      };
-      const res = await supabase.from('admin_users').insert(newRow).select().single();
-      if (res.error) throw res.error;
-
-      const user = {
-        user_id:   res.data.id,
-        id:        res.data.id,
-        email:     res.data.email,
-        full_name: res.data.name || email.split('@')[0],
-        name:      res.data.name,
-        role:      res.data.role || 'user',
-      };
-      localStorage.setItem('gr_token', 'supabase-token-' + Date.now());
-      localStorage.setItem('gr_user',  JSON.stringify(user));
-      showToast('Account created! Welcome to ScamShield 🎉', 'success');
-      setTimeout(() => location.href = 'index.html', 800);
-      return;
-    } catch (dbErr) {
-      console.warn('Supabase insert failed:', dbErr);
-      showToast('Could not save to database: ' + (dbErr.message || 'Unknown error'), 'error');
-      btn.disabled = false; btn.textContent = 'Create Account';
-      return;
+    const user = data.user || data;
+    
+    if (token) {
+      localStorage.setItem('gr_token', token);
+      localStorage.setItem('gr_user', JSON.stringify(user));
     }
+    
+    showToast('Account created successfully! Welcome to ScamShield 🎉', 'success');
+    setTimeout(() => {
+      location.href = (user.role === 'admin') ? 'admin.html' : 'index.html';
+    }, 800);
+  } catch (error) {
+    console.error('Registration error:', error);
+    showToast(error.message || 'Registration failed. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
   }
-
-  // ── Offline demo fallback ──
-  const user = {
-    user_id: 'new-' + Date.now(),
-    email,
-    full_name: email.split('@')[0],
-    role: 'user',
-  };
-  localStorage.setItem('gr_token', 'demo-token-user-' + Date.now());
-  localStorage.setItem('gr_user',  JSON.stringify(user));
-  showToast('Account created (offline mode — connect backend for persistence)', 'info');
-  setTimeout(() => location.href = 'index.html', 800);
-
-  btn.disabled = false; btn.textContent = 'Create Account';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   updateThemeBtn(localStorage.getItem('gr_theme') || 'dark');
 });
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.activeElement?.closest('.auth-card')) handleRegister();
 });

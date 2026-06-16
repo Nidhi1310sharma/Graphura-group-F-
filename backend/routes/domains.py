@@ -17,3 +17,5 @@ async def get_blacklisted_domains(limit: int = 12):
     )
 
     return response.data
+
+

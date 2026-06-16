@@ -160,11 +160,11 @@
           <div style="text-align:center;margin-bottom:10px"><span style="font-size:12px;color:var(--teal);font-weight:600;background:rgba(86,124,141,.12);padding:4px 14px;border-radius:99px;border:1px solid rgba(86,124,141,.2)">Free — No login required</span></div>
           <div class="unified-checker mb-4">
             <div class="input-mode-bar" id="mode-bar">
-              <button class="mode-btn active" onclick="setMode('url')">Link</button>
-              <button class="mode-btn" onclick="setMode('screenshot')">Screenshot</button>
-              <!-- <button class="mode-btn" onclick="setMode('email')">Email</button> -->
-              <button class="mode-btn" onclick="setMode('offer')">Offer Letter</button>
-              <button class="mode-btn" onclick="setMode('text')">Description</button>
+              <button class="mode-btn active" onclick="setMode('url', this)">Link</button>
+              <button class="mode-btn" onclick="setMode('screenshot', this)">Screenshot</button>
+              <!-- <button class="mode-btn" onclick="setMode('email', this)">Email</button> -->
+              <button class="mode-btn" onclick="setMode('offer', this)">Offer Letter</button>
+              <button class="mode-btn" onclick="setMode('text', this)">Description</button>
             </div>
 
             <div class="checker-body">
@@ -174,7 +174,7 @@
                   <label class="form-label">Job posting or company link</label>
                   <div style="display:flex;gap:8px">
                     <input type="url" id="url-input" class="form-control" placeholder="https://naukri.com/job/... or suspicious-site.xyz" style="flex:1">
-                    <button class="btn btn-primary" onclick="analyzeFromHome()">Analyze</button>
+                    <!--<button class="btn btn-primary" onclick="analyzeFromHome()">Analyze</button> {% endcomment %} -->
                   </div>
                 </div>
                 <p class="text-xs text-muted mt-1">Paste the job URL — we'll check domain age, SSL, recruiter email, and more.</p>
@@ -189,23 +189,7 @@
                 </div>
                 <input type="file" id="file-ss" accept="image/*" style="display:none" onchange="previewFile(this,'prev-ss')">
                 <div id="prev-ss" class="mt-2"></div>
-                <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Screenshot</button>
-              </div>
-
-              <!-- Email Mode -->
-              <div class="mode-panel" id="mode-email">
-                <div class="form-group">
-                  <label class="form-label">Sender email address</label>
-                  <input type="email" id="email-sender" class="form-control" placeholder="recruiter@fake-company.xyz">
-                </div>
-                <div class="drop-zone mt-2" onclick="document.getElementById('file-email').click()">
-                  <div class="drop-zone-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-                  <div class="drop-zone-label">Upload email screenshot (optional)</div>
-                  <div class="drop-zone-hint">PNG, JPG or .eml — max 5MB</div>
-                </div>
-                <input type="file" id="file-email" accept="image/*,.eml" style="display:none" onchange="previewFile(this,'prev-email')">
-                <div id="prev-email" class="mt-2"></div>
-                <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Email</button>
+                <!--{% comment %} <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Screenshot</button> {% endcomment %}-->
               </div>
 
               <!-- Offer Letter Mode -->
@@ -217,7 +201,7 @@
                 </div>
                 <input type="file" id="file-offer" accept=".pdf,.docx,application/pdf" style="display:none" onchange="previewFile(this,'prev-offer')">
                 <div id="prev-offer" class="mt-2"></div>
-                <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Offer Letter</button>
+                <!--{% comment %} <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Offer Letter</button> {% endcomment %}-->
               </div>
 
               <!-- Paste Text Mode -->
@@ -226,11 +210,150 @@
                   <label class="form-label">Paste job description or email content</label>
                   <textarea id="text-input" class="form-control" rows="5" placeholder="Paste the full job description, email, or any text you received from the recruiter…"></textarea>
                 </div>
-                <button class="btn btn-primary btn-full" onclick="analyzeFromHome()">Analyze Text</button>
+                <!--{% comment %} <button class="btn btn-primary btn-full" onclick="analyzeFromHome()">Analyze Text</button> {% endcomment %}-->
               </div>
+
+              <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:20px;">
+
+              </div>
+              <div id="compareContainer" style="display:none;">
+
+                <!-- URL -->
+                <div id="compare-url" style="display:none; margin-top:15px;">
+
+  <label class="form-label">
+      Second Job URL
+  </label>
+
+  <input
+      type="url"
+      id="url-input-b"
+      class="form-control"
+      placeholder="https://example.com/job">
+
+</div>
+
+                <!-- TEXT -->
+                <div id="compare-text" style="display:none; margin-top:15px;">
+
+  <label class="form-label">
+      Second Job Description
+  </label>
+
+  <textarea
+      id="text-input-b"
+      class="form-control"
+      rows="5"
+      placeholder="Paste second job description">
+  </textarea>
+
+</div>
+
+                <!-- IMAGE -->
+                <div id="compare-image" style="display:none; margin-top:15px;">
+
+                  <div class="drop-zone"
+                      onclick="document.getElementById('file-ss-b').click()">
+
+                      <div class="drop-zone-icon">
+                          <!-- COPY THE SAME SVG FROM YOUR SCREENSHOT BOX -->
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                              stroke="var(--text-muted)" stroke-width="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="2"/>
+                              <circle cx="8.5" cy="8.5" r="1.5"/>
+                              <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                      </div>
+
+                      <div class="drop-zone-label">
+                          Upload second screenshot
+                      </div>
+
+                      <div class="drop-zone-hint">
+                          PNG, JPG, WEBP
+                      </div>
+
+                  </div>
+
+                  <input
+                      type="file"
+                      id="file-ss-b"
+                      accept="image/*"
+                      style="display:none"
+                      onchange="previewFile(this,'prev-ss-b')">
+
+                  <div id="prev-ss-b" class="mt-2"></div>
+
+                </div>
+                <!-- PDF -->
+                <div id="compare-pdf" style="display:none; margin-top:15px;">
+
+  <div class="drop-zone"
+       onclick="document.getElementById('file-offer-b').click()">
+
+      <div class="drop-zone-icon">
+
+          <!-- COPY SAME SVG FROM OFFER LETTER BOX -->
+
+          <svg width="28" height="28" viewBox="0 0 24 24"
+               fill="none"
+               stroke="var(--text-muted)"
+               stroke-width="1.5">
+
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+
+          </svg>
+
+      </div>
+
+      <div class="drop-zone-label">
+          Upload second offer letter
+      </div>
+
+      <div class="drop-zone-hint">
+          PDF or DOCX
+      </div>
+
+  </div>
+
+  <input
+      type="file"
+      id="file-offer-b"
+      accept=".pdf,.docx"
+      style="display:none"
+      onchange="previewFile(this,'prev-offer-b')">
+
+  <div id="prev-offer-b" class="mt-2"></div>
+
+</div>
+
+              </div>
+              <div style="display:flex;gap:12px;margin-top:15px;">
+
+  <button
+      class="btn btn-primary"
+      style="flex:1"
+      onclick="handleAnalysis()">
+      Analyze
+  </button>
+
+  <button
+      class="btn btn-outline"
+      style="flex:1"
+      onclick="toggleCompare()">
+      Compare
+  </button>
+
+</div>
             </div>
           </div>
 
+          <!--{% comment %} results container {% endcomment %} -->
+          <div id="resultsContainer" style="margin-top:24px;"></div>
+          
           <!-- Two column layout for Blacklisted and Quick Actions -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
             <!-- Blacklisted Domains – Left Side -->
@@ -277,13 +400,59 @@
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
-// ── Mode switcher ──
-function setMode(mode) {
-  document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('mode-' + mode).classList.add('active');
-  event.currentTarget.classList.add('active');
+
+const API_BASE = "/api";
+let currentMode = "url";
+
+<!-- toggle enable-->
+let compareEnabled = false;
+
+function toggleCompare(){
+
+    compareEnabled = !compareEnabled;
+
+    document.getElementById(
+      "compareContainer"
+    ).style.display =
+      compareEnabled ? "block" : "none";
+
+    updateCompareFields();
 }
+
+
+// ── Mode switcher ──
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-panel')
+    .forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.mode-btn')
+    .forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + mode)
+    .classList.add('active');
+  btn.classList.add('active');
+  updateCompareFields();
+}
+// {% comment %} compare filed switch {% endcomment %} 
+function updateCompareFields() {
+
+  document.getElementById("compare-url").style.display = "none";
+  document.getElementById("compare-text").style.display = "none";
+  document.getElementById("compare-image").style.display = "none";
+  document.getElementById("compare-pdf").style.display = "none";
+
+  if(currentMode === "url")
+    document.getElementById("compare-url").style.display = "block";
+
+  if(currentMode === "text")
+    document.getElementById("compare-text").style.display = "block";
+
+  if(currentMode === "screenshot")
+    document.getElementById("compare-image").style.display = "block";
+
+  if(currentMode === "offer")
+    document.getElementById("compare-pdf").style.display = "block";
+}
+
 
 function ev(e, cls, id) {
   e.preventDefault();
@@ -309,67 +478,199 @@ function previewFile(input, previewId) {
   }
 }
 
-function analyzeFromHome() {
-  const activeTab = document.querySelector('.tab-btn.active')?.dataset?.tab || 'url';
-  let value = '';
-  let hasFile = false;
+//{% comment %} Analyse Function {% endcomment %}
+async function handleAnalysis(){
 
-  if (activeTab === 'url') {
-    value = document.getElementById('url-input')?.value?.trim() || '';
-    if (!value) {
-      const el = document.getElementById('url-input');
-      if (el) { el.classList.add('error'); el.placeholder = '⚠️ Please paste a job URL'; setTimeout(() => { el.classList.remove('error'); el.placeholder = 'https://'; }, 3000); }
-      showToast('Please enter a job URL to analyze', 'error');
-      return;
-    }
-    if (!value.startsWith('http://') && !value.startsWith('https://')) {
-      value = 'https://' + value;
-      const el = document.getElementById('url-input');
-      if (el) el.value = value;
-    }
-  } else if (activeTab === 'text') {
-    value = document.getElementById('text-input')?.value?.trim() || '';
-    if (value.length < 30) {
-      const el = document.getElementById('text-input');
-      if (el) el.classList.add('error');
-      showToast(value.length === 0 ? 'Please paste a job description or message' : 'Text is too short — paste more details for a reliable result', 'error');
-      setTimeout(() => document.getElementById('text-input')?.classList.remove('error'), 3000);
-      return;
-    }
-  } else if (activeTab === 'screenshot' || activeTab === 'offer') {
-    const fileInput = document.querySelector(`#${activeTab}-drop input[type="file"]`) || document.querySelector('.upload-zone input[type="file"]');
-    hasFile = fileInput && fileInput.files.length > 0;
-    if (!hasFile) {
-      showToast('Please upload a file first', 'error');
-      return;
-    }
-  } else if (activeTab === 'email') {
-    value = document.getElementById('email-sender')?.value?.trim() || '';
-    const body = document.getElementById('email-body')?.value?.trim() || '';
-    if (!value && !body) {
-      showToast('Please enter the sender email or paste the email content', 'error');
-      return;
-    }
-  }
-
-  const params = new URLSearchParams({ mode: activeTab });
-  if (value) params.set('q', encodeURIComponent(value));
-  window.location.href = `checker.html?${params.toString()}`;
+    if(compareEnabled)
+        await compareJobs();
+    else
+        await analyzeSingle();
 }
 
-// // ── Live Feed ──
-// const FEED_DATA = [
-//   { job: 'Data Entry Intern', company: 'XYZ Solutions', city: 'Pune', time: '2m ago', risk: 'high' },
-//   { job: 'WFH Customer Care', company: 'DigiWork India', city: 'Mumbai', time: '5m ago', risk: 'high' },
-//   { job: 'Digital Marketing Exec', company: 'GlobalWork', city: 'Delhi', time: '11m ago', risk: 'medium' },
-//   { job: 'HR Recruiter WFH', company: 'CareerBoost Pvt', city: 'Bangalore', time: '18m ago', risk: 'high' },
-//   { job: 'Remote Data Analyst', company: 'TechGrow India', city: 'Chennai', time: '22m ago', risk: 'medium' },
-//   { job: 'Content Writer (Home)', company: 'WritePro Hub', city: 'Hyderabad', time: '29m ago', risk: 'medium' },
-//   { job: 'Python Developer', company: 'TCS (Official)', city: 'Pune', time: '34m ago', risk: 'low' },
-//   { job: 'Sales Executive', company: 'Zomato Careers', city: 'Gurgaon', time: '41m ago', risk: 'low' },
-//   { job: 'BPO Executive', company: 'QuickEarnings Ltd', city: 'Jaipur', time: '47m ago', risk: 'high' },
-//   { job: 'Typing Operator', company: 'NetJob India', city: 'Noida', time: '55m ago', risk: 'high' },
-// ];
+//{% comment %} Single Analysis {% endcomment %}
+async function analyzeSingle(){
+
+    const fd = new FormData();
+
+    if(currentMode === "url"){
+
+        fd.append("source_type","URL");
+
+        fd.append(
+            "url",
+            document.getElementById("url-input").value
+        );
+    }
+
+    else if(currentMode === "text"){
+
+        fd.append("source_type","TEXT");
+
+        fd.append(
+            "content",
+            document.getElementById("text-input").value
+        );
+    }
+
+    else if(currentMode === "screenshot"){
+
+        fd.append("source_type","IMAGE");
+
+        fd.append(
+            "file",
+            document.getElementById("file-ss").files[0]
+        );
+    }
+
+    else if(currentMode === "offer"){
+
+        fd.append("source_type","PDF");
+
+        fd.append(
+            "file",
+            document.getElementById("file-offer").files[0]
+        );
+    }
+
+    const res = await fetch(
+        `${API_BASE}/analyze/`,
+        {
+            method:"POST",
+            body:fd
+        }
+    );
+s
+    const data = await res.json();
+
+    renderSingleTrustCard(data.data);
+}
+
+//{% comment %} Compare function {% endcomment %}
+async function compareJobs(){
+
+    const fd = new FormData();
+
+    if(currentMode === "url"){
+
+        fd.append("source_type","URL");
+
+        fd.append("url_a",
+            document.getElementById("url-input").value);
+
+        fd.append("url_b",
+            document.getElementById("url-input-b").value);
+    }
+
+    else if(currentMode === "text"){
+
+        fd.append("source_type","TEXT");
+
+        fd.append("content_a",
+            document.getElementById("text-input").value);
+
+        fd.append("content_b",
+            document.getElementById("text-input-b").value);
+    }
+
+    else if(currentMode === "screenshot"){
+
+        fd.append("source_type","IMAGE");
+
+        fd.append("file_a",
+            document.getElementById("file-ss").files[0]);
+
+        fd.append("file_b",
+            document.getElementById("file-ss-b").files[0]);
+    }
+
+    else if(currentMode === "offer"){
+
+        fd.append("source_type","PDF");
+
+        fd.append("file_a",
+            document.getElementById("file-offer").files[0]);
+
+        fd.append("file_b",
+            document.getElementById("file-offer-b").files[0]);
+    }
+
+    const res = await fetch(
+      `${API_BASE}/analyze/compare`,
+      {
+        method:"POST",
+        body:fd
+      }
+    );
+
+    const data = await res.json();
+
+    renderCompareCards(data);
+}
+
+//{% comment %} Trust Cards {% endcomment %}
+function renderSingleTrustCard(result){
+
+  document.getElementById(
+    "resultsContainer"
+  ).innerHTML = buildTrustCard(result);
+}
+
+//{% comment %} SIngle Trust Card {% endcomment %}
+function buildTrustCard(result){
+return `
+<div class="trust-card">
+  <div class="score-ring-wrap">
+      <div>
+        <h2>${result.risk_score}</h2>
+        <small>Risk Score</small>
+      </div>
+      <div>
+        <h3>${result.risk_level}</h3>
+        <p>Trust Score:
+           ${result.trust_score}</p>
+      </div>
+  </div>
+  <div class="trust-flags">
+      ${
+        result.fraud_reasons
+        .map(r =>
+           `<div class="trust-flag bad">✖ ${r}</div>`
+        )
+        .join("")
+      }
+  </div>
+</div>
+`;
+}
+
+//{% comment %} Compare Trust Card {% endcomment %}
+function renderCompareCards(data){
+
+document.getElementById(
+"resultsContainer"
+).innerHTML = `
+
+<div
+style="
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+">
+${buildTrustCard(data.job_a)}
+${buildTrustCard(data.job_b)}
+</div>
+<div
+style="
+text-align:center;
+margin-top:20px;
+font-size:24px;
+font-weight:bold;
+">
+Winner:
+${data.winner}
+</div>
+`;
+}
 
 function renderFeed() {
   const track = document.getElementById('live-feed-track');
@@ -455,8 +756,8 @@ async function renderBlacklist() {
       <span>${d}</span>
     </div>`).join('');
 }
-
 document.addEventListener('DOMContentLoaded', () => {
+   updateCompareFields();
   renderNavbar();
   renderBlacklist();
   

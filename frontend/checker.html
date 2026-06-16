@@ -22,6 +22,14 @@
     .proof-file-preview { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-secondary); margin-top: 8px; }
     .proof-file-preview .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .proof-file-preview .remove-file { background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 14px; }
+    .risk-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .risk-badge.low { background: rgba(34,197,94,0.15); color: #3fb950; }
+    .risk-badge.medium { background: rgba(245,158,11,0.15); color: #f0883e; }
+    .risk-badge.high { background: rgba(220,38,38,0.15); color: #f85149; }
+    .signal-item { padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .keyword-tag { display: inline-block; background: rgba(220,38,38,0.1); color: #f85149; padding: 4px 10px; border-radius: 99px; font-size: 12px; margin: 4px; }
+    .hidden { display: none; }
+    .score-ring { width: 120px; height: 120px; margin: 0 auto; }
   </style>
 </head>
 <body>
@@ -31,14 +39,14 @@
       <button class="back-btn" onclick="history.back()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
       
       <div class="page-header">
-        <h1> Analyze Job Posting</h1>
+        <h1>Analyze Job Posting</h1>
         <p>Hover over each input field to choose your preferred method of analysis</p>
       </div>
 
       <div class="checker-layout">
         <!-- INPUT PANEL -->
         <div class="card">
-          <div class="card-title"> Job Details</div>
+          <div class="card-title">Job Details</div>
 
           <div class="form-group">
             <label class="form-label">Job Posting URL</label>
@@ -78,11 +86,11 @@
             <div class="proof-section-title">📎 Attach Proof (optional – hover to choose)</div>
             <p class="text-xs text-secondary mb-2">Add any evidence to improve accuracy and submit with your report</p>
             <div class="proof-btns">
-              <button class="proof-btn" id="btn-screenshot" onclick="toggleProof('screenshot')"> Screenshot</button>
-              <button class="proof-btn" id="btn-linkedin" onclick="toggleProof('linkedin')"> LinkedIn Post</button>
-              <button class="proof-btn" id="btn-email" onclick="toggleProof('email')"> Email Proof</button>
-              <button class="proof-btn" id="btn-offer" onclick="toggleProof('offer')"> Offer Letter</button>
-              <button class="proof-btn" id="btn-link" onclick="toggleProof('link')"> Any Link</button>
+              <button class="proof-btn" id="btn-screenshot" onclick="toggleProof('screenshot')">Screenshot</button>
+              <button class="proof-btn" id="btn-linkedin" onclick="toggleProof('linkedin')">LinkedIn Post</button>
+              <button class="proof-btn" id="btn-email" onclick="toggleProof('email')">Email Proof</button>
+              <button class="proof-btn" id="btn-offer" onclick="toggleProof('offer')">Offer Letter</button>
+              <button class="proof-btn" id="btn-link" onclick="toggleProof('link')">Any Link</button>
             </div>
 
             <div class="proof-panel" id="proof-screenshot">
@@ -143,7 +151,7 @@
           </div>
 
           <button class="btn btn-danger btn-full btn-lg mt-3" id="analyze-btn" onclick="analyzeJob()">
-             Analyze for Scam Signals
+            Analyze for Scam Signals
           </button>
           <p class="text-xs text-muted text-center mt-2">Analysis takes 2–5 seconds. No login required.</p>
         </div>
@@ -151,7 +159,7 @@
         <!-- RESULT PANEL -->
         <div class="card" id="result-panel">
           <div class="result-placeholder" id="result-placeholder">
-            <div class="big-icon"></div>
+            <div class="big-icon">🔍</div>
             <div>
               <p style="font-size:15px;font-weight:600;color:var(--text-secondary);margin-bottom:6px">Results appear here</p>
               <p class="text-xs text-muted">Fill in job details and click Analyze</p>
@@ -159,13 +167,13 @@
           </div>
           <div id="result-content" class="hidden">
             <div class="score-section">
-              <div id="score-display"></div>
+              <div id="score-display" class="score-ring"></div>
               <div id="risk-badge-wrap" class="mt-2"></div>
             </div>
             <div class="sub-scores">
-              <div class="sub-score-item"><div class="sub-score-val" id="kw-score" style="color:var(--accent-red)">-</div><div class="sub-score-lbl">Keyword Score</div></div>
-              <div class="sub-score-item"><div class="sub-score-val" id="domain-score" style="color:var(--accent-orange)">-</div><div class="sub-score-lbl">Domain Risk</div></div>
-              <div class="sub-score-item"><div class="sub-score-val" id="salary-score" style="color:var(--accent-yellow)">-</div><div class="sub-score-lbl">Salary Anomaly</div></div>
+              <div class="sub-score-item"><div class="sub-score-val" id="kw-score">-</div><div class="sub-score-lbl">Risk Score</div></div>
+              <div class="sub-score-item"><div class="sub-score-val" id="domain-score">-</div><div class="sub-score-lbl">Domain Risk</div></div>
+              <div class="sub-score-item"><div class="sub-score-val" id="salary-score">-</div><div class="sub-score-lbl">Salary Anomaly</div></div>
               <div class="sub-score-item"><div class="sub-score-val" id="ssl-status">-</div><div class="sub-score-lbl">SSL Status</div></div>
             </div>
             <div class="tabs"><button class="tab-btn active" data-tab="tab-signals">Signals</button><button class="tab-btn" data-tab="tab-keywords">Keywords</button><button class="tab-btn" data-tab="tab-info">Info</button></div>
@@ -183,7 +191,7 @@
 
       <!-- Red Flags Info -->
       <div class="card mt-4">
-        <div class="card-title"> Red Flags to Watch For</div>
+        <div class="card-title">Red Flags to Watch For</div>
         <div class="three-col" style="gap:14px;margin-top:4px">
           <div>
             <p class="text-sm" style="font-weight:600;color:var(--accent-red);margin-bottom:8px">💰 Financial Red Flags</p>
@@ -193,14 +201,14 @@
             </ul>
           </div>
           <div>
-            <p class="text-sm" style="font-weight:600;color:var(--accent-orange);margin-bottom:8px"> Communication Red Flags</p>
+            <p class="text-sm" style="font-weight:600;color:var(--accent-orange);margin-bottom:8px">📧 Communication Red Flags</p>
             <ul style="list-style:none;font-size:13px;color:var(--text-secondary);line-height:2">
               <li>• HR only on WhatsApp/Telegram</li><li>• Gmail/Yahoo recruiter email</li>
               <li>• No formal interview process</li><li>• Pressure to decide quickly</li>
             </ul>
           </div>
           <div>
-            <p class="text-sm" style="font-weight:600;color:var(--accent-yellow);margin-bottom:8px"> Domain Red Flags</p>
+            <p class="text-sm" style="font-weight:600;color:var(--accent-yellow);margin-bottom:8px">🌐 Domain Red Flags</p>
             <ul style="list-style:none;font-size:13px;color:var(--text-secondary);line-height:2">
               <li>• Suspicious TLDs (.xyz, .tk)</li><li>• New domain under 90 days old</li>
               <li>• No SSL certificate</li><li>• Misspelled company names</li>
@@ -217,38 +225,30 @@
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+let currentFile = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   renderNavbar();
-
   const params = new URLSearchParams(window.location.search);
   const mode = params.get('mode');
   const q = params.get('q') ? decodeURIComponent(params.get('q')) : '';
-
-  // Legacy ?url= param (backwards compat)
   const legacyUrl = params.get('url');
   if (legacyUrl) {
     const decoded = decodeURIComponent(legacyUrl);
     const el = document.getElementById('job-url');
     if (el) el.value = decoded;
-    try { const d = document.getElementById('domain-name'); if (d) d.value = new URL(decoded).hostname.replace('www.',''); } catch(_) {}
   }
-
-  // Handle mode + q from analyzeFromHome()
   if (mode && q) {
     if (mode === 'url') {
       const el = document.getElementById('job-url');
       if (el) el.value = q;
-      try { const d = document.getElementById('domain-name'); if (d) d.value = new URL(q).hostname.replace('www.',''); } catch(_) {}
     } else if (mode === 'text') {
-      // Put in job description field if it exists
-      const el = document.getElementById('job-description') || document.getElementById('job-title');
+      const el = document.getElementById('description');
       if (el) el.value = q;
     } else if (mode === 'email') {
       const el = document.getElementById('recruiter-email');
       if (el) el.value = q;
     }
-    // Auto-scroll to the form
-    document.getElementById('analyze-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 });
 
@@ -262,41 +262,34 @@ function toggleProof(type) {
 }
 
 function handleFile(input, type) {
-  const file = input.files[0]; if (!file) return;
+  const file = input.files[0]; 
+  if (!file) return;
+  currentFile = file;
   const preview = document.getElementById('preview-' + type);
-  preview.innerHTML = `<div class="proof-file-preview"><span>📎</span><span class="file-name">${file.name}</span><span style="font-size:11px;color:var(--text-muted)">${(file.size/1024).toFixed(0)}KB</span><button class="remove-file" onclick="document.getElementById('file-${type}').value='';document.getElementById('preview-${type}').innerHTML=''">✕</button></div>`;
+  preview.innerHTML = `<div class="proof-file-preview"><span>📎</span><span class="file-name">${file.name}</span><span style="font-size:11px;color:var(--text-muted)">${(file.size/1024).toFixed(0)}KB</span><button class="remove-file" onclick="document.getElementById('file-${type}').value='';document.getElementById('preview-${type}').innerHTML='';currentFile=null">✕</button></div>`;
   showToast(`${file.name} attached`, 'success');
 }
 
-// Drag and drop
-document.querySelectorAll('.file-upload-area').forEach(area => {
-  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
-  area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
-  area.addEventListener('drop', e => { e.preventDefault(); area.classList.remove('drag-over'); });
-});
-
 async function analyzeJob() {
   const btn = document.getElementById("analyze-btn");
-
   const jobUrl = document.getElementById("job-url")?.value.trim() || '';
-  const companyName = document.getElementById("company-name")?.value.trim() || '';
   const description = document.getElementById("description")?.value.trim() || '';
   const recruiterEmail = document.getElementById("recruiter-email")?.value.trim() || '';
+  const companyName = document.getElementById("company-name")?.value.trim() || '';
+  const domainName = document.getElementById("domain-name")?.value.trim() || '';
+  const salaryText = document.getElementById("salary-text")?.value.trim() || '';
+  const jobTitle = document.getElementById("job-title")?.value.trim() || '';
 
-  // Validation — at least one meaningful input required
-  const hasInput = jobUrl || companyName || description || recruiterEmail;
+  const hasInput = jobUrl || description || recruiterEmail || companyName;
   if (!hasInput) {
     showToast("Please fill in at least one field — job URL, company name, or description", "error");
-    // Highlight required fields
     ['job-url','company-name','description'].forEach(id => {
       const el = document.getElementById(id);
       if (el) { el.classList.add('error'); setTimeout(() => el.classList.remove('error'), 3000); }
     });
-    document.getElementById("job-url")?.focus();
     return;
   }
 
-  // URL format check
   if (jobUrl && !jobUrl.startsWith('http://') && !jobUrl.startsWith('https://')) {
     showToast("Please enter a full URL starting with https://", "error");
     document.getElementById("job-url")?.classList.add('error');
@@ -304,63 +297,110 @@ async function analyzeJob() {
     return;
   }
 
-  btn.disabled = true; btn.textContent = "Analyzing…";
-  const payload = {
-    job_url: jobUrl || null,
-    job_title: document.getElementById("job-title")?.value.trim() || null,
-    company_name: companyName || null,
-    salary_text: document.getElementById("salary-text")?.value.trim() || null,
-    recruiter_email: recruiterEmail || null,
-    domain_name: document.getElementById("domain-name")?.value.trim() || null,
-    description: description || null,
-  };
-  try {
-    const data = await api.post("/analyze", payload);
-    renderResult(data);
-  } catch (e) {
-    // Demo mode fallback
-    renderResult(generateDemoResult(payload));
-    showToast("Demo mode – backend not connected", "warning");
-  }
-  btn.disabled = false; btn.textContent = "🔍 Analyze for Scam Signals";
-}
+  btn.disabled = true; 
+  btn.textContent = "Analyzing...";
 
-function generateDemoResult(payload) {
-  const desc = (payload.description || '').toLowerCase();
-  const hasRedFlags = /fee|deposit|registration|security|pay|whatsapp|telegram|urgent/.test(desc);
-  const score = hasRedFlags ? 65 + Math.floor(Math.random() * 20) : 20 + Math.floor(Math.random() * 20);
-  const risk = score >= 70 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
-  return {
-    scam_score: score, risk_level: risk, risk_label: getRiskLabel(risk),
-    keyword_score: score - 10, domain_score: Math.floor(score * 0.7),
-    salary_anomaly: hasRedFlags, ssl_valid: !hasRedFlags,
-    domain_blacklisted: false, impersonation_detected: false,
-    analyzed_at: new Date().toISOString(),
-    recommendation: risk === 'HIGH' ? 'This job shows multiple red flags. Do NOT pay any fees. Report this job immediately.' : risk === 'MEDIUM' ? 'Proceed with caution. Verify company details before sharing personal information.' : 'This job appears relatively safe, but always verify before applying.',
-    fraud_signals: hasRedFlags ? [{ severity: 'high', description: 'Registration/security fee detected in description', signal_type: 'fee_demand', score_contribution: 30 }, { severity: 'medium', description: 'Urgency language detected', signal_type: 'urgency', score_contribution: 15 }] : [{ severity: 'low', description: 'No critical fraud signals detected', signal_type: 'clean', score_contribution: 5 }],
-    suspicious_keywords: hasRedFlags ? ['registration fee', 'security deposit', 'urgent'] : []
-  };
+  // Determine source type smartly
+  let sourceType = 'TEXT';
+  if (currentFile) sourceType = 'FILE';
+  else if (jobUrl) sourceType = 'URL';
+
+  // Build combined content string (backend expects single 'content' field)
+  const contentParts = [];
+  if (jobTitle) contentParts.push('Job Title: ' + jobTitle);
+  if (companyName) contentParts.push('Company: ' + companyName);
+  if (recruiterEmail) contentParts.push('Recruiter Email: ' + recruiterEmail);
+  if (salaryText) contentParts.push('Salary: ' + salaryText);
+  if (description) contentParts.push('Description: ' + description);
+  const combinedContent = contentParts.join('\n');
+
+  const formData = new FormData();
+  formData.append('source_type', sourceType);
+  if (jobUrl) formData.append('url', jobUrl);
+  else if (domainName) formData.append('url', 'https://' + domainName.replace(/^https?:\/\//, ''));
+  if (combinedContent) formData.append('content', combinedContent);
+  if (currentFile) formData.append('file', currentFile);
+
+  try {
+    const response = await fetch('http://localhost:8000/api/analyze/', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Analysis failed');
+    }
+    
+    const result = await response.json();
+    if (result.success && result.data) {
+      renderResult(result.data);
+      showToast('Analysis complete!', 'success');
+    } else {
+      throw new Error('Invalid response format');
+    }
+  } catch (error) {
+    console.error('Analysis error:', error);
+    renderDemoResult({ job_url: jobUrl, description: description });
+    showToast(error.message || 'Analysis failed. Using demo mode.', 'warning');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Analyze for Scam Signals";
+  }
 }
 
 function renderResult(data) {
   document.getElementById("result-placeholder").classList.add("hidden");
   document.getElementById("result-content").classList.remove("hidden");
-  renderScoreBar("score-display", data.scam_score, data.risk_level);
-  document.getElementById("risk-badge-wrap").innerHTML = `<span class="risk-badge ${getRiskClass(data.risk_level)}">${getRiskEmoji(data.risk_level)} ${data.risk_label}</span>`;
-  document.getElementById("kw-score").textContent = Math.round(data.keyword_score);
-  document.getElementById("domain-score").textContent = Math.round(data.domain_score);
-  document.getElementById("salary-score").textContent = data.salary_anomaly ? "Yes" : "No";
-  document.getElementById("ssl-status").textContent = data.ssl_valid === true ? "✅" : data.ssl_valid === false ? "❌" : "-";
-  renderSignals("signals-list", data.fraud_signals);
-  renderKeywords("keywords-wrap", data.suspicious_keywords);
+  
+  const riskScore = data.risk_score || 0;
+  const riskLevel = riskScore > 70 ? 'HIGH' : (riskScore > 40 ? 'MEDIUM' : 'LOW');
+  const riskLabel = riskLevel === 'HIGH' ? '⚠️ High Risk' : (riskLevel === 'MEDIUM' ? '⚠️ Medium Risk' : '✅ Low Risk');
+  const riskClass = riskLevel === 'HIGH' ? 'high' : (riskLevel === 'MEDIUM' ? 'medium' : 'low');
+  
+  document.getElementById("risk-badge-wrap").innerHTML = `<span class="risk-badge ${riskClass}">${riskLabel}</span>`;
+  document.getElementById("kw-score").textContent = riskScore;
+  document.getElementById("domain-score").textContent = data.domain_score || (riskScore - 10);
+  document.getElementById("salary-score").textContent = data.salary_anomaly ? "⚠️ Yes" : "✅ No";
+  document.getElementById("ssl-status").textContent = data.ssl_valid === true ? "✅ Valid" : (data.ssl_valid === false ? "❌ Invalid" : "—");
+  
+  // Signals
+  const signals = data.flags || data.warnings || [];
+  const signalsHtml = signals.length ? signals.map(s => `<div class="signal-item">⚠️ ${s}</div>`).join('') : '<div class="signal-item">✅ No major red flags detected</div>';
+  document.getElementById("signals-list").innerHTML = signalsHtml;
+  
+  // Keywords
+  const keywords = data.suspicious_keywords || [];
+  const keywordsHtml = keywords.length ? keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('') : '<span class="text-muted">No suspicious keywords detected</span>';
+  document.getElementById("keywords-wrap").innerHTML = keywordsHtml;
+  
+  // Info
   document.getElementById("analysis-info").innerHTML = `<div style="display:grid;gap:8px;font-size:13px">
-    <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Domain Blacklisted</span><span>${data.domain_blacklisted ? '🚫 Yes' : '✅ No'}</span></div>
-    <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-muted">Impersonation Detected</span><span>${data.impersonation_detected ? '⚠️ Yes' : '✅ No'}</span></div>
-    <div class="flex-between" style="padding:6px 0"><span class="text-muted">Analyzed At</span><span class="mono" style="font-size:12px">${formatDate(data.analyzed_at)}</span></div>
+    <div class="flex-between"><span class="text-muted">Domain Blacklisted</span><span>${data.domain_blacklisted ? '🚫 Yes' : '✅ No'}</span></div>
+    <div class="flex-between"><span class="text-muted">Impersonation</span><span>${data.impersonation_detected ? '⚠️ Yes' : '✅ No'}</span></div>
+    <div class="flex-between"><span class="text-muted">Analyzed At</span><span>${new Date().toLocaleString()}</span></div>
   </div>`;
-  const rColor = { LOW: "success", MEDIUM: "warning", HIGH: "danger", CONFIRMED_SCAM: "danger" };
-  document.getElementById("recommendation-box").innerHTML = `<div class="alert alert-${rColor[data.risk_level] || 'info'}"><span class="alert-icon">${getRiskEmoji(data.risk_level)}</span><span>${data.recommendation}</span></div>`;
+  
+  const recommendation = data.recommendation || (riskLevel === 'HIGH' ? 'Do not apply - This appears to be a scam' : (riskLevel === 'MEDIUM' ? 'Apply with caution - Verify further' : 'Safe to apply'));
+  document.getElementById("recommendation-box").innerHTML = `<div class="alert alert-${riskClass}"><span class="alert-icon">${riskLevel === 'HIGH' ? '🚨' : (riskLevel === 'MEDIUM' ? '⚠️' : '✅')}</span><span>${recommendation}</span></div>`;
+  
   document.getElementById("result-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderDemoResult(payload) {
+  const hasRedFlags = /fee|deposit|registration|security|pay|whatsapp|telegram|urgent/i.test(payload.description || '');
+  const riskScore = hasRedFlags ? 75 : 35;
+  renderResult({
+    risk_score: riskScore,
+    domain_score: hasRedFlags ? 70 : 30,
+    salary_anomaly: hasRedFlags,
+    ssl_valid: !hasRedFlags,
+    domain_blacklisted: hasRedFlags,
+    impersonation_detected: hasRedFlags,
+    flags: hasRedFlags ? ['Security deposit detected', 'Urgency language found', 'Suspicious domain pattern'] : ['No major red flags'],
+    suspicious_keywords: hasRedFlags ? ['registration fee', 'security deposit', 'urgent hiring'] : [],
+    recommendation: hasRedFlags ? 'This job shows multiple red flags. Do not pay any fees.' : 'This job appears relatively safe, but always verify before applying.'
+  });
 }
 
 function resetForm() {
@@ -369,6 +409,16 @@ function resetForm() {
   document.getElementById("result-content").classList.add("hidden");
   document.querySelectorAll('.proof-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.proof-btn').forEach(b => b.classList.remove('active'));
+  currentFile = null;
+}
+
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:' + (type === 'error' ? '#f85149' : '#3fb950') + ';color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-size:14px';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 </script>
-</body></html>
+</body>
+</html>

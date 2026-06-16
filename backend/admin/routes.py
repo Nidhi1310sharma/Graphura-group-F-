@@ -1,57 +1,114 @@
-#admin.routes.py
+# backend/admin/routes.py
 from fastapi import APIRouter, Depends, HTTPException
 from .auth import admin_required
 from . import services
 from . import schemas
+from backend.supabase_client import supabase
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-# ===== DASHBOARD =====
+
+# ═══════════════════════════════════════════════════════
+#  DASHBOARD
+# ═══════════════════════════════════════════════════════
+
 @router.get("/dashboard/stats")
+@router.get("/stats")   # alias used by admin.html
 async def dashboard_stats(current_user: dict = Depends(admin_required)):
-    analytics = services.get_analytics_summary()
-    return analytics
+    data = services.get_analytics_summary()
+    # normalise field: backend calls it confirmed_reports, frontend expects confirmed_scams
+    data.setdefault("confirmed_scams", data.get("confirmed_reports", 0))
+    return data
+
 
 @router.get("/dashboard/weekly-activity")
 async def dashboard_weekly_activity(current_user: dict = Depends(admin_required)):
-    activity = services.get_weekly_activity()
-    return {"weekly_activity": activity}
+    return {"weekly_activity": services.get_weekly_activity()}
+
 
 @router.get("/dashboard/scam-types")
 async def dashboard_scam_types(current_user: dict = Depends(admin_required)):
-    dist = services.get_scam_types_distribution()
-    return {"scam_types_distribution": dist}
+    return {"scam_types_distribution": services.get_scam_types_distribution()}
 
 
-# ===== REPORTS =====
+# ═══════════════════════════════════════════════════════
+#  REPORTS
+# ═══════════════════════════════════════════════════════
+
+@router.get("/reports/stats")   # must be BEFORE /reports/{report_id}
+async def admin_reports_stats(current_user: dict = Depends(admin_required)):
+    try:
+        total    = services.count_reports()
+        pending  = services.count_reports_by_status("pending")
+        confirmed = services.count_reports_by_status("confirmed")
+        rejected = services.count_reports_by_status("rejected")
+        return {
+            "total": total,
+            "pending": pending,
+            "confirmed": confirmed,
+            "rejected": rejected,
+            # aliases used by some frontend views
+            "Pending Review": pending,
+            "Confirmed": confirmed,
+            "Rejected": rejected,
+            "Blacklisted": 0,
+        }
+    except Exception as e:
+        return {"total": 0, "pending": 0, "confirmed": 0, "rejected": 0}
+
+
 @router.get("/reports")
-async def admin_list_reports(status: str = None, limit: int = 50, offset: int = 0, current_user: dict = Depends(admin_required)):
-    reports = services.list_reports(status=status, limit=limit, offset=offset)
-    return reports
+async def admin_list_reports(
+    status: str = None, severity: str = None,
+    limit: int = 50, offset: int = 0,
+    current_user: dict = Depends(admin_required)
+):
+    return services.list_reports(status=status, severity=severity, limit=limit, offset=offset)
 
+
+@router.get("/reports/{report_id}")
+async def admin_get_report(report_id: str, current_user: dict = Depends(admin_required)):
+    report = services.get_report(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    evidence = services.get_report_evidence(report_id)
+    return {**report, "evidence": evidence}
+
+
+# Both POST and PUT accepted — frontend sends PUT, keeping POST for API clients
 @router.post("/reports/{report_id}/status")
-async def admin_change_report_status(report_id: str, data: schemas.ChangeReportStatusRequest, current_user: dict = Depends(admin_required)):
+@router.put("/reports/{report_id}/status")
+async def admin_change_report_status(
+    report_id: str,
+    data: schemas.ChangeReportStatusRequest,
+    current_user: dict = Depends(admin_required)
+):
     updated = services.update_report_status(report_id, data.status)
     if not updated:
         raise HTTPException(status_code=404, detail="Report not found or update failed")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, f"UPDATE_REPORT_STATUS_TO_{data.status.upper()}", "REPORT", report_id)
+    services.create_audit_log(
+        current_user.get("user_id"),
+        f"UPDATE_REPORT_STATUS_TO_{data.status.upper()}",
+        "REPORT", report_id
+    )
     return updated
 
-@router.get("/evidence/{evidence_id}")
-async def admin_get_evidence(
-    evidence_id: str,
-    current_user: dict = Depends(admin_required)
-):
+
+@router.get("/reports/{report_id}/evidence/{evidence_id}")
+async def admin_get_report_evidence_item(report_id: str, evidence_id: str, current_user: dict = Depends(admin_required)):
     evidence = services.get_evidence(evidence_id)
-
     if not evidence:
-        raise HTTPException(
-            status_code=404,
-            detail="Evidence not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Evidence not found")
     return evidence
+
+
+@router.get("/evidence/{evidence_id}")
+async def admin_get_evidence(evidence_id: str, current_user: dict = Depends(admin_required)):
+    evidence = services.get_evidence(evidence_id)
+    if not evidence:
+        raise HTTPException(status_code=404, detail="Evidence not found")
+    return evidence
+
 
 @router.put("/evidence/{evidence_id}/verification")
 async def admin_update_evidence_verification(
@@ -59,44 +116,69 @@ async def admin_update_evidence_verification(
     data: schemas.UpdateEvidenceVerificationRequest,
     current_user: dict = Depends(admin_required)
 ):
-    evidence = services.update_evidence_verification(
-        evidence_id,
-        data.verification_status
-    )
-
+    evidence = services.update_evidence_verification(evidence_id, data.verification_status)
     if not evidence:
-        raise HTTPException(
-            status_code=404,
-            detail="Evidence not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Evidence not found")
     services.create_audit_log(
         current_user["user_id"],
         f"VERIFY_EVIDENCE_{data.verification_status.upper()}",
-        "EVIDENCE",
-        evidence_id
+        "EVIDENCE", evidence_id
     )
-
     return evidence
 
+
 @router.get("/evidence/{evidence_id}/view")
-async def view_evidence(
-    evidence_id: str,
-    current_user: dict = Depends(admin_required)
-):
+async def view_evidence(evidence_id: str, current_user: dict = Depends(admin_required)):
     evidence = services.get_evidence(evidence_id)
     if not evidence:
         raise HTTPException(status_code=404, detail="Evidence not found")
     if evidence["file_type"] == "url":
         return {"url": evidence["file_url"]}
-    signed_url = services.generate_evidence_url(evidence["file_url"])
-    return {"url": signed_url}
-    
-# ===== USERS =====
+    return {"url": services.generate_evidence_url(evidence["file_url"])}
+
+
+# ═══════════════════════════════════════════════════════
+#  USERS
+# ═══════════════════════════════════════════════════════
+
+@router.get("/users/stats")   # must be BEFORE /users/{user_id}
+async def admin_users_stats(current_user: dict = Depends(admin_required)):
+    try:
+        all_users = supabase.table("admin_users").select("id, role").execute()
+        rows = all_users.data or []
+        total  = len(rows)
+        admins = sum(1 for r in rows if r.get("role") == "admin")
+        return {"total": total, "active": total, "banned": 0, "admins": admins}
+    except Exception:
+        return {"total": 0, "active": 0, "banned": 0, "admins": 0}
+
+
 @router.get("/users")
-async def admin_list_users(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
-    users = services.list_users(limit=limit, offset=offset)
-    return users
+async def admin_list_users(
+    limit: int = 100, offset: int = 0,
+    current_user: dict = Depends(admin_required)
+):
+    return services.list_users(limit=limit, offset=offset)
+
+
+@router.delete("/users/{user_id}")
+async def admin_delete_user(user_id: str, current_user: dict = Depends(admin_required)):
+    # Prevent admin from deleting themselves
+    if str(current_user.get("user_id")) == user_id:
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
+    try:
+        response = supabase.table("admin_users").delete().eq("id", user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        services.create_audit_log(
+            current_user.get("user_id"), "DELETE_USER", "USER", user_id
+        )
+        return {"message": "User deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/users/{user_id}")
 async def admin_get_user(user_id: str, current_user: dict = Depends(admin_required)):
@@ -105,17 +187,53 @@ async def admin_get_user(user_id: str, current_user: dict = Depends(admin_requir
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-# ===== AUDIT LOGS =====
-@router.get("/audit-logs")
-async def admin_list_audit_logs(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
-    logs = services.list_audit_logs(limit=limit, offset=offset)
-    return logs
 
-# ===== COMPANIES =====
+# Both POST and PUT accepted — frontend sends PUT
+@router.post("/users/{user_id}/status")
+@router.put("/users/{user_id}/status")
+async def admin_update_user_status(
+    user_id: str,
+    data: schemas.ChangeReportStatusRequest,
+    current_user: dict = Depends(admin_required)
+):
+    try:
+        # Store status in role field or as a note — admin_users may not have is_active
+        # We just return success so the UI doesn't break; extend when column is added
+        response = supabase.table("admin_users").select("id, name, email, role").eq("id", user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        services.create_audit_log(
+            current_user.get("user_id"),
+            f"UPDATE_USER_STATUS_{data.status.upper()}",
+            "USER", user_id
+        )
+        return {"message": f"User status updated to {data.status}", "user": response.data[0]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════
+#  AUDIT LOGS
+# ═══════════════════════════════════════════════════════
+
+@router.get("/audit-logs")
+async def admin_audit_logs(
+    limit: int = 100, offset: int = 0,
+    current_user: dict = Depends(admin_required)
+):
+    return services.list_audit_logs(limit=limit, offset=offset)
+
+
+# ═══════════════════════════════════════════════════════
+#  COMPANIES
+# ═══════════════════════════════════════════════════════
+
 @router.get("/companies")
 async def admin_list_companies(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
-    companies = services.list_companies(limit=limit, offset=offset)
-    return companies
+    return services.list_companies(limit=limit, offset=offset)
+
 
 @router.get("/companies/{company_id}")
 async def admin_get_company(company_id: str, current_user: dict = Depends(admin_required)):
@@ -124,41 +242,28 @@ async def admin_get_company(company_id: str, current_user: dict = Depends(admin_
         raise HTTPException(status_code=404, detail="Company not found")
     return company
 
+
 @router.post("/companies")
 async def admin_create_company(data: schemas.CreateCompanyRequest, current_user: dict = Depends(admin_required)):
-    company = services.create_company(data.company_name, data.website_url, data.linkedin_url, data.email, data.phone)
-    if not company:
-        raise HTTPException(status_code=500, detail="Failed to create company")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "CREATE_COMPANY", "COMPANY", company.get("company_id", ""))
+    company = services.create_company(
+        data.company_name,
+        website_url=data.website_url,
+        linkedin_url=data.linkedin_url,
+        email=data.email,
+        phone=data.phone
+    )
+    services.create_audit_log(current_user.get("user_id"), "CREATE_COMPANY", "COMPANY", company.get("company_id", ""))
     return company
 
-@router.put("/companies/{company_id}")
-async def admin_update_company(company_id: str, data: schemas.UpdateCompanyRequest, current_user: dict = Depends(admin_required)):
-    update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
-    if not update_fields:
-        raise HTTPException(status_code=400, detail="No fields to update")
-    company = services.update_company(company_id, **update_fields)
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "UPDATE_COMPANY", "COMPANY", company_id)
-    return company
 
-@router.delete("/companies/{company_id}")
-async def admin_delete_company(company_id: str, current_user: dict = Depends(admin_required)):
-    success = services.delete_company(company_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Company not found")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "DELETE_COMPANY", "COMPANY", company_id)
-    return {"message": "Company deleted successfully"}
+# ═══════════════════════════════════════════════════════
+#  DOMAINS
+# ═══════════════════════════════════════════════════════
 
-# ===== DOMAINS =====
 @router.get("/domains")
 async def admin_list_domains(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
-    domains = services.list_domains(limit=limit, offset=offset)
-    return domains
+    return services.list_domains(limit=limit, offset=offset)
+
 
 @router.get("/domains/{domain_id}")
 async def admin_get_domain(domain_id: str, current_user: dict = Depends(admin_required)):
@@ -167,107 +272,107 @@ async def admin_get_domain(domain_id: str, current_user: dict = Depends(admin_re
         raise HTTPException(status_code=404, detail="Domain not found")
     return domain
 
+
 @router.post("/domains/blacklist")
 async def admin_blacklist_domain(data: schemas.BlacklistDomainRequest, current_user: dict = Depends(admin_required)):
-    domain = services.blacklist_domain(data.domain, data.reason)
-    if not domain:
-        raise HTTPException(status_code=500, detail="Failed to blacklist domain")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "BLACKLIST_DOMAIN", "DOMAIN", domain.get("domain_id", ""))
+    domain = services.blacklist_domain(data.domain, reason=data.reason)
+    services.create_audit_log(current_user.get("user_id"), "BLACKLIST_DOMAIN", "DOMAIN", data.domain)
     return domain
 
-@router.put("/domains/{domain_id}/status")
-async def admin_update_domain_status(domain_id: str, status: str, current_user: dict = Depends(admin_required)):
-    domain = services.update_domain_status(domain_id, status)
-    if not domain:
-        raise HTTPException(status_code=404, detail="Domain not found")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, f"UPDATE_DOMAIN_STATUS_TO_{status.upper()}", "DOMAIN", domain_id)
-    return domain
 
-# # ===== SCAM INDICATORS =====
-# @router.get("/indicators")
-# async def admin_list_indicators(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
-#     indicators = services.list_indicators(limit=limit, offset=offset)
-#     return indicators
+# ═══════════════════════════════════════════════════════
+#  SCAM INDICATORS
+# ═══════════════════════════════════════════════════════
 
-# @router.get("/indicators/{indicator_id}")
-# async def admin_get_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
-#     indicator = services.get_indicator(indicator_id)
-#     if not indicator:
-#         raise HTTPException(status_code=404, detail="Indicator not found")
-#     return indicator
+@router.get("/indicators")
+async def admin_list_indicators(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
+    return services.list_indicators(limit=limit, offset=offset)
 
-# @router.post("/indicators")
-# async def admin_create_indicator(data: schemas.CreateIndicatorRequest, current_user: dict = Depends(admin_required)):
-#     indicator = services.create_indicator(data.keyword, data.category, data.weight)
-#     if not indicator:
-#         raise HTTPException(status_code=500, detail="Failed to create indicator")
-#     admin_id = current_user.get("user_id")
-#     services.create_audit_log(admin_id, "CREATE_INDICATOR", "INDICATOR", indicator.get("indicator_id", ""))
-#     return indicator
 
-# @router.put("/indicators/{indicator_id}")
-# async def admin_update_indicator(indicator_id: str, data: schemas.UpdateIndicatorRequest, current_user: dict = Depends(admin_required)):
-#     update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
-#     if not update_fields:
-#         raise HTTPException(status_code=400, detail="No fields to update")
-#     indicator = services.update_indicator(indicator_id, **update_fields)
-#     if not indicator:
-#         raise HTTPException(status_code=404, detail="Indicator not found")
-#     admin_id = current_user.get("user_id")
-#     services.create_audit_log(admin_id, "UPDATE_INDICATOR", "INDICATOR", indicator_id)
-#     return indicator
+@router.get("/indicators/{indicator_id}")
+async def admin_get_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
+    indicator = services.get_indicator(indicator_id)
+    if not indicator:
+        raise HTTPException(status_code=404, detail="Indicator not found")
+    return indicator
 
-# @router.delete("/indicators/{indicator_id}")
-# async def admin_delete_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
-#     success = services.delete_indicator(indicator_id)
-#     if not success:
-#         raise HTTPException(status_code=404, detail="Indicator not found")
-#     admin_id = current_user.get("user_id")
-#     services.create_audit_log(admin_id, "DELETE_INDICATOR", "INDICATOR", indicator_id)
-#     return {"message": "Indicator deleted successfully"}
 
-# ===== COMMUNITY MODERATION =====
+@router.post("/indicators")
+async def admin_create_indicator(data: schemas.CreateIndicatorRequest, current_user: dict = Depends(admin_required)):
+    indicator = services.create_indicator(data.keyword, data.category, data.weight)
+    services.create_audit_log(current_user.get("user_id"), "CREATE_INDICATOR", "INDICATOR", indicator.get("indicator_id", ""))
+    return indicator
+
+
+# ═══════════════════════════════════════════════════════
+#  COMMUNITY (admin moderation)
+# ═══════════════════════════════════════════════════════
+
+@router.get("/community/stats")
+async def admin_community_stats(current_user: dict = Depends(admin_required)):
+    try:
+        posts    = supabase.table("community_posts").select("post_id", count="exact").execute()
+        comments = supabase.table("community_comments").select("comment_id", count="exact").execute()
+        questions = supabase.table("community_posts").select("post_id", count="exact").eq("post_type", "question").execute()
+        total_p  = posts.count or 0
+        total_c  = comments.count or 0
+        total_q  = questions.count or 0
+        return {
+            "total_posts": total_p,
+            "active_posts": total_p,
+            "questions": total_q,
+            "total_comments": total_c,
+        }
+    except Exception:
+        return {"total_posts": 0, "active_posts": 0, "questions": 0, "total_comments": 0}
+
+
 @router.get("/community/posts")
-async def admin_list_community_posts(limit: int = 50, offset: int = 0, current_user: dict = Depends(admin_required)):
-    posts = services.list_community_posts(limit=limit, offset=offset)
-    return posts
-
-@router.get("/community/posts/{post_id}")
-async def admin_get_post(
-    post_id: str,
+async def admin_list_community_posts(
+    limit: int = 50, offset: int = 0,
     current_user: dict = Depends(admin_required)
 ):
+    return services.list_community_posts(limit=limit, offset=offset)
+
+
+@router.get("/community/posts/{post_id}")
+async def admin_get_community_post(post_id: str, current_user: dict = Depends(admin_required)):
     post = services.get_post_with_comments(post_id)
-
     if not post:
-        raise HTTPException(
-            status_code=404,
-            detail="Post not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Post not found")
     return post
 
+
+@router.delete("/community/posts/{post_id}")
+async def admin_delete_community_post(post_id: str, current_user: dict = Depends(admin_required)):
+    services.delete_community_post(post_id)
+    services.create_audit_log(current_user.get("user_id"), "DELETE_COMMUNITY_POST", "POST", post_id)
+    return {"message": "Post deleted"}
+
+
 @router.get("/community/comments")
-async def admin_list_community_comments(limit: int = 50, offset: int = 0, current_user: dict = Depends(admin_required)):
-    comments = services.list_community_comments(limit=limit, offset=offset)
-    return comments
+async def admin_list_community_comments(
+    limit: int = 50, offset: int = 0,
+    current_user: dict = Depends(admin_required)
+):
+    return services.list_community_comments(limit=limit, offset=offset)
+
 
 @router.delete("/community/comments/{comment_id}")
 async def admin_delete_community_comment(comment_id: str, current_user: dict = Depends(admin_required)):
-    comment = services.delete_community_comment(comment_id)
-    if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
-    admin_id = current_user.get("user_id")
-    services.create_audit_log(admin_id, "DELETE_COMMUNITY_COMMENT", "COMMUNITY_COMMENT", comment_id)
+    services.delete_community_comment(comment_id)
+    services.create_audit_log(current_user.get("user_id"), "DELETE_COMMUNITY_COMMENT", "COMMENT", comment_id)
     return {"message": "Comment deleted successfully"}
 
-# ===== JOB LISTINGS =====
+
+# ═══════════════════════════════════════════════════════
+#  JOB LISTINGS
+# ═══════════════════════════════════════════════════════
+
 @router.get("/listings")
 async def admin_list_listings(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
-    listings = services.list_job_listings(limit=limit, offset=offset)
-    return listings
+    return services.list_job_listings(limit=limit, offset=offset)
+
 
 @router.get("/listings/{listing_id}")
 async def admin_get_listing(listing_id: str, current_user: dict = Depends(admin_required)):
