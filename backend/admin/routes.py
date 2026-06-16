@@ -208,7 +208,37 @@ async def admin_get_user(user_id: str, current_user: dict = Depends(admin_requir
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.post("/users/{user_id}/status")
+# add new admin
+@router.post("/users/admins")
+async def admin_create_admin(
+    data: schemas.CreateAdminRequest,
+    current_user: dict = Depends(admin_required)
+):
+    admin = services.create_admin(
+        data.name,
+        data.email,
+        data.password
+    )
+
+    if not admin:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not create admin"
+        )
+
+    services.create_audit_log(
+        current_user.get("user_id"),
+        "CREATE_ADMIN",
+        "USER",
+        admin["id"]
+    )
+
+    return {
+        "message": "Admin created successfully",
+        "admin": admin
+    }
+    
+# @router.post("/users/{user_id}/status")
 @router.put("/users/{user_id}/status")
 async def admin_update_user_status(
     user_id: str,

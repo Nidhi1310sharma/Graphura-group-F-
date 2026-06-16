@@ -164,6 +164,36 @@ def export_reports_csv():
         return None
 
 # ===== USERS =====
+# admin create fn
+def create_admin(name: str, email: str, password: str):
+    try:
+
+        auth_user = supabase.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True
+        })
+
+        user_id = auth_user.user.id
+
+        resp = (
+            supabase.table("admin_users")
+            .insert({
+                "id": user_id,
+                "name": name,
+                "email": email,
+                "role": "admin",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            .execute()
+        )
+
+        return resp.data[0] if resp.data else None
+
+    except Exception as e:
+        print(f"[ERROR] Create admin: {e}")
+        return None
+
 def list_users(limit: int=100, offset: int=0):
     try:
         resp = supabase.table("admin_users").select("id, name, email, role, created_at").range(offset, offset+limit-1).execute()

@@ -39,6 +39,24 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+.modal-card{
+  width:420px;
+  max-width:90%;
+  background:var(--bg-card);
+  border:1px solid var(--border-color);
+  border-radius:12px;
+  padding:24px;
+}
     
     .toast-success { background: #3fb950 !important; }
     .toast-error { background: #f85149 !important; }
@@ -83,23 +101,58 @@
       
       <div class="card">
         <div class="flex-between mb-3" style="gap:10px;flex-wrap:wrap">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input type="text" class="form-control" id="search-users" placeholder="Search users..." style="max-width:250px" oninput="filterUsers()">
-            <select class="form-control" style="max-width:160px" id="user-status-filter" onchange="filterUsers()">
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="deleted">Deleted</option>
-              <option value="suspended">Suspended</option>
-            </select>
-            <select class="form-control" style="max-width:160px" id="user-role-filter" onchange="filterUsers()">
-              <option value="">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
-            </select>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="exportUsersCSV()">📥 Export CSV</button>
-        </div>
-        
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <input
+      type="text"
+      class="form-control"
+      id="search-users"
+      placeholder="Search users..."
+      style="max-width:250px"
+      oninput="filterUsers()"
+    >
+
+    <select
+      class="form-control"
+      style="max-width:160px"
+      id="user-status-filter"
+      onchange="filterUsers()"
+    >
+      <option value="">All Status</option>
+      <option value="active">Active</option>
+      <option value="deleted">Deleted</option>
+      <option value="suspended">Suspended</option>
+    </select>
+
+    <select
+      class="form-control"
+      style="max-width:160px"
+      id="user-role-filter"
+      onchange="filterUsers()"
+    >
+      <option value="">All Roles</option>
+      <option value="admin">Admin</option>
+      <option value="user">User</option>
+    </select>
+  </div>
+
+  <div style="display:flex;gap:8px;">
+    <button
+      class="btn btn-primary btn-sm"
+      onclick="openAddAdminModal()"
+    >
+      + Add Admin
+    </button>
+
+    <button
+      class="btn btn-outline btn-sm"
+      onclick="exportUsersCSV()"
+    >
+      📥 Export CSV
+    </button>
+  </div>
+
+</div>
         <div class="table-wrap">
           <table class="table">
             <thead>
@@ -130,6 +183,75 @@
 const API_BASE = 'http://localhost:8000/api';
 let allUsers = [];
 let currentUserId = null;
+
+//add admin
+function openAddAdminModal() {
+  document.getElementById('add-admin-modal').style.display = 'flex';
+}
+
+function closeAddAdminModal() {
+  document.getElementById('add-admin-modal').style.display = 'none';
+}
+async function createAdmin() {
+
+  const name =
+    document.getElementById('admin-name').value.trim();
+
+  const email =
+    document.getElementById('admin-email').value.trim();
+
+  const password =
+    document.getElementById('admin-password').value.trim();
+
+  if (!name || !email || !password) {
+    showToast('All fields are required', 'error');
+    return;
+  }
+
+  try {
+
+    const token = localStorage.getItem('gr_token');
+
+    const res = await fetch(
+      `${API_BASE}/admin/users/admins`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.detail || 'Failed to create admin');
+    }
+
+    showToast('Admin created successfully', 'success');
+
+    closeAddAdminModal();
+
+    document.getElementById('admin-name').value = '';
+    document.getElementById('admin-email').value = '';
+    document.getElementById('admin-password').value = '';
+
+    await loadUsers();
+    await loadStats();
+
+  }
+  catch(err) {
+    console.error(err);
+    showToast(err.message, 'error');
+  }
+}
+
 
 // ============ LOAD STATS ============
 async function loadStats() {
@@ -419,5 +541,50 @@ document.addEventListener('DOMContentLoaded', () => {
   loadUsers();
 });
 </script>
+<div id="add-admin-modal" class="modal-backdrop" style="display:none;">
+  <div class="modal-card">
+    <h3>Add New Admin</h3>
+
+    <input
+      type="text"
+      id="admin-name"
+      class="form-control"
+      placeholder="Full Name"
+      style="margin-bottom:10px;"
+    >
+
+    <input
+      type="email"
+      id="admin-email"
+      class="form-control"
+      placeholder="Email"
+      style="margin-bottom:10px;"
+    >
+
+    <input
+      type="password"
+      id="admin-password"
+      class="form-control"
+      placeholder="Password"
+      style="margin-bottom:15px;"
+    >
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button
+        class="btn btn-outline"
+        onclick="closeAddAdminModal()"
+      >
+        Cancel
+      </button>
+
+      <button
+        class="btn btn-primary"
+        onclick="createAdmin()"
+      >
+        Create Admin
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

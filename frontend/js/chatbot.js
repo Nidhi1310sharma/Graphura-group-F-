@@ -1,243 +1,7 @@
 // ============================================================
 // chatbot.js – ScamShield AI Chatbot (Claude-powered)
 // Uses Anthropic API for real AI responses
-// Fallback to keyword matching if API unavailable// ============================================================
-// sidebar.js – ScamShield Sidebar & Topbar Renderer
-// ============================================================
-
-function renderSidebar(activeLink, isAdmin) {
-  const user = (() => { try { return JSON.parse(localStorage.getItem('gr_user') || 'null'); } catch { return null; } })();
-  const avatarContent = user?.avatar
-    ? `<img src="${user.avatar}" alt="${user.full_name}">`
-    : (user?.full_name?.[0] || 'G').toUpperCase();
-    
-  const savedTheme = localStorage.getItem('gr_theme') || 'dark';
-
-  // ADMIN SIDEBAR LINKS - Only 4 sections
-  const adminLinks = `
-    <li><a href="admin.html" class="${activeLink === 'admin.html' ? 'active' : ''}"><span class="nav-icon">📊</span> Dashboard</a></li>
-    <li><a href="admin-reports.html" class="${activeLink === 'admin-reports.html' ? 'active' : ''}"><span class="nav-icon">🚩</span> Reports <span class="nav-badge">67</span></a></li>
-    <li><a href="admin-community.html" class="${activeLink === 'admin-community.html' ? 'active' : ''}"><span class="nav-icon">👥</span> Community</a></li>
-    <li><a href="admin-users.html" class="${activeLink === 'admin-users.html' ? 'active' : ''}"><span class="nav-icon">👤</span> Users</a></li>`;
-
-  const sidebarHTML = `
-<aside class="sidebar admin-sidebar" data-theme="${savedTheme}">
-  <div class="sidebar-brand">
-    <div class="sidebar-logo">🛡️</div>
-    <div class="sidebar-brand-text">
-      <span class="brand-name">ScamShield</span>
-      <span class="brand-sub">Admin Panel</span>
-    </div>
-  </div>
-  <div class="sidebar-section">
-    <div class="sidebar-section-label">ADMINISTRATION</div>
-    <ul class="sidebar-nav">${adminLinks}</ul>
-  </div>
-  <div class="sidebar-footer">
-    <button class="theme-toggle" onclick="toggleTheme()">
-      <span class="theme-toggle-icon">${savedTheme === 'dark' ? '☀️' : '🌙'}</span>
-      <span class="theme-toggle-text">${savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-    </button>
-  </div>
-</aside>`;
-
-  const topbarHTML = `
-<header class="topbar" data-theme="${savedTheme}">
-  <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
-  <span class="topbar-title" id="page-title"></span>
-  <div class="topbar-spacer"></div>
-  ${user ? `<div class="alert-chip" onclick="window.location.href='my-reports.html'">🔔 <span>3 alerts</span></div>` : ''}
-  <div class="topbar-user" onclick="window.location.href='${isAdmin ? 'admin.html' : (user ? 'profile.html' : 'login.html')}'">
-    <div class="user-avatar">${avatarContent}</div>
-    <div class="topbar-user-info">
-      <span class="topbar-user-name">${user?.full_name || (user ? 'User' : 'Guest')}</span>
-      <span class="topbar-user-role">${user?.role === 'admin' ? 'Administrator' : (user ? 'Member' : 'Not signed in')}</span>
-    </div>
-  </div>
-  ${isAdmin ? `<button class="signout-btn" onclick="handleTopbarLogout()">Sign out</button>` : ''}
-</header>`;
-
-  const target = document.getElementById('app-shell') || document.body;
-  const existingSidebar = target.querySelector('.sidebar');
-  if (!existingSidebar) target.insertAdjacentHTML('afterbegin', sidebarHTML);
-  const existingTopbar = target.querySelector('.topbar');
-  if (!existingTopbar) {
-    const mc = target.querySelector('.main-content');
-    if (mc) mc.insertAdjacentHTML('afterbegin', topbarHTML);
-  }
-
-  // Inject chatbot
-  if (!document.querySelector('.chatbot-bubble')) {
-    document.body.insertAdjacentHTML('beforeend', `
-<div class="chatbot-bubble" title="Ask ScamShield AI">🤖</div>
-<div class="chatbot-panel">
-  <div class="chatbot-header">
-    <div class="chatbot-avatar">🛡️</div>
-    <div><div class="chatbot-name">ScamShield AI</div><div class="chatbot-status">Online</div></div>
-    <button class="chatbot-close">✕</button>
-  </div>
-  <div class="chatbot-msgs"></div>
-  <div class="chatbot-input-row">
-    <input class="chatbot-input" placeholder="Ask about scam detection…"/>
-    <button class="chatbot-send">Send</button>
-  </div>
-</div>`);
-  }
-  setTimeout(() => { if (typeof initChatbot === 'function') initChatbot(); }, 100);
-}
-
-function handleTopbarLogout() {
-  localStorage.removeItem('gr_user');
-  localStorage.removeItem('token');
-  localStorage.removeItem('gr_theme');
-  window.location.href = 'login.html';
-}
-
-window.toggleTheme = function() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'dark';
-  const newTheme = current === 'dark' ? 'light' : 'dark';
-  
-  html.setAttribute('data-theme', newTheme);
-  localStorage.setItem('gr_theme', newTheme);
-  
-  // Update all elements with data-theme
-  document.querySelectorAll('[data-theme]').forEach(el => {
-    el.setAttribute('data-theme', newTheme);
-  });
-  
-  // Update theme buttons
-  const themeBtns = document.querySelectorAll('.theme-toggle');
-  themeBtns.forEach(btn => {
-    const iconSpan = btn.querySelector('.theme-toggle-icon');
-    const textSpan = btn.querySelector('.theme-toggle-text');
-    if (iconSpan) iconSpan.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-    if (textSpan) textSpan.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-  });
-};
-
-(function initTheme() {
-  const saved = localStorage.getItem('gr_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-})();// ============================================================
-// sidebar.js – ScamShield Sidebar & Topbar Renderer
-// ============================================================
-
-function renderSidebar(activeLink, isAdmin) {
-  const user = (() => { try { return JSON.parse(localStorage.getItem('gr_user') || 'null'); } catch { return null; } })();
-  const avatarContent = user?.avatar
-    ? `<img src="${user.avatar}" alt="${user.full_name}">`
-    : (user?.full_name?.[0] || 'G').toUpperCase();
-    
-  const savedTheme = localStorage.getItem('gr_theme') || 'dark';
-
-  // ADMIN SIDEBAR LINKS - Only 4 sections
-  const adminLinks = `
-    <li><a href="admin.html" class="${activeLink === 'admin.html' ? 'active' : ''}"><span class="nav-icon">📊</span> Dashboard</a></li>
-    <li><a href="admin-reports.html" class="${activeLink === 'admin-reports.html' ? 'active' : ''}"><span class="nav-icon">🚩</span> Reports <span class="nav-badge">67</span></a></li>
-    <li><a href="admin-community.html" class="${activeLink === 'admin-community.html' ? 'active' : ''}"><span class="nav-icon">👥</span> Community</a></li>
-    <li><a href="admin-users.html" class="${activeLink === 'admin-users.html' ? 'active' : ''}"><span class="nav-icon">👤</span> Users</a></li>`;
-
-  const sidebarHTML = `
-<aside class="sidebar admin-sidebar" data-theme="${savedTheme}">
-  <div class="sidebar-brand">
-    <div class="sidebar-logo">🛡️</div>
-    <div class="sidebar-brand-text">
-      <span class="brand-name">ScamShield</span>
-      <span class="brand-sub">Admin Panel</span>
-    </div>
-  </div>
-  <div class="sidebar-section">
-    <div class="sidebar-section-label">ADMINISTRATION</div>
-    <ul class="sidebar-nav">${adminLinks}</ul>
-  </div>
-  <div class="sidebar-footer">
-    <button class="theme-toggle" onclick="toggleTheme()">
-      <span class="theme-toggle-icon">${savedTheme === 'dark' ? '☀️' : '🌙'}</span>
-      <span class="theme-toggle-text">${savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-    </button>
-  </div>
-</aside>`;
-
-  const topbarHTML = `
-<header class="topbar" data-theme="${savedTheme}">
-  <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
-  <span class="topbar-title" id="page-title"></span>
-  <div class="topbar-spacer"></div>
-  ${user ? `<div class="alert-chip" onclick="window.location.href='my-reports.html'">🔔 <span>3 alerts</span></div>` : ''}
-  <div class="topbar-user" onclick="window.location.href='${isAdmin ? 'admin.html' : (user ? 'profile.html' : 'login.html')}'">
-    <div class="user-avatar">${avatarContent}</div>
-    <div class="topbar-user-info">
-      <span class="topbar-user-name">${user?.full_name || (user ? 'User' : 'Guest')}</span>
-      <span class="topbar-user-role">${user?.role === 'admin' ? 'Administrator' : (user ? 'Member' : 'Not signed in')}</span>
-    </div>
-  </div>
-  ${isAdmin ? `<button class="signout-btn" onclick="handleTopbarLogout()">Sign out</button>` : ''}
-</header>`;
-
-  const target = document.getElementById('app-shell') || document.body;
-  const existingSidebar = target.querySelector('.sidebar');
-  if (!existingSidebar) target.insertAdjacentHTML('afterbegin', sidebarHTML);
-  const existingTopbar = target.querySelector('.topbar');
-  if (!existingTopbar) {
-    const mc = target.querySelector('.main-content');
-    if (mc) mc.insertAdjacentHTML('afterbegin', topbarHTML);
-  }
-
-  // Inject chatbot
-  if (!document.querySelector('.chatbot-bubble')) {
-    document.body.insertAdjacentHTML('beforeend', `
-<div class="chatbot-bubble" title="Ask ScamShield AI">🤖</div>
-<div class="chatbot-panel">
-  <div class="chatbot-header">
-    <div class="chatbot-avatar">🛡️</div>
-    <div><div class="chatbot-name">ScamShield AI</div><div class="chatbot-status">Online</div></div>
-    <button class="chatbot-close">✕</button>
-  </div>
-  <div class="chatbot-msgs"></div>
-  <div class="chatbot-input-row">
-    <input class="chatbot-input" placeholder="Ask about scam detection…"/>
-    <button class="chatbot-send">Send</button>
-  </div>
-</div>`);
-  }
-  setTimeout(() => { if (typeof initChatbot === 'function') initChatbot(); }, 100);
-}
-
-function handleTopbarLogout() {
-  localStorage.removeItem('gr_user');
-  localStorage.removeItem('token');
-  localStorage.removeItem('gr_theme');
-  window.location.href = 'login.html';
-}
-
-window.toggleTheme = function() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'dark';
-  const newTheme = current === 'dark' ? 'light' : 'dark';
-  
-  html.setAttribute('data-theme', newTheme);
-  localStorage.setItem('gr_theme', newTheme);
-  
-  // Update all elements with data-theme
-  document.querySelectorAll('[data-theme]').forEach(el => {
-    el.setAttribute('data-theme', newTheme);
-  });
-  
-  // Update theme buttons
-  const themeBtns = document.querySelectorAll('.theme-toggle');
-  themeBtns.forEach(btn => {
-    const iconSpan = btn.querySelector('.theme-toggle-icon');
-    const textSpan = btn.querySelector('.theme-toggle-text');
-    if (iconSpan) iconSpan.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-    if (textSpan) textSpan.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-  });
-};
-
-(function initTheme() {
-  const saved = localStorage.getItem('gr_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-})();
+// Fallback to keyword matching if API unavailable
 // ============================================================
 
 // Local keyword responses (instant fallback)
@@ -263,16 +27,16 @@ function matchLocal(msg) {
   if (/domain|ssl|whois|website/.test(m)) return BOT_KB.domain;
   if (/fee|registr|deposit|pay/.test(m)) return "🚨 **Registration Fee = Always a Scam!**\nNo legitimate company ever charges candidates for joining. Report immediately if you see this red flag!";
   if (/salary|pay|earn|lpa/.test(m)) return "💰 **Salary Red Flags:**\nFresher role with ₹8-10LPA 'no experience needed' = almost certainly fake. Check AmbitionBox or Glassdoor for realistic salary ranges.";
-  if (/compare|comparison|vs|versus/.test(m)) return "⚖️ Use the **Compare Jobs** feature (sidebar) to paste two URLs side-by-side. It shows every signal — domain age, SSL, salary, recruiter email — in a visual diff so fakes are instantly obvious.";
+  if (/compare|comparison|vs|versus/.test(m)) return "⚖️ Use the **Compare Jobs** feature to paste two URLs side-by-side. It shows every signal — domain age, SSL, salary, recruiter email — in a visual diff so fakes are instantly obvious.";
   if (/trust card|report card|share/.test(m)) return "📋 The **Job Trust Card** is generated after every analysis. It has a unique report ID, risk score, and per-dimension breakdown. You can download it as an image and share on WhatsApp to warn others!";
   return null;
 }
 
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-// Call Anthropic API for real AI response
+// ── Anthropic API call ──
 async function callClaudeAPI(userMessage, conversationHistory) {
-  const systemPrompt = `You are ScamShield AI, the intelligent assistant for ScamShield — an Indian job scam detection platform. 
+  const systemPrompt = `You are ScamShield AI, the intelligent assistant for ScamShield — an Indian job scam detection platform.
 You help users identify fake job postings, understand scam signals, and stay safe.
 
 Key facts about ScamShield:
@@ -287,7 +51,7 @@ If asked about a specific job/company, give guidance on red flags to check.
 Keep responses under 200 words unless the user needs detailed analysis.`;
 
   const messages = [
-    ...conversationHistory.slice(-6), // last 3 exchanges for context
+    ...conversationHistory.slice(-6),
     { role: "user", content: userMessage }
   ];
 
@@ -309,18 +73,51 @@ Keep responses under 200 words unless the user needs detailed analysis.`;
   throw new Error("No response from AI");
 }
 
-function initChatbot() {
-  const bubble = document.querySelector('.chatbot-bubble');
-  const panel = document.querySelector('.chatbot-panel');
-  const closeBtn = document.querySelector('.chatbot-close');
-  const input = document.querySelector('.chatbot-input');
-  const sendBtn = document.querySelector('.chatbot-send');
-  const msgs = document.querySelector('.chatbot-msgs');
-  if (!bubble || !panel) return;
+// ── Inject chatbot HTML into DOM ──
+function injectChatbotHTML() {
+  if (document.querySelector('.chatbot-bubble')) return; // already injected
+  document.body.insertAdjacentHTML('beforeend', `
+<div class="chatbot-bubble" id="chatbotBubble" title="Ask ScamShield AI">🤖</div>
+<div class="chatbot-panel" id="chatbotPanel">
+  <div class="chatbot-header">
+    <div class="chatbot-avatar">🛡️</div>
+    <div>
+      <div class="chatbot-name">ScamShield AI</div>
+      <div class="chatbot-status">Online</div>
+    </div>
+    <button class="chatbot-close" id="chatbotClose">✕</button>
+  </div>
+  <div class="chatbot-msgs" id="chatbotMsgs"></div>
+  <div class="chatbot-input-row">
+    <input class="chatbot-input" id="chatbotInput" placeholder="Ask about scam detection…"/>
+    <button class="chatbot-send" id="chatbotSend">Send</button>
+  </div>
+</div>`);
+}
 
-  // Conversation history for Claude context
+// ── Main init — safe to call multiple times, only binds once ──
+function initChatbot() {
+  // Guard: prevent double-binding
+  if (window._chatbotReady) return;
+
+  // Inject HTML if not already present (handles both nav.js and direct call)
+  injectChatbotHTML();
+
+  const bubble   = document.querySelector('.chatbot-bubble');
+  const panel    = document.querySelector('.chatbot-panel');
+  const closeBtn = document.querySelector('.chatbot-close');
+  const input    = document.querySelector('.chatbot-input');
+  const sendBtn  = document.querySelector('.chatbot-send');
+  const msgs     = document.querySelector('.chatbot-msgs');
+
+  // Elements must exist before we proceed
+  if (!bubble || !panel || !msgs) return;
+
+  window._chatbotReady = true;
+
   const conversationHistory = [];
 
+  // ── Open / Close ──
   bubble.addEventListener('click', () => {
     panel.classList.toggle('open');
     if (panel.classList.contains('open') && msgs.children.length === 0) {
@@ -328,9 +125,12 @@ function initChatbot() {
       setTimeout(() => addSuggestions(['Signs of fake job', 'How detection works', 'Safety tips', 'Compare two jobs', 'Report a scam']), 700);
     }
   });
-  closeBtn?.addEventListener('click', () => panel.classList.remove('open'));
-  sendBtn?.addEventListener('click', sendChat);
-  input?.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+  closeBtn && closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+
+  // ── Send ──
+  sendBtn  && sendBtn.addEventListener('click', sendChat);
+  input    && input.addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
 
   async function sendChat() {
     const text = input.value.trim();
@@ -338,11 +138,9 @@ function initChatbot() {
     addUserMsg(text);
     input.value = '';
     msgs.querySelectorAll('.chatbot-suggestions').forEach(s => s.remove());
-
-    // Add to history
     conversationHistory.push({ role: "user", content: text });
 
-    // Try local match first for instant response
+    // Local match = instant response
     const local = matchLocal(text);
     if (local) {
       setTimeout(() => {
@@ -352,9 +150,8 @@ function initChatbot() {
       return;
     }
 
-    // Show typing indicator
+    // Claude API
     const typing = addTypingIndicator();
-
     try {
       const aiResponse = await callClaudeAPI(text, conversationHistory.slice(0, -1));
       typing.remove();
@@ -368,6 +165,7 @@ function initChatbot() {
     }
   }
 
+  // ── Helpers ──
   function addTypingIndicator() {
     const d = document.createElement('div');
     d.className = 'chatbot-msg bot typing';
@@ -380,10 +178,13 @@ function initChatbot() {
   function addBotMsg(text) {
     const d = document.createElement('div');
     d.className = 'chatbot-msg bot';
-    d.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    d.innerHTML = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
   }
+
   function addUserMsg(text) {
     const d = document.createElement('div');
     d.className = 'chatbot-msg user';
@@ -391,6 +192,7 @@ function initChatbot() {
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
   }
+
   function addSuggestions(items) {
     const wrap = document.createElement('div');
     wrap.className = 'chatbot-suggestions';
@@ -411,8 +213,15 @@ function initChatbot() {
         } else {
           const typing = addTypingIndicator();
           callClaudeAPI(item, conversationHistory.slice(0, -1))
-            .then(r => { typing.remove(); addBotMsg(r); conversationHistory.push({ role: "assistant", content: r }); })
-            .catch(() => { typing.remove(); addBotMsg(rand(BOT_KB.default)); });
+            .then(r => {
+              typing.remove();
+              addBotMsg(r);
+              conversationHistory.push({ role: "assistant", content: r });
+            })
+            .catch(() => {
+              typing.remove();
+              addBotMsg(rand(BOT_KB.default));
+            });
         }
       };
       wrap.appendChild(b);
@@ -421,12 +230,11 @@ function initChatbot() {
     msgs.scrollTop = msgs.scrollHeight;
   }
 }
-// Nav.js injects the chatbot bubble and calls initChatbot() after 60ms.
-// This is a safety fallback if chatbot.js loads standalone.
+
+// ── Auto-init on DOMContentLoaded ──
+// Works whether chatbot.js is loaded standalone OR via nav.js/sidebar.js
 document.addEventListener('DOMContentLoaded', () => {
-  // If bubble already in DOM, init immediately; else wait for nav.js
-  if (document.querySelector('.chatbot-bubble')) {
-    initChatbot();
-  }
-  // nav.js will call initChatbot() via setTimeout if it renders navbar
+  // If bubble already in DOM (injected by sidebar.js before this runs), init directly
+  // If not, injectChatbotHTML() inside initChatbot() will handle it
+  setTimeout(initChatbot, 100);
 });
