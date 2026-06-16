@@ -17,7 +17,13 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 # ── CORS (allow all for local dev) ──────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "*"  # Allow all for development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,12 +68,12 @@ async def startup_event():
 
 # ── Static frontend ──────────────────────────────────────────
 @app.get("/")
-def root():
-    return {"message": "API Running"}
-    
-if __name__ == "__main__":
-        import uvicorn
-        import os
-        port = int(os.environ.get("PORT", 10000))
-        uvicorn.run("backend.main:app", host="0.0.0.0", port=port)
-   
+async def serve_home():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+@app.get("/{file_path:path}")
+async def serve_frontend(file_path: str):
+    file = FRONTEND_DIR / file_path
+    if file.exists() and file.is_file():
+        return FileResponse(file)
+    return FileResponse(FRONTEND_DIR / "index.html")

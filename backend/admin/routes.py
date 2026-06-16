@@ -1,5 +1,6 @@
 # backend/admin/routes.py
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from .auth import admin_required
 from . import services
 from . import schemas
@@ -7,55 +8,77 @@ from backend.supabase_client import supabase
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-
 # ═══════════════════════════════════════════════════════
 #  DASHBOARD
 # ═══════════════════════════════════════════════════════
 
 @router.get("/dashboard/stats")
-@router.get("/stats")   # alias used by admin.html
+@router.get("/stats")
 async def dashboard_stats(current_user: dict = Depends(admin_required)):
     data = services.get_analytics_summary()
-    # normalise field: backend calls it confirmed_reports, frontend expects confirmed_scams
     data.setdefault("confirmed_scams", data.get("confirmed_reports", 0))
+    print(f"[DEBUG] Dashboard stats: {data}")
     return data
-
 
 @router.get("/dashboard/weekly-activity")
 async def dashboard_weekly_activity(current_user: dict = Depends(admin_required)):
     return {"weekly_activity": services.get_weekly_activity()}
 
-
 @router.get("/dashboard/scam-types")
 async def dashboard_scam_types(current_user: dict = Depends(admin_required)):
     return {"scam_types_distribution": services.get_scam_types_distribution()}
-
 
 # ═══════════════════════════════════════════════════════
 #  REPORTS
 # ═══════════════════════════════════════════════════════
 
-@router.get("/reports/stats")   # must be BEFORE /reports/{report_id}
+@router.get("/reports/stats")
 async def admin_reports_stats(current_user: dict = Depends(admin_required)):
     try:
         total    = services.count_reports()
         pending  = services.count_reports_by_status("pending")
         confirmed = services.count_reports_by_status("confirmed")
         rejected = services.count_reports_by_status("rejected")
-        return {
+        data = {
             "total": total,
             "pending": pending,
             "confirmed": confirmed,
             "rejected": rejected,
-            # aliases used by some frontend views
             "Pending Review": pending,
             "Confirmed": confirmed,
             "Rejected": rejected,
             "Blacklisted": 0,
         }
+        print(f"[DEBUG] Reports stats: {data}")
+        return data
     except Exception as e:
+        print(f"[ERROR] Reports stats: {e}")
         return {"total": 0, "pending": 0, "confirmed": 0, "rejected": 0}
 
+@router.get("/reports/export")
+async def admin_export_reports(current_user: dict = Depends(admin_required)):
+    """
+    Export all reports as CSV file.
+    Returns a downloadable CSV file.
+    """
+    try:
+        csv_data = services.export_reports_csv()
+        
+        if csv_data is None:
+            raise HTTPException(status_code=404, detail="No reports found to export")
+        
+        return Response(
+            content=csv_data,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=reports_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Export reports: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to export reports: {str(e)}")
 
 @router.get("/reports")
 async def admin_list_reports(
@@ -63,8 +86,9 @@ async def admin_list_reports(
     limit: int = 50, offset: int = 0,
     current_user: dict = Depends(admin_required)
 ):
-    return services.list_reports(status=status, severity=severity, limit=limit, offset=offset)
-
+    data = services.list_reports(status=status, severity=severity, limit=limit, offset=offset)
+    print(f"[DEBUG] Reports list: {len(data)} reports found")
+    return data
 
 @router.get("/reports/{report_id}")
 async def admin_get_report(report_id: str, current_user: dict = Depends(admin_required)):
@@ -72,10 +96,10 @@ async def admin_get_report(report_id: str, current_user: dict = Depends(admin_re
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     evidence = services.get_report_evidence(report_id)
-    return {**report, "evidence": evidence}
+    result = {**report, "evidence": evidence}
+    print(f"[DEBUG] Report details: {report_id} - {len(evidence)} evidence items")
+    return result
 
-
-# Both POST and PUT accepted — frontend sends PUT, keeping POST for API clients
 @router.post("/reports/{report_id}/status")
 @router.put("/reports/{report_id}/status")
 async def admin_change_report_status(
@@ -93,7 +117,6 @@ async def admin_change_report_status(
     )
     return updated
 
-
 @router.get("/reports/{report_id}/evidence/{evidence_id}")
 async def admin_get_report_evidence_item(report_id: str, evidence_id: str, current_user: dict = Depends(admin_required)):
     evidence = services.get_evidence(evidence_id)
@@ -101,14 +124,12 @@ async def admin_get_report_evidence_item(report_id: str, evidence_id: str, curre
         raise HTTPException(status_code=404, detail="Evidence not found")
     return evidence
 
-
 @router.get("/evidence/{evidence_id}")
 async def admin_get_evidence(evidence_id: str, current_user: dict = Depends(admin_required)):
     evidence = services.get_evidence(evidence_id)
     if not evidence:
         raise HTTPException(status_code=404, detail="Evidence not found")
     return evidence
-
 
 @router.put("/evidence/{evidence_id}/verification")
 async def admin_update_evidence_verification(
@@ -126,7 +147,6 @@ async def admin_update_evidence_verification(
     )
     return evidence
 
-
 @router.get("/evidence/{evidence_id}/view")
 async def view_evidence(evidence_id: str, current_user: dict = Depends(admin_required)):
     evidence = services.get_evidence(evidence_id)
@@ -136,40 +156,42 @@ async def view_evidence(evidence_id: str, current_user: dict = Depends(admin_req
         return {"url": evidence["file_url"]}
     return {"url": services.generate_evidence_url(evidence["file_url"])}
 
-
 # ═══════════════════════════════════════════════════════
 #  USERS
 # ═══════════════════════════════════════════════════════
 
-@router.get("/users/stats")   # must be BEFORE /users/{user_id}
+@router.get("/users/stats")
 async def admin_users_stats(current_user: dict = Depends(admin_required)):
     try:
         all_users = supabase.table("admin_users").select("id, role").execute()
         rows = all_users.data or []
         total  = len(rows)
         admins = sum(1 for r in rows if r.get("role") == "admin")
-        return {"total": total, "active": total, "banned": 0, "admins": admins}
-    except Exception:
+        data = {"total": total, "active": total, "banned": 0, "admins": admins}
+        print(f"[DEBUG] Users stats: {data}")
+        return data
+    except Exception as e:
+        print(f"[ERROR] Users stats: {e}")
         return {"total": 0, "active": 0, "banned": 0, "admins": 0}
-
 
 @router.get("/users")
 async def admin_list_users(
     limit: int = 100, offset: int = 0,
     current_user: dict = Depends(admin_required)
 ):
-    return services.list_users(limit=limit, offset=offset)
-
+    data = services.list_users(limit=limit, offset=offset)
+    print(f"[DEBUG] Users list: {len(data)} users found")
+    return data
 
 @router.delete("/users/{user_id}")
 async def admin_delete_user(user_id: str, current_user: dict = Depends(admin_required)):
-    # Prevent admin from deleting themselves
     if str(current_user.get("user_id")) == user_id:
         raise HTTPException(status_code=400, detail="You cannot delete your own account")
     try:
-        response = supabase.table("admin_users").delete().eq("id", user_id).execute()
-        if not response.data:
-            raise HTTPException(status_code=404, detail="User not found")
+        success = services.delete_user(user_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="User not found or could not be deleted")
+        
         services.create_audit_log(
             current_user.get("user_id"), "DELETE_USER", "USER", user_id
         )
@@ -179,7 +201,6 @@ async def admin_delete_user(user_id: str, current_user: dict = Depends(admin_req
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/users/{user_id}")
 async def admin_get_user(user_id: str, current_user: dict = Depends(admin_required)):
     user = services.get_user(user_id)
@@ -187,8 +208,6 @@ async def admin_get_user(user_id: str, current_user: dict = Depends(admin_requir
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-
-# Both POST and PUT accepted — frontend sends PUT
 @router.post("/users/{user_id}/status")
 @router.put("/users/{user_id}/status")
 async def admin_update_user_status(
@@ -197,8 +216,6 @@ async def admin_update_user_status(
     current_user: dict = Depends(admin_required)
 ):
     try:
-        # Store status in role field or as a note — admin_users may not have is_active
-        # We just return success so the UI doesn't break; extend when column is added
         response = supabase.table("admin_users").select("id, name, email, role").eq("id", user_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail="User not found")
@@ -213,7 +230,6 @@ async def admin_update_user_status(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 # ═══════════════════════════════════════════════════════
 #  AUDIT LOGS
 # ═══════════════════════════════════════════════════════
@@ -225,7 +241,6 @@ async def admin_audit_logs(
 ):
     return services.list_audit_logs(limit=limit, offset=offset)
 
-
 # ═══════════════════════════════════════════════════════
 #  COMPANIES
 # ═══════════════════════════════════════════════════════
@@ -234,14 +249,12 @@ async def admin_audit_logs(
 async def admin_list_companies(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
     return services.list_companies(limit=limit, offset=offset)
 
-
 @router.get("/companies/{company_id}")
 async def admin_get_company(company_id: str, current_user: dict = Depends(admin_required)):
     company = services.get_company(company_id)
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     return company
-
 
 @router.post("/companies")
 async def admin_create_company(data: schemas.CreateCompanyRequest, current_user: dict = Depends(admin_required)):
@@ -255,7 +268,6 @@ async def admin_create_company(data: schemas.CreateCompanyRequest, current_user:
     services.create_audit_log(current_user.get("user_id"), "CREATE_COMPANY", "COMPANY", company.get("company_id", ""))
     return company
 
-
 # ═══════════════════════════════════════════════════════
 #  DOMAINS
 # ═══════════════════════════════════════════════════════
@@ -264,7 +276,6 @@ async def admin_create_company(data: schemas.CreateCompanyRequest, current_user:
 async def admin_list_domains(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
     return services.list_domains(limit=limit, offset=offset)
 
-
 @router.get("/domains/{domain_id}")
 async def admin_get_domain(domain_id: str, current_user: dict = Depends(admin_required)):
     domain = services.get_domain(domain_id)
@@ -272,13 +283,11 @@ async def admin_get_domain(domain_id: str, current_user: dict = Depends(admin_re
         raise HTTPException(status_code=404, detail="Domain not found")
     return domain
 
-
 @router.post("/domains/blacklist")
 async def admin_blacklist_domain(data: schemas.BlacklistDomainRequest, current_user: dict = Depends(admin_required)):
     domain = services.blacklist_domain(data.domain, reason=data.reason)
     services.create_audit_log(current_user.get("user_id"), "BLACKLIST_DOMAIN", "DOMAIN", data.domain)
     return domain
-
 
 # ═══════════════════════════════════════════════════════
 #  SCAM INDICATORS
@@ -288,7 +297,6 @@ async def admin_blacklist_domain(data: schemas.BlacklistDomainRequest, current_u
 async def admin_list_indicators(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
     return services.list_indicators(limit=limit, offset=offset)
 
-
 @router.get("/indicators/{indicator_id}")
 async def admin_get_indicator(indicator_id: str, current_user: dict = Depends(admin_required)):
     indicator = services.get_indicator(indicator_id)
@@ -296,17 +304,16 @@ async def admin_get_indicator(indicator_id: str, current_user: dict = Depends(ad
         raise HTTPException(status_code=404, detail="Indicator not found")
     return indicator
 
-
 @router.post("/indicators")
 async def admin_create_indicator(data: schemas.CreateIndicatorRequest, current_user: dict = Depends(admin_required)):
     indicator = services.create_indicator(data.keyword, data.category, data.weight)
     services.create_audit_log(current_user.get("user_id"), "CREATE_INDICATOR", "INDICATOR", indicator.get("indicator_id", ""))
     return indicator
 
-
 # ═══════════════════════════════════════════════════════
 #  COMMUNITY (admin moderation)
 # ═══════════════════════════════════════════════════════
+from datetime import datetime
 
 @router.get("/community/stats")
 async def admin_community_stats(current_user: dict = Depends(admin_required)):
@@ -314,41 +321,62 @@ async def admin_community_stats(current_user: dict = Depends(admin_required)):
         posts    = supabase.table("community_posts").select("post_id", count="exact").execute()
         comments = supabase.table("community_comments").select("comment_id", count="exact").execute()
         questions = supabase.table("community_posts").select("post_id", count="exact").eq("post_type", "question").execute()
-        total_p  = posts.count or 0
-        total_c  = comments.count or 0
-        total_q  = questions.count or 0
-        return {
+        total_p  = posts.count if hasattr(posts, "count") else 0
+        total_c  = comments.count if hasattr(comments, "count") else 0
+        total_q  = questions.count if hasattr(questions, "count") else 0
+        data = {
             "total_posts": total_p,
             "active_posts": total_p,
             "questions": total_q,
             "total_comments": total_c,
         }
-    except Exception:
+        print(f"[DEBUG] Community stats: {data}")
+        return data
+    except Exception as e:
+        print(f"[ERROR] Community stats: {e}")
         return {"total_posts": 0, "active_posts": 0, "questions": 0, "total_comments": 0}
-
 
 @router.get("/community/posts")
 async def admin_list_community_posts(
     limit: int = 50, offset: int = 0,
     current_user: dict = Depends(admin_required)
 ):
-    return services.list_community_posts(limit=limit, offset=offset)
-
+    data = services.list_community_posts(limit=limit, offset=offset)
+    print(f"[DEBUG] Community posts: {len(data)} posts found")
+    return data
 
 @router.get("/community/posts/{post_id}")
 async def admin_get_community_post(post_id: str, current_user: dict = Depends(admin_required)):
     post = services.get_post_with_comments(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
+    print(f"[DEBUG] Post details: {post_id} - {len(post.get('comments', []))} comments")
     return post
-
 
 @router.delete("/community/posts/{post_id}")
 async def admin_delete_community_post(post_id: str, current_user: dict = Depends(admin_required)):
-    services.delete_community_post(post_id)
-    services.create_audit_log(current_user.get("user_id"), "DELETE_COMMUNITY_POST", "POST", post_id)
-    return {"message": "Post deleted"}
-
+    try:
+        check = supabase.table("community_posts").select("post_id").eq("post_id", post_id).execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="Post not found")
+        
+        result = services.delete_post(post_id)
+        if result is None:
+            raise HTTPException(status_code=500, detail="Failed to delete post")
+        
+        services.create_audit_log(
+            current_user.get("user_id"),
+            "DELETE_COMMUNITY_POST",
+            "POST",
+            post_id
+        )
+        
+        return {"message": "Post deleted successfully", "post_id": post_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Delete post: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete post: {str(e)}")
 
 @router.get("/community/comments")
 async def admin_list_community_comments(
@@ -357,13 +385,55 @@ async def admin_list_community_comments(
 ):
     return services.list_community_comments(limit=limit, offset=offset)
 
-
 @router.delete("/community/comments/{comment_id}")
 async def admin_delete_community_comment(comment_id: str, current_user: dict = Depends(admin_required)):
-    services.delete_community_comment(comment_id)
-    services.create_audit_log(current_user.get("user_id"), "DELETE_COMMUNITY_COMMENT", "COMMENT", comment_id)
-    return {"message": "Comment deleted successfully"}
+    try:
+        check = supabase.table("community_comments").select("comment_id").eq("comment_id", comment_id).execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        
+        result = services.delete_comment(comment_id)
+        if result is None:
+            raise HTTPException(status_code=500, detail="Failed to delete comment")
+        
+        services.create_audit_log(
+            current_user.get("user_id"),
+            "DELETE_COMMUNITY_COMMENT",
+            "COMMENT",
+            comment_id
+        )
+        
+        return {"message": "Comment deleted successfully", "comment_id": comment_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Delete comment: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete comment: {str(e)}")
 
+# ═══════════════════════════════════════════════════════
+#  COMMUNITY EXPORT
+# ═══════════════════════════════════════════════════════
+
+@router.get("/community/export")
+async def admin_export_community_posts(current_user: dict = Depends(admin_required)):
+    try:
+        csv_data = services.export_community_posts_csv()
+        
+        if csv_data is None:
+            raise HTTPException(status_code=404, detail="No community posts found to export")
+        
+        return Response(
+            content=csv_data,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=community_posts_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Export community posts: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to export community posts: {str(e)}")
 
 # ═══════════════════════════════════════════════════════
 #  JOB LISTINGS
@@ -372,7 +442,6 @@ async def admin_delete_community_comment(comment_id: str, current_user: dict = D
 @router.get("/listings")
 async def admin_list_listings(limit: int = 100, offset: int = 0, current_user: dict = Depends(admin_required)):
     return services.list_job_listings(limit=limit, offset=offset)
-
 
 @router.get("/listings/{listing_id}")
 async def admin_get_listing(listing_id: str, current_user: dict = Depends(admin_required)):
