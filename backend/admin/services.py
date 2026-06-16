@@ -186,36 +186,91 @@ def count_users():
         return 0
 
 def delete_user(user_id: str):
-    """
-    Delete a user by setting foreign key references to NULL first.
-    """
     try:
-        # Check if user exists
-        check = supabase.table("admin_users").select("id").eq("id", user_id).execute()
+        check = (
+            supabase.table("admin_users")
+            .select("id")
+            .eq("id", user_id)
+            .execute()
+        )
+
         if not check.data:
             return False
-        
-       
-        # Set user_id to NULL in user_reports
-        supabase.table("user_reports").update({"user_id": None}).eq("user_id", user_id).execute()
-        
-        # Set user_id to NULL in community_posts
-        supabase.table("community_posts").update({"user_id": None}).eq("user_id", user_id).execute()
-        
-        # Set user_id to NULL in community_comments
-        supabase.table("community_comments").update({"user_id": None}).eq("user_id", user_id).execute()
-        
-        # Set user_id to NULL in community_votes
-        supabase.table("community_votes").update({"user_id": None}).eq("user_id", user_id).execute()
-        
-        # Set admin_id to NULL in audit_logs
-        supabase.table("audit_logs").update({"admin_id": None}).eq("admin_id", user_id).execute()
-        
-        # Delete the user
-        delete_resp = supabase.table("admin_users").delete().eq("id", user_id).execute()
-        
-        return len(delete_resp.data) > 0 if delete_resp.data else False
-            
+
+        # Delete votes
+        supabase.table("community_votes") \
+            .delete() \
+            .eq("user_id", user_id) \
+            .execute()
+
+        # Delete comments
+        supabase.table("community_comments") \
+            .delete() \
+            .eq("user_id", user_id) \
+            .execute()
+
+        # Delete posts
+        posts = (
+            supabase.table("community_posts")
+            .select("post_id")
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+        for post in posts.data:
+            pid = post["post_id"]
+
+            supabase.table("community_votes") \
+                .delete() \
+                .eq("post_id", pid) \
+                .execute()
+
+            supabase.table("community_comments") \
+                .delete() \
+                .eq("post_id", pid) \
+                .execute()
+
+        supabase.table("community_posts") \
+            .delete() \
+            .eq("user_id", user_id) \
+            .execute()
+
+        # Delete evidence attached to reports
+        reports = (
+            supabase.table("user_reports")
+            .select("report_id")
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+        for report in reports.data:
+            supabase.table("report_evidence") \
+                .delete() \
+                .eq("report_id", report["report_id"]) \
+                .execute()
+
+        # Delete reports
+        supabase.table("user_reports") \
+            .delete() \
+            .eq("user_id", user_id) \
+            .execute()
+
+        # Audit logs
+        supabase.table("audit_logs") \
+            .update({"admin_id": None}) \
+            .eq("admin_id", user_id) \
+            .execute()
+
+        # Finally delete user
+        resp = (
+            supabase.table("admin_users")
+            .delete()
+            .eq("id", user_id)
+            .execute()
+        )
+
+        return bool(resp.data)
+
     except Exception as e:
         print(f"[ERROR] Delete user {user_id}: {e}")
         return False
@@ -376,12 +431,39 @@ def get_post_vote_count(post_id: str):
 
 def delete_post(post_id: str):
     try:
-        check = supabase.table("community_posts").select("post_id").eq("post_id", post_id).execute()
-        if not check.data:
+        # Check if post exists
+        post = (
+            supabase.table("community_posts")
+            .select("*")
+            .eq("post_id", post_id)
+            .execute()
+        )
+
+        if not post.data:
             return None
-        
-        resp = supabase.table("community_posts").delete().eq("post_id", post_id).execute()
-        return resp.data[0] if resp.data else None
+
+        # Delete all votes for the post
+        supabase.table("community_votes") \
+            .delete() \
+            .eq("post_id", post_id) \
+            .execute()
+
+        # Delete all comments for the post
+        supabase.table("community_comments") \
+            .delete() \
+            .eq("post_id", post_id) \
+            .execute()
+
+        # Delete the post itself
+        deleted = (
+            supabase.table("community_posts")
+            .delete()
+            .eq("post_id", post_id)
+            .execute()
+        )
+
+        return deleted.data[0] if deleted.data else None
+
     except Exception as e:
         print(f"[ERROR] Delete post {post_id}: {e}")
         return None
