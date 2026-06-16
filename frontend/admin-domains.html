@@ -2,83 +2,195 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Domains – ScamShield Admin</title>
+  <title>Domain Blacklist – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    .domain-row {
+      transition: opacity 0.3s ease;
+    }
+    .severity-critical { background: rgba(220,38,38,0.15); color: var(--accent-red); }
+    .severity-high { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+    .severity-medium { background: rgba(139,148,158,0.15); color: #8b949e; }
+  </style>
 </head>
 <body>
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
-    <nav class="admin-nav">
-      <a href="admin.html"><span>📊</span> Overview</a>
-      <a href="admin-reports.html" class="domainsreports"><span>🚩</span> Reports</a>
-      <a href="admin-community.html" class="domainscommunity"><span>👥</span> Community</a>
-      <a href="admin-listings.html" class="domainslistings"><span>💼</span> Listings</a>
-      <div class="admin-nav-group">Knowledge Base</div>
-      <a href="admin-companies.html" class="domainscompanies"><span>🏢</span> Companies</a>
-      <a href="admin-domains.html" class="active" class="active" class="active"><span>🌐</span> Domains</a>
-      <a href="admin-indicators.html" class="domainsindicators"><span>⚡</span> Scam Indicators</a>
-      <div class="admin-nav-group">System</div>
-      <a href="admin-users.html" class="domainsadmins"><span>👤</span> Admins & Logs</a>
-    </nav>
-    <div class="admin-sidebar-footer">
-      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
-    </div>
-  </aside>
-  <div class="admin-main"><div class="admin-page">
-    
-      <div class="page-header"><h1>🌐 Domains — Knowledge Base</h1><p>View analyzed domains, update status, manage blacklist</p></div>
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <input type="text" class="form-control" style="max-width:240px" placeholder="Search domain…" oninput="filterTable(this.value,\"dom-tbody\")">
-        <button class="btn btn-primary" onclick="addDomain()">+ Add Domain</button>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+      <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
+      <div class="page-header">
+        <h1>Domain Blacklist</h1>
+        <p>Manage flagged and blacklisted domains across the platform</p>
       </div>
-      <div class="card">
+      <div class="card mb-3">
+        <div class="flex-between mb-3">
+          <div style="display:flex;gap:8px;flex:1">
+            <input type="text" class="form-control" id="domain-search" placeholder="Search domain…" style="max-width:280px" oninput="filterDomains(this.value)">
+            <select class="form-control" id="severity-filter" style="max-width:140px" onchange="filterDomains(document.getElementById('domain-search').value)">
+              <option value="">All severity</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="addDomainForm()">+ Add Domain</button>
+        </div>
         <div class="table-wrap">
-          <table><thead><tr><th>Domain</th><th>Trust Score</th><th>SSL</th><th>Registrar</th><th>Reports</th><th>Status</th><th>Last Checked</th><th>Actions</th></tr></thead>
-          <tbody id="dom-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+          <table id="domains-table">
+            <thead>
+              <tr><th>Domain</th><th>Severity</th><th>Reports</th><th>Added</th><th>Reason</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr class="domain-row">
+                <td class="mono">careers-google-jobs.xyz</td>
+                <td><span class="badge badge-red">Critical</span></td>
+                <td>14</td>
+                <td>5d ago</td>
+                <td>Fee demand, brand impersonation</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">infosys-hr-jobs.tk</td>
+                <td><span class="badge badge-red">Critical</span></td>
+                <td>9</td>
+                <td>1w ago</td>
+                <td>Infosys impersonation, phishing</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">tcs-careers2025.in</td>
+                <td><span class="badge badge-red">Critical</span></td>
+                <td>11</td>
+                <td>2d ago</td>
+                <td>TCS impersonation, fake offer letters</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">workfromhome-india.net</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td>6</td>
+                <td>2w ago</td>
+                <td>Data theft, advance fee fraud</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">netjob-india.xyz</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td>8</td>
+                <td>3d ago</td>
+                <td>Registration fee, MLM structure</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">digiwork-india.net</td>
+                <td><span class="badge badge-orange">High</span></td>
+                <td>9</td>
+                <td>4d ago</td>
+                <td>Unpaid work, disappeared</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+              <tr class="domain-row">
+                <td class="mono">quickearnings-jobs.in</td>
+                <td><span class="badge badge-yellow">Medium</span></td>
+                <td>4</td>
+                <td>1w ago</td>
+                <td>MLM, advance salary request</td>
+                <td><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-
-  </div></div>
+    </div>
+  </div>
 </div>
+
 <script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+function filterDomains(q) {
+  const searchTerm = q.toLowerCase();
+  const severityFilter = document.getElementById('severity-filter')?.value || '';
+  
+  document.querySelectorAll('#domains-table tbody tr').forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const severityCell = row.querySelector('td:nth-child(2) .badge');
+    const severity = severityCell ? severityCell.textContent : '';
+    
+    let show = true;
+    if (searchTerm && !text.includes(searchTerm)) show = false;
+    if (severityFilter && severity !== severityFilter) show = false;
+    
+    row.style.display = show ? '' : 'none';
+  });
+}
 
-async function loadDomains() {
-  try {
-    const doms = await DB.getDomains();
-    document.getElementById("dom-tbody").innerHTML = doms.map(d => `
-      <tr>
-        <td class="mono" style="font-size:12px">${d.domain}</td>
-        <td><span style="font-family:var(--font-mono);color:${d.trust_score>70?"var(--accent-green)":d.trust_score>40?"var(--accent-orange)":"var(--accent-red)"}">${d.trust_score}</span></td>
-        <td>${d.ssl_valid?"<span style=\"color:var(--accent-green)\">✓ Valid</span>":"<span style=\"color:var(--accent-red)\">✗ Invalid</span>"}</td>
-        <td style="font-size:12px">${d.registrar||"Unknown"}</td>
-        <td>${d.report_count}</td>
-        <td><span class="badge ${d.status==="safe"?"badge-green":d.status==="blacklisted"?"badge-red":d.status==="suspicious"?"badge-orange":"badge-gray"}">${d.status}</span></td>
-        <td style="font-size:11px;color:var(--text-muted)">${new Date(d.last_checked).toLocaleDateString("en-IN")}</td>
-        <td style="display:flex;gap:5px">
-          <button class="btn btn-danger btn-sm" onclick="setDomStatus(\"${d.domain_id}\",\"blacklisted\",this)">🚫 BL</button>
-          <button class="btn btn-outline btn-sm" onclick="setDomStatus(\"${d.domain_id}\",\"safe\",this)">✓ Safe</button>
-        </td>
-      </tr>`).join("") || "<tr><td colspan=\"8\" style=\"text-align:center;color:var(--text-muted)\">No domains</td></tr>";
-  } catch(e) { console.error(e); }
+function addDomainForm() {
+  const d = prompt('Enter domain to add (e.g. scam-site.xyz):');
+  if (!d) return;
+  const clean = d.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
+  if (!clean.includes('.')) { showToast('Please enter a valid domain (e.g. scam-site.xyz)', 'error'); return; }
+  
+  const tbody = document.querySelector('#domains-table tbody');
+  const tr = document.createElement('tr');
+  tr.className = 'domain-row';
+  tr.innerHTML = `
+    <td>${clean}</div> -
+    <td class="text-secondary mono"><span class="badge badge-yellow">Pending</span></div> -
+    <td class="text-secondary mono">0</div> -
+    <td class="text-secondary mono">Just now</div> -
+    <td class="text-secondary mono">Manually added by admin</div> -
+    <td class="text-secondary mono"><button class="btn btn-outline btn-sm" onclick="removeDomain(this)">Remove</button></div> -
+  表`;
+  tbody.prepend(tr);
+  showToast(`Domain "${clean}" added`, 'success');
+  logAdminAction('ADD_DOMAIN', clean);
 }
-async function setDomStatus(id, status, btn) {
-  try {
-    await DB.updateDomainStatus(id, status);
-    await DB.logAction({ admin_id:null, action:(status==="blacklisted"?"BLACKLIST_DOMAIN":"WHITELIST_DOMAIN"), target_type:"DOMAIN", target_id:id });
-    showToast("Domain " + status, "success"); loadDomains();
-  } catch(e) { showToast("Updated (demo)","info"); }
-}
-function addDomain() {
-  const d = prompt("Domain to add (e.g. scam-site.xyz):"); if (!d) return;
-  showToast("Domain \"" + d + "\" queued for analysis", "success");
-}
-function filterTable(q, tbodyId) { document.querySelectorAll("#"+tbodyId+" tr").forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? "" : "none"; }); }
-document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadDomains(); });
 
+function removeDomain(btn) {
+  const row = btn.closest('tr');
+  const domain = row.cells[0]?.textContent || 'Domain';
+  if (!confirm(`Remove "${domain}" from the list?`)) return;
+  row.style.opacity = '0.4';
+  setTimeout(() => row.remove(), 300);
+  showToast('Domain removed', 'info');
+  logAdminAction('REMOVE_DOMAIN', domain);
+}
+
+function logAdminAction(action, target) {
+  try {
+    const logs = JSON.parse(localStorage.getItem('ss_audit_logs') || '[]');
+    const user = typeof _getUser === 'function' ? _getUser() : null;
+    logs.unshift({ ts: new Date().toISOString(), admin: user?.full_name || 'Admin', action, target });
+    localStorage.setItem('ss_audit_logs', JSON.stringify(logs.slice(0, 50)));
+  } catch(_) {}
+}
+
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.left = '50%';
+  toast.style.transform = 'translateX(-50%)';
+  toast.style.backgroundColor = type === 'error' ? 'var(--accent-red)' : (type === 'success' ? 'var(--accent-green)' : 'var(--accent-blue)');
+  toast.style.color = 'white';
+  toast.style.padding = '12px 24px';
+  toast.style.borderRadius = '8px';
+  toast.style.fontSize = '14px';
+  toast.style.zIndex = '9999';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  requireAdmin();
+  renderSidebar('admin-domains.html', true);
+  document.getElementById('page-title').textContent = 'Domain Management';
+});
 </script>
-</body></html>
+</body>
+</html>

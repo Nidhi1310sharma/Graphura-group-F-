@@ -12,12 +12,10 @@ def count_reports_by_status(status: str):
     resp = supabase.table("user_reports").select("report_id", count="exact").eq("status", status).execute()
     return resp.count if hasattr(resp, "count") else 0
 
-def list_reports(status: Optional[str]=None, severity: Optional[str]=None, limit: int=50, offset: int=0):
+def list_reports(status: Optional[str]=None, limit: int=50, offset: int=0):
     q = supabase.table("user_reports").select("*")
     if status:
         q = q.eq("status", status)
-    if severity:
-        q = q.eq("severity", severity)
     resp = q.order("created_at", desc=True).range(offset, offset+limit-1).execute()
     return resp.data or []
 
@@ -223,31 +221,31 @@ def count_blacklisted_domains():
     resp = supabase.table("domain_analysis").select("domain_id", count="exact").eq("status", "blacklisted").execute()
     return resp.count if hasattr(resp, "count") else 0
 
-# ===== SCAM INDICATORS =====
-def list_indicators(limit: int=100, offset: int=0):
-    resp = supabase.table("scam_indicators").select("*").range(offset, offset+limit-1).execute()
-    return resp.data or []
+# # ===== SCAM INDICATORS =====
+# def list_indicators(limit: int=100, offset: int=0):
+#     resp = supabase.table("scam_indicators").select("*").range(offset, offset+limit-1).execute()
+#     return resp.data or []
 
-def get_indicator(indicator_id: str):
-    resp = supabase.table("scam_indicators").select("*").eq("indicator_id", indicator_id).execute()
-    return resp.data[0] if resp.data else None
+# def get_indicator(indicator_id: str):
+#     resp = supabase.table("scam_indicators").select("*").eq("indicator_id", indicator_id).execute()
+#     return resp.data[0] if resp.data else None
 
-def create_indicator(keyword: str, category: str, weight: int):
-    resp = supabase.table("scam_indicators").insert({
-        "keyword": keyword,
-        "category": category,
-        "weight": weight,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }).execute()
-    return resp.data[0] if resp.data else None
+# def create_indicator(keyword: str, category: str, weight: int):
+#     resp = supabase.table("scam_indicators").insert({
+#         "keyword": keyword,
+#         "category": category,
+#         "weight": weight,
+#         "created_at": datetime.now(timezone.utc).isoformat()
+#     }).execute()
+#     return resp.data[0] if resp.data else None
 
-def update_indicator(indicator_id: str, **kwargs):
-    resp = supabase.table("scam_indicators").update(kwargs).eq("indicator_id", indicator_id).execute()
-    return resp.data[0] if resp.data else None
+# def update_indicator(indicator_id: str, **kwargs):
+#     resp = supabase.table("scam_indicators").update(kwargs).eq("indicator_id", indicator_id).execute()
+#     return resp.data[0] if resp.data else None
 
-def delete_indicator(indicator_id: str):
-    resp = supabase.table("scam_indicators").delete().eq("indicator_id", indicator_id).execute()
-    return len(resp.data) > 0 if resp.data else False
+# def delete_indicator(indicator_id: str):
+#     resp = supabase.table("scam_indicators").delete().eq("indicator_id", indicator_id).execute()
+#     return len(resp.data) > 0 if resp.data else False
 
 # ===== COMMUNITY MODERATION =====
 def get_post_vote_count(post_id: str):

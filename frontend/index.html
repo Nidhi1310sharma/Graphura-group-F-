@@ -2,118 +2,468 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScamShield – Detect Fake Jobs Instantly</title>
+  <title>ScamShield – Detect Fake Jobs</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    /* ── Hero ── */
+    .hero-section {
+      background: linear-gradient(135deg, rgba(47,65,86,0.25) 0%, rgba(86,124,141,0.12) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px 28px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-section::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(86,124,141,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-title { font-size: 26px; font-weight: 800; line-height: 1.25; margin-bottom: 8px; text-align:center; }
+    .hero-title span { background: linear-gradient(90deg, var(--sky-blue), #8fbfcf); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub { color: var(--text-secondary); font-size: 14px; max-width: 520px; margin:0 auto; }
+    .hero-stats { display: flex; gap: 28px; margin-top: 20px; flex-wrap: wrap; justify-content:center; }
+    .hero-stat { display: flex; flex-direction: column; }
+    .hero-stat-val { font-size: 22px; font-weight: 800; color: var(--text-primary); font-family: var(--font-mono); }
+    .hero-stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+
+    /* ── Combined Input Panel ── */
+    .unified-checker { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .input-mode-bar {
+      display: flex;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 4px;
+      gap: 2px;
+    }
+    .mode-btn {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 6px;
+      border: none; border-radius: 7px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px; font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .mode-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+    .mode-btn.active { background: var(--accent-blue); color: #fff; }
+    .mode-btn .mode-icon { font-size: 14px; }
+    .checker-body { padding: 20px; }
+    .mode-panel { display: none; animation: fadeIn 0.2s ease; }
+    .mode-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform:none; } }
+
+    /* ── File drop areas ── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--bg-input);
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent-blue); background: rgba(88,166,255,0.04); }
+    .drop-zone-icon { font-size: 2rem; margin-bottom: 8px; }
+    .drop-zone-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .drop-zone-hint { font-size: 12px; color: var(--text-muted); }
+
+    /*buffer spinner*/ 
+    .spinner{width:60px; height:60px; margin:auto; border:5px solid rgba(255,255,255,0.1); 
+      border-top:5px solid var(--accent-blue);
+        border-radius:50%;
+        animation:spin 1s linear infinite;
+      }
+      @keyframes spin{
+        from{transform:rotate(0deg);}
+        to{transform:rotate(360deg);}
+      }
+    /* ── Live Feed ── */
+    .live-feed-wrapper { overflow: hidden; position: relative; border-radius: var(--radius); }
+    .live-feed-track { display: flex; flex-direction: column; gap: 0; transition: none; }
+    .feed-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+      transition: background 0.2s;
+    }
+    .feed-item:hover { background: var(--bg-card-hover); }
+    .feed-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .feed-dot.red { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
+    .feed-dot.amber { background: var(--accent-orange); }
+    .feed-dot.green { background: var(--accent-green); }
+    .feed-job { font-weight: 600; color: var(--text-primary); flex: 1; }
+    .feed-company { color: var(--text-secondary); min-width: 120px; }
+    .feed-city { color: var(--text-muted); min-width: 90px; }
+    .feed-time { color: var(--text-muted); font-size: 11px; min-width: 60px; text-align: right; }
+    .feed-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; flex-shrink: 0; }
+    .feed-badge.high { background: rgba(248,81,73,0.15); color: var(--accent-red); border: 1px solid rgba(248,81,73,0.2); }
+    .feed-badge.medium { background: rgba(227,112,42,0.15); color: var(--accent-orange); border: 1px solid rgba(227,112,42,0.2); }
+    .feed-badge.low { background: rgba(63,185,80,0.15); color: var(--accent-green); border: 1px solid rgba(63,185,80,0.2); }
+    .feed-scroll-container { max-height: 280px; overflow: hidden; position: relative; }
+
+    /* ── Trust Card Preview ── */
+    .trust-card {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(88,166,255,0.04) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+    .score-ring-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .score-ring { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .score-ring-num { font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: var(--accent-red); }
+    .score-ring-lbl { font-size: 8px; text-transform: uppercase; color: var(--text-muted); }
+    .dim-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .dim-bar-label { font-size: 11px; color: var(--text-muted); width: 70px; flex-shrink: 0; }
+    .dim-bar-track { flex: 1; height: 5px; background: var(--bg-input); border-radius: 3px; overflow: hidden; }
+    .dim-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+    .dim-bar-val { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); width: 28px; text-align: right; }
+    .trust-flags { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .trust-flag { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .trust-flag.bad { color: var(--accent-red); }
+    .trust-flag.ok { color: var(--accent-green); }
+    .trust-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+    /* ── Quick stats row ── */
+    .quick-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 900px) { .quick-stats { grid-template-columns: repeat(2, 1fr); } }
+    .q-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .q-stat-val { font-size: 20px; font-weight: 800; font-family: var(--font-mono); }
+    .q-stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Home layout ── */
+    .home-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+    @media (max-width: 1100px) { .home-layout { grid-template-columns: 1fr; } }
+    .home-right { display: flex; flex-direction: column; gap: 16px; }
+  </style>
 </head>
 <body>
-<!-- Navbar injected by nav.js -->
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
 
-<div class="page-container wide" style="margin-top:28px">
-
-  <!-- Hero -->
-  <div class="analyzer-hero">
-    <h1>India's Job Scam Detector<br><span>Know before you apply.</span></h1>
-    <p>Analyze any job offer — URL, description, email, screenshot or offer letter — and get an instant Trust Card. Free. No sign-up required.</p>
-  </div>
-
-  <!-- KPI Strip (from Supabase) -->
-  <div class="kpi-strip">
-    <div class="kpi-item"><span class="kpi-val" id="kpi-analyzed">1,842</span><span class="kpi-lbl">Jobs Analysed</span></div>
-    <div class="kpi-item"><span class="kpi-val" id="kpi-scams">214</span><span class="kpi-lbl">Scams Detected</span></div>
-    <div class="kpi-item"><span class="kpi-val" id="kpi-domains">89</span><span class="kpi-lbl">Blacklisted Domains</span></div>
-    <div class="kpi-item"><span class="kpi-val" id="kpi-community">189</span><span class="kpi-lbl">Community Reports</span></div>
-  </div>
-
-  <!-- Analyzer + Blacklist Widget -->
-  <div class="analyzer-page">
-    <!-- LEFT: Analyzer -->
-    <div>
-      <!-- Tabs -->
-      <div class="analyzer-tabs" id="analyzer-tabs">
-        <button class="analyzer-tab active" onclick="switchTab('url',this)">URL</button>
-        <button class="analyzer-tab" onclick="switchTab('description',this)">Description</button>
-        <button class="analyzer-tab" onclick="switchTab('offer',this)">Offer Letter</button>
-        <button class="analyzer-tab" onclick="switchTab('screenshot',this)">Screenshot</button>
-      </div>
-
-      <div class="analyzer-body">
-        <!-- URL tab -->
-        <div id="tab-url" class="tab-panel">
-          <div class="form-group">
-            <label class="form-label">Paste a job posting link or suspicious company URL</label>
-            <input type="url" id="url-input" class="form-control" placeholder="https://tcs-careers-hiring.xyz/job/1234 or naukri.com/job/…" style="font-size:15px;height:48px">
-          </div>
-          <p class="text-xs text-muted">We check domain age, SSL, WHOIS, recruiter email, and content signals.</p>
-        </div>
-
-        <!-- Description tab -->
-        <div id="tab-description" class="tab-panel" style="display:none">
-          <div class="form-group">
-            <label class="form-label">Paste recruiter message, job description, email content or WhatsApp message</label>
-            <textarea id="desc-input" class="form-control" rows="6" placeholder="Hi, I'm from TCS HR team. You've been shortlisted for Data Entry role. Salary ₹45,000/month WFH. Registration fee ₹3000 required…"></textarea>
-          </div>
-          <p class="text-xs text-muted">Copy and paste any text you received — we'll scan it for 50+ fraud patterns.</p>
-        </div>
-
-        <!-- Offer Letter tab -->
-        <div id="tab-offer" class="tab-panel" style="display:none">
-          <div class="drop-zone" onclick="document.getElementById('offer-file').click()" id="offer-drop"
-            ondragover="onDragOver(event,'offer-drop')" ondragleave="onDragLeave('offer-drop')" ondrop="onFileDrop(event,'offer-file','offer-drop')">
-            <div class="drop-zone-icon">📄</div>
-            <div class="drop-zone-label">Click to upload or drag & drop your offer letter</div>
-            <div class="drop-zone-hint">PDF · DOC · DOCX — we scan for registration fee clauses, fake company signals, vague terms</div>
-          </div>
-          <input type="file" id="offer-file" accept=".pdf,.doc,.docx" style="display:none" onchange="onFileSelect(this,'offer-drop')">
-          <div id="offer-preview" class="mt-2"></div>
-        </div>
-
-        <!-- Screenshot tab -->
-        <div id="tab-screenshot" class="tab-panel" style="display:none">
-          <div class="drop-zone" onclick="document.getElementById('ss-file').click()" id="ss-drop"
-            ondragover="onDragOver(event,'ss-drop')" ondragleave="onDragLeave('ss-drop')" ondrop="onFileDrop(event,'ss-file','ss-drop')">
-            <div class="drop-zone-icon">📷</div>
-            <div class="drop-zone-label">Click or drag to upload screenshot</div>
-            <div class="drop-zone-hint">PNG · JPG · WEBP — recruiter chats, offer images, LinkedIn posts, emails</div>
-          </div>
-          <input type="file" id="ss-file" accept="image/*" style="display:none" onchange="onFileSelect(this,'ss-drop')">
-          <div id="ss-preview" class="mt-2"></div>
-        </div>
-
-        <!-- Action buttons -->
-        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-          <button class="btn btn-primary" style="flex:2;height:44px;font-size:15px;font-weight:700" onclick="runAnalysis()" id="analyze-btn">
-            🔍 Analyze
-          </button>
-          <button class="btn btn-outline" style="flex:1;height:44px;font-weight:600" onclick="toggleCompare()" id="compare-toggle">
-            ⚖️ Compare Mode
-          </button>
-        </div>
-
-        <!-- Compare mode (hidden by default) -->
-        <div id="compare-section" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
-          <p class="text-xs text-muted mb-2">Paste a second URL, description or upload a second document to compare side by side.</p>
-          <div class="form-group">
-            <label class="form-label">Job B — Reference / Comparison Input</label>
-            <input type="url" id="compare-input" class="form-control" placeholder="https://www.tcs.com/careers/india (official URL for comparison)">
-          </div>
+      <!-- Hero -->
+      <div class="hero-section">
+        <div class="hero-title">Protect yourself from<br><span>fake job scams</span></div>
+        <p class="hero-sub">India's first AI-powered job scam detector. Analyze job postings, compare listings, verify recruiters — before you apply.</p>
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="hero-stat-val">1,842</span><span class="hero-stat-lbl">Jobs Analyzed</span></div>
+          <div class="hero-stat"><span class="hero-stat-val">347</span><span class="hero-stat-lbl">Scams Flagged</span></div>
+          <div class="hero-stat"><span class="hero-stat-val">89</span><span class="hero-stat-lbl">Blacklisted Domains</span></div>
+          <div class="hero-stat"><span class="hero-stat-val">214</span><span class="hero-stat-lbl">Reports by Community</span></div>
         </div>
       </div>
+<div class="home-layout" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px;">
+        <!-- LEFT: Unified Checker + Live Feed -->
+        <div style="max-width: 800px; width: 100%;">
+          <!-- Unified Input Panel -->
+          <div style="text-align:center;margin-bottom:10px"><span style="font-size:12px;color:var(--teal);font-weight:600;background:rgba(86,124,141,.12);padding:4px 14px;border-radius:99px;border:1px solid rgba(86,124,141,.2)">Free — No login required</span></div>
+          <div class="unified-checker mb-4">
+            <div class="input-mode-bar" id="mode-bar">
+              <button class="mode-btn active" onclick="setMode('url', this)">Link</button>
+              <button class="mode-btn" onclick="setMode('screenshot', this)">Screenshot</button>
+              <!-- <button class="mode-btn" onclick="setMode('email', this)">Email</button> -->
+              <button class="mode-btn" onclick="setMode('offer', this)">Offer Letter</button>
+              <button class="mode-btn" onclick="setMode('text', this)">Description</button>
+            </div>
+
+            <div class="checker-body">
+              <!-- URL Mode -->
+              <div class="mode-panel active" id="mode-url">
+                <div class="form-group">
+                  <label class="form-label">Job posting or company link</label>
+                  <div style="display:flex;gap:8px">
+                    <input type="url" id="url-input" class="form-control" placeholder="https://naukri.com/job/... or suspicious-site.xyz" style="flex:1">
+                    <!--<button class="btn btn-primary" onclick="analyzeFromHome()">Analyze</button> {% endcomment %} -->
+                  </div>
+                </div>
+                <p class="text-xs text-muted mt-1">Paste the job URL — we'll check domain age, SSL, recruiter email, and more.</p>
+              </div>
+
+              <!-- Screenshot Mode -->
+              <div class="mode-panel" id="mode-screenshot">
+                <div class="drop-zone" id="drop-screenshot" onclick="document.getElementById('file-ss').click()" ondragover="ev(event,'drag-over','drop-screenshot')" ondragleave="ev(event,'','drop-screenshot')" ondrop="handleDrop(event,'ss')">
+                  <div class="drop-zone-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+                  <div class="drop-zone-label">Drop screenshot here or click to upload</div>
+                  <div class="drop-zone-hint">PNG, JPG, WEBP · Naukri, LinkedIn, WhatsApp — any screenshot works</div>
+                </div>
+                <input type="file" id="file-ss" accept="image/*" style="display:none" onchange="previewFile(this,'prev-ss')">
+                <div id="prev-ss" class="mt-2"></div>
+                <!--{% comment %} <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Screenshot</button> {% endcomment %}-->
+              </div>
+
+              <!-- Offer Letter Mode -->
+              <div class="mode-panel" id="mode-offer">
+                <div class="drop-zone" onclick="document.getElementById('file-offer').click()">
+                  <div class="drop-zone-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+                  <div class="drop-zone-label">Upload offer letter — PDF or DOCX</div>
+                  <div class="drop-zone-hint">We'll scan for registration fee demands, vague clauses, fake company signals</div>
+                </div>
+                <input type="file" id="file-offer" accept=".pdf,.docx,application/pdf" style="display:none" onchange="previewFile(this,'prev-offer')">
+                <div id="prev-offer" class="mt-2"></div>
+                <!--{% comment %} <button class="btn btn-primary btn-full mt-2" onclick="analyzeFromHome()">Analyze Offer Letter</button> {% endcomment %}-->
+              </div>
+
+              <!-- Paste Text Mode -->
+              <div class="mode-panel" id="mode-text">
+                <div class="form-group">
+                  <label class="form-label">Paste job description or email content</label>
+                  <textarea id="text-input" class="form-control" rows="5" placeholder="Paste the full job description, email, or any text you received from the recruiter…"></textarea>
+                </div>
+                <!--{% comment %} <button class="btn btn-primary btn-full" onclick="analyzeFromHome()">Analyze Text</button> {% endcomment %}-->
+              </div>
+
+              <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:20px;">
+
+              </div>
+              <div id="compareContainer" style="display:none;">
+
+                <!-- URL -->
+                <div id="compare-url" style="display:none; margin-top:15px;">
+
+  <label class="form-label">
+      Second Job URL
+  </label>
+
+  <input
+      type="url"
+      id="url-input-b"
+      class="form-control"
+      placeholder="https://example.com/job">
+
+</div>
+
+                <!-- TEXT -->
+                <div id="compare-text" style="display:none; margin-top:15px;">
+
+  <label class="form-label">
+      Second Job Description
+  </label>
+
+  <textarea
+      id="text-input-b"
+      class="form-control"
+      rows="5"
+      placeholder="Paste second job description">
+  </textarea>
+
+</div>
+
+                <!-- IMAGE -->
+                <div id="compare-image" style="display:none; margin-top:15px;">
+
+                  <div class="drop-zone"
+                      onclick="document.getElementById('file-ss-b').click()">
+
+                      <div class="drop-zone-icon">
+                          <!-- COPY THE SAME SVG FROM YOUR SCREENSHOT BOX -->
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                              stroke="var(--text-muted)" stroke-width="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="2"/>
+                              <circle cx="8.5" cy="8.5" r="1.5"/>
+                              <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                      </div>
+
+                      <div class="drop-zone-label">
+                          Upload second screenshot
+                      </div>
+
+                      <div class="drop-zone-hint">
+                          PNG, JPG, WEBP
+                      </div>
+
+                  </div>
+
+                  <input
+                      type="file"
+                      id="file-ss-b"
+                      accept="image/*"
+                      style="display:none"
+                      onchange="previewFile(this,'prev-ss-b')">
+
+                  <div id="prev-ss-b" class="mt-2"></div>
+
+                </div>
+                <!-- PDF -->
+                <div id="compare-pdf" style="display:none; margin-top:15px;">
+
+  <div class="drop-zone"
+       onclick="document.getElementById('file-offer-b').click()">
+
+      <div class="drop-zone-icon">
+
+          <!-- COPY SAME SVG FROM OFFER LETTER BOX -->
+
+          <svg width="28" height="28" viewBox="0 0 24 24"
+               fill="none"
+               stroke="var(--text-muted)"
+               stroke-width="1.5">
+
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+
+          </svg>
+
+      </div>
+
+      <div class="drop-zone-label">
+          Upload second offer letter
+      </div>
+
+      <div class="drop-zone-hint">
+          PDF or DOCX
+      </div>
+
+  </div>
+
+  <input
+      type="file"
+      id="file-offer-b"
+      accept=".pdf,.docx"
+      style="display:none"
+      onchange="previewFile(this,'prev-offer-b')">
+
+  <div id="prev-offer-b" class="mt-2"></div>
+
+</div>
+
+              </div>
+              <div style="display:flex;gap:12px;margin-top:15px;">
+
+  <button
+      id="analyzeBtn"
+      class="btn btn-primary"
+      style="flex:1"
+      onclick="handleAnalysis()">
+      Analyze
+  </button>
+
+  <button
+      class="btn btn-outline"
+      style="flex:1"
+      onclick="toggleCompare()">
+      Compare
+  </button>
+
+</div>
+            </div>
+          </div>
+
+          <!--{% comment %} results container {% endcomment %} -->
+          <div id="resultsContainer" style="margin-top:24px;"></div>
+          
+          <!-- Two column layout for Blacklisted and Quick Actions -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <!-- Blacklisted Domains – Left Side -->
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="live-dot"></span>
+                  <span style="font-size:13px;font-weight:700">Blacklisted Domains</span>
+                  <span class="nav-badge" style="background:rgba(224,82,82,.15);color:var(--accent-red);border:1px solid rgba(224,82,82,.2)" id="bl-count">0</span>
+                </div>
+                <a href="admin-domains.html" class="text-xs link">View all</a>
+              </div>
+              <div class="blacklist-scroll-wrapper" id="bl-wrapper">
+                <div class="blacklist-scroll-track" id="bl-track"></div>
+              </div>
+            </div>
+
+            <!-- Quick Actions – Right Side -->
+            <div class="card">
+              <div class="card-title">⚡ Quick Actions</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <!-- <a href="compare.html" class="btn btn-outline btn-full" style="justify-content:flex-start;gap:10px">⚖️ Compare two job URLs side by side</a> -->
+                <a href="community.html" class="btn btn-outline btn-full" style="justify-content:flex-start;gap:10px">Share Your Experience</a>
+                <!-- <a href="checker.html?mode=url" class="btn btn-outline btn-full" style="justify-content:flex-start;gap:10px">🌐 Check a suspicious domain / URL</a> -->
+                <a href="report.html" class="btn btn-danger btn-full" onclick="if(!requireLogin('report a scam'))return false" style="justify-content:flex-start;gap:10px">🚨 Report a scam job posting</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Safety Tips Card -->
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-title">💡 Today's Safety Tip</div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.7" id="daily-tip">
+              Loading tip…
+            </div>
+          </div>
+        </div></div>
 
     </div>
   </div>
 </div>
 <script src="js/main.js"></script>
+<script src="js/nav.js"></script>
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
-// ── Mode switcher ──
-function setMode(mode) {
-  document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('mode-' + mode).classList.add('active');
-  event.currentTarget.classList.add('active');
+
+const API_BASE = "/api";
+let currentMode = "url";
+
+//<!-- toggle enable-->
+let compareEnabled = false;
+
+function toggleCompare(){
+
+    compareEnabled = !compareEnabled;
+
+    document.getElementById(
+      "compareContainer"
+    ).style.display =
+      compareEnabled ? "block" : "none";
+
+    updateCompareFields();
 }
+
+
+// ── Mode switcher ──
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-panel')
+    .forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.mode-btn')
+    .forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + mode)
+    .classList.add('active');
+  btn.classList.add('active');
+  updateCompareFields();
+}
+// {% comment %} compare filed switch {% endcomment %} 
+function updateCompareFields() {
+
+  document.getElementById("compare-url").style.display = "none";
+  document.getElementById("compare-text").style.display = "none";
+  document.getElementById("compare-image").style.display = "none";
+  document.getElementById("compare-pdf").style.display = "none";
+
+  if(currentMode === "url")
+    document.getElementById("compare-url").style.display = "block";
+
+  if(currentMode === "text")
+    document.getElementById("compare-text").style.display = "block";
+
+  if(currentMode === "screenshot")
+    document.getElementById("compare-image").style.display = "block";
+
+  if(currentMode === "offer")
+    document.getElementById("compare-pdf").style.display = "block";
+}
+
 
 function ev(e, cls, id) {
   e.preventDefault();
@@ -139,24 +489,493 @@ function previewFile(input, previewId) {
   }
 }
 
-function analyzeFromHome() {
-  showToast('Redirecting to full analyzer…', 'info');
-  setTimeout(() => window.location.href = 'checker.html', 500);
+//{% comment %} Analyse Function {% endcomment %}
+async function handleAnalysis(){
+
+    if(compareEnabled)
+        await compareJobs();
+    else
+        await analyzeSingle();
 }
 
-// ── Live Feed ──
-const FEED_DATA = [
-  { job: 'Data Entry Intern', company: 'XYZ Solutions', city: 'Pune', time: '2m ago', risk: 'high' },
-  { job: 'WFH Customer Care', company: 'DigiWork India', city: 'Mumbai', time: '5m ago', risk: 'high' },
-  { job: 'Digital Marketing Exec', company: 'GlobalWork', city: 'Delhi', time: '11m ago', risk: 'medium' },
-  { job: 'HR Recruiter WFH', company: 'CareerBoost Pvt', city: 'Bangalore', time: '18m ago', risk: 'high' },
-  { job: 'Remote Data Analyst', company: 'TechGrow India', city: 'Chennai', time: '22m ago', risk: 'medium' },
-  { job: 'Content Writer (Home)', company: 'WritePro Hub', city: 'Hyderabad', time: '29m ago', risk: 'medium' },
-  { job: 'Python Developer', company: 'TCS (Official)', city: 'Pune', time: '34m ago', risk: 'low' },
-  { job: 'Sales Executive', company: 'Zomato Careers', city: 'Gurgaon', time: '41m ago', risk: 'low' },
-  { job: 'BPO Executive', company: 'QuickEarnings Ltd', city: 'Jaipur', time: '47m ago', risk: 'high' },
-  { job: 'Typing Operator', company: 'NetJob India', city: 'Noida', time: '55m ago', risk: 'high' },
-];
+//{% comment %} Single Analysis {% endcomment %}
+async function analyzeSingle(){
+    try{
+        showAnalysisLoader(false);
+        const fd = new FormData();
+        //fd.append("source_type", currentMode);
+
+        if(currentMode === "url"){
+          fd.append("source_type", "URL");
+          fd.append("url", document.getElementById("url-input").value);
+}
+
+else if(currentMode === "text"){
+  fd.append("source_type", "TEXT");
+    fd.append("content",document.getElementById("text-input").value);
+}
+
+else if(currentMode === "screenshot"){
+  fd.append("source_type", "IMAGE");
+    const file =document.getElementById("file-ss").files[0];
+    if(file)
+        fd.append("file", file);
+}
+
+else if(currentMode === "offer"){
+  fd.append("source_type", "PDF");
+    const file = document.getElementById("file-offer").files[0];
+    if(file)
+        fd.append("file", file);
+}
+
+        // existing code...
+        const res = await fetch(
+            `${API_BASE}/analyze/`, { method:"POST", body:fd});
+        const data = await res.json();
+        renderSingleTrustCard(data.data);
+    }catch(err){
+        console.error(err);
+        document.getElementById(
+          "resultsContainer"
+        ).innerHTML =
+        `<div class="card">
+            Analysis failed.
+         </div>`;
+    }finally{
+        hideAnalysisLoader();
+    }
+}
+//{% comment %} Compare function {% endcomment %}
+async function compareJobs(){
+    try{
+        showAnalysisLoader(true);
+        const fd = new FormData();
+        //fd.append("source_type", currentMode);
+
+        if(currentMode === "url"){
+    fd.append("source_type", "URL");
+    fd.append( "url_a",document.getElementById("url-input").value);
+    fd.append("url_b",document.getElementById("url-input-b").value);
+}
+
+else if(currentMode === "text"){
+  fd.append("source_type", "TEXT");
+    fd.append("content_a",document.getElementById("text-input").value);
+    fd.append("content_b",document.getElementById("text-input-b").value);
+}
+else if(currentMode === "screenshot"){
+  fd.append("source_type", "IMAGE");
+    const a =document.getElementById("file-ss").files[0];
+    const b =document.getElementById("file-ss-b").files[0];
+    if(a) fd.append("file_a", a);
+    if(b) fd.append("file_b", b);
+}
+else if(currentMode === "offer"){
+  fd.append("source_type", "PDF");
+    const a =document.getElementById("file-offer").files[0];
+    const b =document.getElementById("file-offer-b").files[0];
+    if(a) fd.append("file_a", a);
+    if(b) fd.append("file_b", b);
+}
+        // existing compare code...
+        const res = await fetch(
+          `${API_BASE}/analyze/compare`,{method:"POST",body:fd});
+        const data = await res.json();
+        renderCompareCards(data);
+    }catch(err){
+        console.error(err);
+        document.getElementById(
+          "resultsContainer"
+        ).innerHTML =
+        `<div class="card">
+            Comparison failed.
+         </div>`;
+    }finally{
+        hideAnalysisLoader();
+    }
+}
+let loaderInterval;
+
+//loading analysis buffer
+function showAnalysisLoader(isCompare=false){
+    document.getElementById("analyzeBtn").disabled = true;
+    document.getElementById("analysisLoader").style.display = "flex";
+
+    const messages = isCompare
+      ? [
+          "Extracting content from both jobs...",
+          "Running fraud detection...",
+          "Comparing trust scores...",
+          "Evaluating scam indicators...",
+          "Generating comparison results..."
+        ]
+      : [
+          "Checking domain reputation...",
+          "Analyzing company legitimacy...",
+          "Scanning for scam patterns...",
+          "Evaluating trust signals...",
+          "Generating risk assessment..."
+        ];
+
+    let i = 0;
+
+    document.getElementById("loaderMessage").textContent = messages[0];
+
+    loaderInterval = setInterval(() => {
+        i = (i + 1) % messages.length;
+        document.getElementById(
+          "loaderMessage"
+        ).textContent = messages[i];
+    }, 1800);
+}
+// Disable Analysis when analysing result
+function hideAnalysisLoader(){
+    document.getElementById("analyzeBtn").disabled = false;
+    document.getElementById("analysisLoader").style.display = "none";
+
+    clearInterval(loaderInterval);
+}
+
+
+//{% comment %} Trust Cards {% endcomment %}
+function renderSingleTrustCard(result){
+
+  document.getElementById(
+    "resultsContainer"
+  ).innerHTML = buildTrustCard(result);
+}
+
+//{% comment %} Single Trust Card {% endcomment %}
+function buildTrustCard(result){
+
+let metrics = result.card_metrics || {};
+
+if (
+    Object.keys(metrics).length === 0 &&
+    result.raw_url_analysis
+) {
+    metrics = {
+        "Domain": 100 - (result.raw_url_analysis.domain_risk_score || 0),
+        "Content": 100 - (result.raw_url_analysis.content_risk_score || 0),
+        "HTTPS": result.raw_url_analysis.https_enabled ? 100 : 20,
+        "Reputation": result.raw_url_analysis.website_reachable ? 90 : 10
+    };
+}
+
+const badgeColor =
+    result.risk_level === "HIGH"
+    ? "#ef4444"
+    : result.risk_level === "MEDIUM"
+    ? "#f59e0b"
+    : "#22c55e";
+
+const metricBars = Object.entries(metrics)
+.map(([name,value]) => {
+
+    let color =
+        value >= 70
+        ? "#22c55e"
+        : value >= 40
+        ? "#f59e0b"
+        : "#ef4444";
+
+    return `
+    <div class="dim-bar-row">
+
+        <div class="dim-bar-label">
+            ${name}
+        </div>
+
+        <div class="dim-bar-track">
+
+            <div
+                class="dim-bar-fill"
+                style="
+                    width:${value}%;
+                    background:${color};
+                ">
+            </div>
+
+        </div>
+
+        <div class="dim-bar-val">
+            ${Math.round(value)}
+        </div>
+
+    </div>
+    `;
+})
+.join("");
+
+return `
+<div class="trust-card" id="trustCard">
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:20px;
+    ">
+
+        <div style="
+            font-size:13px;
+            font-weight:700;
+        ">
+            ScamShield Analysis
+        </div>
+
+        <div style="
+            background:${badgeColor}20;
+            color:${badgeColor};
+            padding:6px 12px;
+            border-radius:999px;
+            font-size:12px;
+            font-weight:700;
+        ">
+            ${result.risk_level} RISK
+        </div>
+
+    </div>
+
+    <div style="
+        display:flex;
+        gap:20px;
+        align-items:center;
+        margin-bottom:20px;
+    ">
+
+        <div style="
+            width:90px;
+            height:90px;
+            border-radius:50%;
+            border:8px solid ${badgeColor};
+
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+        ">
+
+            <div style="
+                font-size:28px;
+                font-weight:800;
+                color:${badgeColor};
+            ">
+                ${result.risk_score}
+            </div>
+
+            <div style="font-size:10px">
+                /100
+            </div>
+
+        </div>
+
+        <div>
+
+            <div style="
+                font-size:14px;
+                color:var(--text-muted);
+            ">
+                Trust Score
+            </div>
+
+            <div style="
+                font-size:30px;
+                font-weight:800;
+            ">
+                ${result.trust_score}
+            </div>
+
+            <div style="
+                font-size:12px;
+                color:var(--text-secondary);
+            ">
+                ${result.trust_level}
+            </div>
+
+        </div>
+
+    </div>
+
+    
+    ${metricBars}
+
+${
+result.raw_url_analysis
+? `
+<div style="
+margin-top:16px;
+padding:12px;
+background:var(--bg-secondary);
+border-radius:10px;
+font-size:13px;
+">
+
+<div><strong>Domain:</strong>
+${result.raw_url_analysis.full_domain || "Unknown"}
+</div>
+
+<div>
+<strong>HTTPS:</strong>
+${result.raw_url_analysis.https_enabled ? "Yes" : "No"}
+</div>
+
+<div>
+<strong>Domain Age:</strong>
+${result.raw_url_analysis.domain_age_days || "Unknown"} days
+</div>
+
+<div>
+<strong>Status:</strong>
+${result.raw_url_analysis.website_reachable ? "Reachable" : "Unreachable"}
+</div>
+
+</div>
+`
+: ""
+}
+
+    <div style="
+        margin-top:18px;
+        padding:12px;
+        background:var(--bg-secondary);
+        border-radius:10px;
+    ">
+
+        <div style="
+            font-weight:700;
+            margin-bottom:6px;
+        ">
+            Recommendation
+        </div>
+
+        <div style="
+            color:var(--text-secondary);
+            font-size:13px;
+            line-height:1.5;
+        ">
+            ${result.recommended_action}
+            <hr style="margin:12px 0">
+
+<div style="
+font-size:13px;
+font-weight:700;
+margin-bottom:8px;
+">
+Detected Issues
+</div>
+
+${
+(
+Array.isArray(result.fraud_reasons)
+? result.fraud_reasons
+: [result.fraud_reasons]
+)
+.map(reason => `
+<div class="trust-flag bad">
+✖ ${reason}
+</div>
+`)
+.join("")
+}
+        </div>
+
+    </div>
+
+    <div class="trust-actions">
+
+        <button
+            class="btn btn-outline"
+            onclick="saveTrustCard()">
+            ⬇ Save
+        </button>
+
+        <button
+            class="btn btn-outline"
+            onclick="shareTrustCard()">
+            ⇪ Share
+        </button>
+
+        <button
+            class="btn btn-danger"
+            onclick="location.href='report.html'">
+            ⚑ Report
+        </button>
+
+    </div>
+
+</div>
+`;
+}
+
+//{% comment %} Compare Trust Card {% endcomment %}
+function renderCompareCards(data){
+
+document.getElementById(
+"resultsContainer"
+).innerHTML = `
+
+<div
+style="
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+">
+${buildTrustCard(data.job_a)}
+${buildTrustCard(data.job_b)}
+</div>
+<div
+style="
+text-align:center;
+margin-top:20px;
+font-size:24px;
+font-weight:bold;
+">
+Winner:
+${data.winner}
+</div>
+`;
+}
+// save trust card
+function saveTrustCard(){
+
+    html2canvas(
+        document.getElementById("trustCard")
+    ).then(canvas => {
+
+        const link =
+            document.createElement("a");
+
+        link.download =
+            "trust-card.png";
+
+        link.href =
+            canvas.toDataURL();
+
+        link.click();
+    });
+}
+//share trust card
+function shareTrustCard(){
+
+    const url = window.location.href;
+
+    if(navigator.share){
+
+        navigator.share({
+            title:"ScamShield Analysis",
+            text:"Check this job analysis",
+            url:url
+        });
+
+        return;
+    }
+
+    window.open(
+        `https://wa.me/?text=${encodeURIComponent(url)}`,
+        "_blank"
+    );
+}
 
 function renderFeed() {
   const track = document.getElementById('live-feed-track');
@@ -171,7 +990,7 @@ function renderFeed() {
       <div class="feed-dot ${dotClass}"></div>
       <div class="feed-job">${item.job}</div>
       <div class="feed-company">${item.company}</div>
-      <div class="feed-city">📍 ${item.city}</div>
+      <div class="feed-city">${item.city}</div>
       <span class="feed-badge ${item.risk}">${badgeText}</span>
       <div class="feed-time">${item.time}</div>
     </div>`;
@@ -195,17 +1014,58 @@ function stopScroll() { clearInterval(scrollInterval); }
 
 // Safety tips rotation
 const TIPS = [
-  '🚨 <strong>Any job that asks for a registration/security deposit fee is a scam</strong> — no exceptions. Legitimate employers never charge candidates.',
-  '🔍 Before applying, check the company domain age on <strong>whois.domaintools.com</strong> — scam sites are usually less than 3 months old.',
-  '📧 Real recruiters from TCS, Infosys, Wipro use <strong>@tcs.com, @infosys.com, @wipro.com</strong> — if the email is @gmail.com, it\'s fake.',
-  '💰 A fresher data entry role offering ₹40,000/month with "no experience needed" is almost always fake. Check realistic salaries on <strong>AmbitionBox</strong>.',
-  '📞 Scam recruiters often insist on <strong>WhatsApp-only communication</strong> and avoid phone/video calls — legitimate companies have proper HR processes.',
+  '<strong>Any job that asks for a registration/security deposit fee is a scam</strong> — no exceptions. Legitimate employers never charge candidates.',
+  'Before applying, check the company domain age on <strong>whois.domaintools.com</strong> — scam sites are usually less than 3 months old.',
+  'Real recruiters from TCS, Infosys, Wipro use <strong>@tcs.com, @infosys.com, @wipro.com</strong> — if the email is @gmail.com, it\'s fake.',
+  'A fresher data entry role offering ₹40,000/month with "no experience needed" is almost always fake. Check realistic salaries on <strong>AmbitionBox</strong>.',
+  'Scam recruiters often insist on <strong>WhatsApp-only communication</strong> and avoid phone/video calls — legitimate companies have proper HR processes.',
 ];
 document.getElementById('daily-tip').innerHTML = TIPS[new Date().getDay() % TIPS.length];
 
+
+// ── Blacklisted Domains (static + Supabase) ──
+const STATIC_BLACKLIST = [
+  'careers-google-job.xyz','fake-amazon-hiring.net','remote-fastpay-jobs.org',
+  'tcs-recruitment-2024.com','infosys-careers-hub.net','quick-hire-daily.com',
+  'wipro-jobs-india.tk','work-from-home-earn.ml','naukri-genuine-jobs.xyz',
+  'amazon-work-online.cf','hiring-india-now.pw','itjobs-daily.top',
+  'earn-daily-500.click','job-guaranteed.xyz','bpo-home-work.net',
+  'data-entry-earn.xyz','freshers-hiring-daily.com','hr-recruiter-wfh.net'
+];
+
+async function renderBlacklist() {
+  let domains = [...STATIC_BLACKLIST];
+  // Try fetching from Supabase
+  try {
+    if (typeof supabase !== 'undefined') {
+      const { data } = await supabase.table('domains').select('domain').eq('status','blacklisted').limit(50).execute ? 
+        supabase.table('domains').select('domain').eq('status','blacklisted').limit(50).execute() :
+        await supabase.from('domains').select('domain').eq('status','blacklisted').limit(50);
+      if (data && data.length) {
+        const dbDomains = data.map(d => d.domain);
+        domains = [...new Set([...dbDomains, ...STATIC_BLACKLIST])];
+      }
+    }
+  } catch(e) {}
+
+  const track = document.getElementById('bl-track');
+  const countEl = document.getElementById('bl-count');
+  if (!track) return;
+  if (countEl) countEl.textContent = domains.length;
+
+  // Duplicate for seamless loop
+  const all = [...domains, ...domains];
+  track.innerHTML = all.map(d => `
+    <div class="blacklist-domain-item">
+      <div class="blacklist-dot"></div>
+      <span>${d}</span>
+    </div>`).join('');
+}
 document.addEventListener('DOMContentLoaded', () => {
-  renderSidebar('index.html');
-  document.getElementById('page-title').textContent = 'Home';
+   updateCompareFields();
+  renderNavbar();
+  renderBlacklist();
+  
   renderFeed();
   const container = document.getElementById('live-feed-container');
   if (container) {
@@ -213,238 +1073,64 @@ document.addEventListener('DOMContentLoaded', () => {
     container.addEventListener('mouseleave', startScroll);
   }
   setTimeout(startScroll, 1000);
-=======
-      <!-- Trust Card Result (injected here after analysis) -->
-      <div id="result-section" style="display:none"></div>
-    </div>
-
-    <!-- RIGHT: Blacklisted Domains Widget -->
-    <div>
-      <div class="blacklist-widget">
-        <div class="blacklist-header">
-          <span>🚫 Blacklisted Domains</span>
-          <span class="text-xs text-muted" id="bl-count">Loading…</span>
-        </div>
-        <div id="blacklist-list">
-          <div style="padding:14px;text-align:center;color:var(--text-muted);font-size:12px">Loading…</div>
-        </div>
-        <div style="padding:10px 14px;border-top:1px solid var(--border)">
-          <a href="community.html" class="text-xs link">See community reports →</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/nav.js"></script>
-<script src="js/chatbot.js"></script>
-<script>
-// ── Tab switching ──
-let activeTab = 'url';
-function switchTab(tab, btn) {
-  activeTab = tab;
-  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.analyzer-tab').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).style.display = 'block';
-  btn.classList.add('active');
-}
-
-function toggleCompare() {
-  const sec = document.getElementById('compare-section');
-  const isOpen = sec.style.display !== 'none';
-  sec.style.display = isOpen ? 'none' : 'block';
-  document.getElementById('compare-toggle').textContent = isOpen ? '⚖️ Compare Mode' : '✕ Close Compare';
-}
-
-// ── Drag & drop helpers ──
-function onDragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over'); }
-function onDragLeave(id) { document.getElementById(id).classList.remove('drag-over'); }
-function onFileDrop(e, inputId, dropId) {
-  e.preventDefault();
-  document.getElementById(dropId).classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (!file) return;
-  const input = document.getElementById(inputId);
-  const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
-  showFilePreview(file, dropId);
-}
-function onFileSelect(input, dropId) {
-  if (input.files[0]) showFilePreview(input.files[0], dropId);
-}
-function showFilePreview(file, dropId) {
-  const el = document.getElementById(dropId);
-  el.innerHTML = `<div style="padding:12px;text-align:center"><div style="font-size:1.5rem">${file.type.startsWith('image/')? '🖼️':'📄'}</div><div style="font-weight:600;font-size:13px;margin-top:4px">${file.name}</div><div style="font-size:11px;color:var(--text-muted)">${(file.size/1024).toFixed(0)} KB · Ready to analyze</div></div>`;
-  el.style.borderStyle = 'solid';
-  el.style.borderColor = 'var(--accent-green)';
-}
-
-// ── Main analysis function ──
-async function runAnalysis() {
-  const btn = document.getElementById('analyze-btn');
-  btn.disabled = true; btn.textContent = '⏳ Analyzing…';
-
-  // Gather input
-  let input = '';
-  if (activeTab === 'url') input = document.getElementById('url-input').value.trim();
-  else if (activeTab === 'description') input = document.getElementById('desc-input').value.trim();
-
-  if (!input && activeTab !== 'offer' && activeTab !== 'screenshot') {
-    showToast('Please enter a URL or description to analyze', 'warning');
-    btn.disabled = false; btn.textContent = '🔍 Analyze'; return;
-  }
-
-  //Analyze
-  const formData = new FormData();
-
-  if (activeTab === "url") {
-      formData.append("source_type", "URL");
-      formData.append("url", document.getElementById("url-input").value.trim());
-  }
-
-  else if (activeTab === "description") {
-      formData.append("source_type", "TEXT");
-      formData.append("content", document.getElementById("desc-input").value.trim());
-  }
-
-  else if (activeTab === "offer") {
-      const file = document.getElementById("offer-file").files[0];
-
-      if (!file) {
-          showToast("Please upload an offer letter", "warning");
-          return;
-      }
-
-      formData.append("source_type", "DOCUMENT");
-      formData.append("file", file);
-  }
-
-  else if (activeTab === "screenshot") {
-      const file = document.getElementById("ss-file").files[0];
-
-      if (!file) {
-          showToast("Please upload a screenshot", "warning");
-          return;
-      }
-      formData.append("source_type", "IMAGE");
-      formData.append("file", file);
-  }
-  
-  const response = await fetch(
-      "http://localhost:8000/analyze/",
-      {
-          method: "POST",
-          body: formData
-      }
-  );
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.detail || "Analysis failed");}
-
-  console.log(result);
-  // Render trust card
-  const circumference = 2 * Math.PI * 30;
-  const dash = circumference - (riskScore / 100) * circumference;
-  const resultHTML = `
-  <div class="trust-card-result">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">📋 JOB TRUST CARD</div>
-      <span class="badge ${riskLevel === 'HIGH' ? 'badge-red' : riskLevel === 'MEDIUM' ? 'badge-orange' : 'badge-green'}">${riskLevel === 'HIGH' ? '❌ HIGH RISK' : riskLevel === 'MEDIUM' ? '⚠️ SUSPICIOUS' : '✅ LIKELY SAFE'}</span>
-    </div>
-    <div class="trust-card-header">
-      <div class="trust-card-score">
-        <svg width="80" height="80" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="30" fill="none" stroke="var(--border)" stroke-width="8"/>
-          <circle cx="40" cy="40" r="30" fill="none" stroke="${riskColor}" stroke-width="8"
-            stroke-dasharray="${circumference}" stroke-dashoffset="${dash}" stroke-linecap="round" style="transition:stroke-dashoffset 1s ease"/>
-        </svg>
-        <div class="score-text">
-          <span class="score-num" style="color:${riskColor}">${riskScore}</span>
-          <span class="score-label">/100</span>
-        </div>
-      </div>
-      <div class="trust-card-info">
-        <h3>${domain !== 'N/A' ? domain : 'Job Analyzed'}</h3>
-        <div class="meta">${activeTab === 'url' ? '🔗 URL Analysis' : activeTab === 'description' ? '📝 Text Analysis' : activeTab === 'offer' ? '📄 Offer Letter Analysis' : '📷 Screenshot Analysis'}</div>
-        <div class="report-id">Report ID: ${reportId}</div>
-      </div>
-    </div>
-
-    <div class="trust-dimensions">
-      ${[['Domain Risk', domainRisk], ['Recruiter Risk', recruiterRisk], ['Content Risk', contentRisk], ['Salary Risk', salaryRisk]].map(([lbl, val]) => `
-      <div class="trust-dim">
-        <div class="trust-dim-label">${lbl}</div>
-        <div class="trust-dim-bar"><div class="trust-dim-fill" style="width:${val}%;background:${val>60?'var(--accent-red)':val>35?'var(--accent-orange)':'var(--accent-green)'}"></div></div>
-        <div class="trust-dim-val" style="color:${val>60?'var(--accent-red)':val>35?'var(--accent-orange)':'var(--accent-green)'}">${val}</div>
-      </div>`).join('')}
-    </div>
-
-    <div class="trust-indicators">
-      <h4>Detected Indicators</h4>
-      ${redFlags.map(f => `<div class="indicator-row bad">⊗ ${f}</div>`).join('')}
-      ${greenFlags.map(f => `<div class="indicator-row ok">✓ ${f}</div>`).join('')}
-    </div>
-
-    <div style="background:var(--bg-input);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;font-size:13.5px;color:var(--text-secondary);line-height:1.65">
-      <strong>Recommendation:</strong> ${riskLevel === 'HIGH' ? '🚨 Do not apply or pay any money. This job shows multiple fraud signals. Report it below.' : riskLevel === 'MEDIUM' ? '⚠️ Proceed with caution. Verify the company independently before sharing personal details.' : '✅ This job appears legitimate based on available signals. Always verify company details independently.'}
-    </div>
-
-    <div class="trust-actions">
-      <button class="btn btn-outline btn-sm" onclick="downloadTrustCard('${reportId}')">⬇ Download Report</button>
-      <button class="btn btn-outline btn-sm" onclick="shareTrustCard('${reportId}')">⇪ Share Report</button>
-      <button class="btn btn-danger btn-sm" onclick="window.location.href='report.html'">🚨 Report Scam</button>
-      <button class="btn btn-outline btn-sm" onclick="window.location.href='community.html'">💬 Discuss</button>
-      <button class="btn btn-ghost btn-sm" onclick="verifyAnother()">🔄 Verify Another</button>
-    </div>
-  </div>`;
-
-  document.getElementById('result-section').innerHTML = resultHTML;
-  document.getElementById('result-section').style.display = 'block';
-  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  btn.disabled = false; btn.textContent = '🔍 Analyze';
-  showToast('Analysis complete — Trust Card generated', riskLevel === 'HIGH' ? 'error' : riskLevel === 'MEDIUM' ? 'warning' : 'success');
-}
-
-function verifyAnother() {
-  document.getElementById('result-section').style.display = 'none';
-  document.getElementById('url-input').value = '';
-  document.getElementById('desc-input').value = '';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function downloadTrustCard(id) { showToast('Trust Card download — connect backend for PDF generation', 'info'); }
-function shareTrustCard(id) {
-  navigator.clipboard?.writeText(`ScamShield Trust Card ${id}: ${window.location.href}`).then(() => showToast('Report link copied!', 'success'));
-}
-
-// ── Blacklist widget from Supabase ──
-async function loadBlacklist() {
-  const domains = await DB.getBlacklistedDomains(12);
-  const list = document.getElementById('blacklist-list');
-  document.getElementById('bl-count').textContent = domains.length + ' blocked';
-  list.innerHTML = domains.map(d => {
-    const icon = d.status === 'blacklisted' ? '🔴' : '🟠';
-    return `
-    <div class="blacklist-item">
-      <div class="blacklist-item-row">
-        <span>${icon}</span>
-        <span class="blacklist-domain">${d.domain}</span>
-      </div>
-      <div class="blacklist-tooltip">
-        <strong style="color:var(--text-primary)">${d.domain}</strong><br>
-        Risk: <span style="color:${d.status==='blacklisted'?'var(--accent-red)':'var(--accent-orange)'}">${d.status}</span><br>
-        Reports: ${d.report_count || 0}<br>
-        ${d.reason ? `Reason: ${d.reason}` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  renderNavbar();
-  loadBlacklist();
+  // Add new feed item every 5 seconds
+  setInterval(() => {
+    const newItems = [
+      { job: 'Online Typing Work', company: 'DataWork India', city: 'Lucknow', time: 'just now', risk: 'high' },
+      { job: 'React Developer', company: 'Flipkart (Official)', city: 'Bangalore', time: 'just now', risk: 'low' },
+      { job: 'Telecaller WFH', company: 'TeleEarn Hub', city: 'Surat', time: 'just now', risk: 'medium' },
+      { job: 'Data Entry Part Time', company: 'EasyEarn Ltd', city: 'Indore', time: 'just now', risk: 'high' },
+    ];
+    const item = newItems[Math.floor(Math.random() * newItems.length)];
+    const track = document.getElementById('live-feed-track');
+    if (!track) return;
+    const dotClass = item.risk==='high'?'red':item.risk==='medium'?'amber':'green';
+    const badgeText = item.risk==='high'?'HIGH RISK':item.risk==='medium'?'SUSPICIOUS':'SAFE';
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+    div.style.animation = 'cardReveal 0.4s ease';
+    div.innerHTML = `<div class="feed-dot ${dotClass}"></div><div class="feed-job">${item.job}</div><div class="feed-company">${item.company}</div><div class="feed-city">${item.city}</div><span class="feed-badge ${item.risk}">${badgeText}</span><div class="feed-time">${item.time}</div>`;
+    track.prepend(div);
+    if (track.children.length > 14) track.lastChild.remove();
+  }, 5000);
 });
 </script>
+<!-- Analysis Loading Overlay -->
+<div id="analysisLoader" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.75);
+backdrop-filter:blur(4px);
+z-index:99999;
+justify-content:center;
+align-items:center;
+">
+  <div style="
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px;
+  width:420px;
+  max-width:90%;
+  text-align:center;
+  ">
+    
+    <div class="spinner"></div>
+
+    <h3 style="margin-top:18px">
+      Analyzing Job Posting
+    </h3>
+
+    <p id="loaderMessage"
+       style="color:var(--text-secondary);margin-top:10px">
+       Checking domain reputation...
+    </p>
+
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </body></html>

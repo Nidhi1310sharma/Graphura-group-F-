@@ -4,81 +4,336 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Community – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    .filter-chip {
+      padding: 5px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-chip:hover, .filter-chip.active {
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+      background: rgba(88,166,255,0.08);
+    }
+    .post-row {
+      cursor: pointer;
+    }
+    .post-row:hover {
+      background: var(--bg-card-hover);
+    }
+    .badge-netvotes {
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+    .badge-netvotes.positive { color: var(--accent-green); }
+    .badge-netvotes.negative { color: var(--accent-red); }
+    
+    .post-detail-section {
+      margin-top: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: none;
+    }
+    .post-detail-section.visible { display: block; }
+    .detail-header {
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .detail-header h3 { font-size: 18px; font-weight: 700; }
+    .close-detail {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .close-detail:hover { background: rgba(220,38,38,0.2); color: var(--accent-red); }
+    .detail-body { padding: 20px; }
+    .detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .detail-label { width: 120px; flex-shrink: 0; color: var(--text-muted); font-size: 13px; }
+    .detail-value { flex: 1; color: var(--text-primary); font-size: 13px; word-break: break-word; }
+    .content-section {
+      margin-top: 16px;
+      padding: 12px;
+      background: var(--bg-input);
+      border-radius: 8px;
+    }
+    .comments-section { margin-top: 20px; padding-top: 16px; border-top: 2px solid var(--border); }
+    .comments-title { font-weight: 700; margin-bottom: 12px; font-size: 14px; }
+    .comment-item {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .comment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .comment-author { font-weight: 600; font-size: 13px; }
+    .comment-date { font-size: 11px; color: var(--text-muted); }
+    .comment-content { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+    .comment-actions { display: flex; gap: 8px; }
+    .detail-footer { padding: 16px 20px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
+    .btn-delete-post {
+      width: 100%;
+      padding: 10px;
+      background: rgba(220,38,38,0.15);
+      border: 1px solid var(--accent-red);
+      border-radius: 8px;
+      color: var(--accent-red);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-delete-post:hover { background: var(--accent-red); color: white; }
+  </style>
 </head>
 <body>
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <a href="admin.html" class="sidebar-brand"><span class="sidebar-logo">🛡️</span><div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div></a>
-    <nav class="admin-nav">
-      <a href="admin.html"><span>📊</span> Overview</a>
-      <a href="admin-reports.html" class="communityreports"><span>🚩</span> Reports</a>
-      <a href="admin-community.html" class="active" class="active" class="active"><span>👥</span> Community</a>
-      <a href="admin-listings.html" class="communitylistings"><span>💼</span> Listings</a>
-      <div class="admin-nav-group">Knowledge Base</div>
-      <a href="admin-companies.html" class="communitycompanies"><span>🏢</span> Companies</a>
-      <a href="admin-domains.html" class="communitydomains"><span>🌐</span> Domains</a>
-      <a href="admin-indicators.html" class="communityindicators"><span>⚡</span> Scam Indicators</a>
-      <div class="admin-nav-group">System</div>
-      <a href="admin-users.html" class="communityadmins"><span>👤</span> Admins & Logs</a>
-    </nav>
-    <div class="admin-sidebar-footer">
-      <div style="display:flex;gap:6px"><button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button><button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button></div>
-    </div>
-  </aside>
-  <div class="admin-main"><div class="admin-page">
-    
-      <div class="page-header"><h1>👥 Community</h1><p>Moderate posts and comments — hide, delete, or lock discussions</p></div>
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="filter-chip active" onclick="setFilter(null,this)">All</button>
-        <button class="filter-chip" onclick="setFilter(\"active\",this)">Active</button>
-        <button class="filter-chip" onclick="setFilter(\"hidden\",this)">Hidden</button>
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+      <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
+      
+      <div class="page-header">
+        <h1>Community</h1>
+        <p>Moderate posts and comments — delete posts or comments</p>
       </div>
+      
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:20px">
+        <div class="stat-card" style="--stat-accent:var(--accent-blue)"><div class="stat-value" id="stat-total">--</div><div class="stat-label">Total Posts</div><div class="stat-delta" id="stat-total-delta">Loading...</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-green)"><div class="stat-value" id="stat-active">--</div><div class="stat-label">Active Posts</div><div class="stat-delta">Currently live</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-orange)"><div class="stat-value" id="stat-questions">--</div><div class="stat-label">Questions</div><div class="stat-delta">Needs answers</div></div>
+        <div class="stat-card" style="--stat-accent:var(--accent-purple)"><div class="stat-value" id="stat-comments">--</div><div class="stat-label">Total Comments</div><div class="stat-delta">Community engaged</div></div>
+      </div>
+      
       <div class="card">
+        <div class="flex-between mb-3" style="gap:10px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" class="form-control" id="search-posts" placeholder="Search posts..." style="max-width:250px" oninput="filterPosts()">
+            <select class="form-control" style="max-width:160px" id="post-type-filter" onchange="filterPosts()">
+              <option value="">All Types</option>
+              <option value="question">Question</option>
+              <option value="discussion">Discussion</option>
+              <!-- <option value="warning">Warning</option> -->
+              <option value="report">Scam Report</option>
+            </select>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="showToast('Exporting posts...','info')">Export CSV</button>
+        </div>
         <div class="table-wrap">
-          <table><thead><tr><th>Title</th><th>Type</th><th>Author</th><th>Votes</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-          <tbody id="posts-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+          <table class="table">
+            <thead>
+              <tr><th>Title</th><th>Type</th><th>Author</th><th>Net Votes</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="posts-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:30px">Loading...</div> -
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-  </div></div>
+      <div id="post-detail-section" class="post-detail-section">
+        <div class="detail-header">
+          <h3>Post Details</h3>
+          <button class="close-detail" onclick="closePostDetail()">✕</button>
+        </div>
+        <div class="detail-body" id="detail-body"></div>
+        <div class="detail-footer" id="detail-footer"></div>
+      </div>
+    </div>
+  </div>
 </div>
+
 <script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
+const API_BASE = 'http://localhost:8000/api';
+let allPosts = [];
+let currentPostId = null;
 
-const typeIcon = { scam_report:"🔴", discussion:"💬", warning:"🟠", question:"❓" };
-async function loadPosts(status) {
+async function loadStats() {
   try {
-    const posts = await DB.getAllPosts(status ? { status } : {});
-    document.getElementById("posts-tbody").innerHTML = posts.map(p => {
-      const votes = (p.community_votes||[]).reduce((a,v) => a + (v.vote_type==="upvote"?1:-1), 0);
-      return `<tr>
-        <td><strong style="font-size:13px">${p.title.slice(0,60)}${p.title.length>60?"…":""}</strong></td>
-        <td>${typeIcon[p.post_type]||"📝"} ${p.post_type}</td>
-        <td style="font-size:12px">${p.users?.full_name||"—"}</td>
-        <td style="font-family:var(--font-mono)">${votes}</td>
-        <td><span class="badge ${p.status==="active"?"badge-green":p.status==="hidden"?"badge-gray":"badge-red"}">${p.status}</span></td>
-        <td style="font-size:12px">${new Date(p.created_at).toLocaleDateString("en-IN")}</td>
-        <td style="display:flex;gap:6px">
-          <button class="btn btn-outline btn-sm" onclick="updatePost(\"${p.post_id}\",\"hidden\",this)">🙈 Hide</button>
-          <button class="btn btn-danger btn-sm" onclick="updatePost(\"${p.post_id}\",\"deleted\",this)">🗑 Delete</button>
-        </td>
-      </tr>`;
-    }).join("") || "<tr><td colspan=\"7\" style=\"text-align:center;color:var(--text-muted)\">No posts</td></tr>";
-  } catch(e) { console.error(e); }
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/community/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const stats = await res.json();
+      document.getElementById('stat-total').textContent = stats.total_posts || 0;
+      document.getElementById('stat-active').textContent = stats.active_posts || 0;
+      document.getElementById('stat-questions').textContent = stats.questions || 0;
+      document.getElementById('stat-comments').textContent = stats.total_comments || 0;
+      document.getElementById('stat-total-delta').innerHTML = stats.weekly_change ? `↑ ${stats.weekly_change} this week` : 'All time';
+    }
+  } catch(e) { console.error('Error loading stats:', e); }
 }
-async function updatePost(id, status, btn) {
-  try {
-    await DB.updatePostStatus(id, status);
-    await DB.logAction({ admin_id:null, action: status==="hidden"?"HIDE_POST":"DELETE_POST", target_type:"POST", target_id:id });
-    showToast("Post " + status, "success");
-    btn.closest("tr").style.opacity = "0.4";
-  } catch(e) { showToast("Updated (demo)", "info"); btn.closest("tr").style.opacity="0.4"; }
-}
-function setFilter(s, btn) { document.querySelectorAll(".filter-chip").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); loadPosts(s); }
-document.addEventListener("DOMContentLoaded", () => { initTheme(); requireAdmin(); loadPosts(); });
 
+async function loadPosts() {
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/community/posts`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      allPosts = await res.json();
+      renderPostsTable(allPosts);
+    }
+  } catch(e) { console.error('Error loading posts:', e); }
+}
+
+function renderPostsTable(posts) {
+  const tbody = document.getElementById('posts-tbody');
+  if (!posts.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px">No posts found</div> -</td>';
+    return;
+  }
+  tbody.innerHTML = posts.map(p => {
+    const netVotes = (p.upvotes || 0) - (p.downvotes || 0);
+    const voteClass = netVotes > 0 ? 'positive' : (netVotes < 0 ? 'negative' : '');
+    const statusClass = p.status === 'active' ? 'badge-green' : 'badge-gray';
+    return `
+      <tr data-status="${p.status}" data-post-id="${p.post_id}" data-type="${p.post_type}" class="post-row" onclick="openPostDetail('${p.post_id}')">
+        <td><strong>${escapeHtml(p.post_title || p.title)}</strong></div> -
+        <td class="text-secondary mono"><span class="badge badge-blue">${escapeHtml(p.post_type)}</span></div> -
+        <td class="text-secondary mono">${escapeHtml(p.users?.full_name || p.author || 'Anonymous')}</div> -
+        <td class="text-secondary mono"><span class="badge-netvotes ${voteClass}">${netVotes}</span></div> -
+        <td class="text-secondary mono"><span class="badge ${statusClass}">${p.status}</span></div> -
+        <td class="text-secondary mono">${new Date(p.created_at).toLocaleDateString()}</div> -
+        <td class="text-secondary mono"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openPostDetail('${p.post_id}')">View</button></div> -
+      </tr>
+    `;
+  }).join('');
+}
+
+async function openPostDetail(postId) {
+  currentPostId = postId;
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/community/posts/${postId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to load post');
+    const post = await res.json();
+    
+    const detailSection = document.getElementById('post-detail-section');
+    const detailBody = document.getElementById('detail-body');
+    const detailFooter = document.getElementById('detail-footer');
+    
+    const netVotes = (post.upvotes || 0) - (post.downvotes || 0);
+    const voteClass = netVotes > 0 ? 'positive' : (netVotes < 0 ? 'negative' : '');
+    
+    let commentsHTML = '';
+    const activeComments = (post.comments || []).filter(c => c.status !== 'deleted').sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    if (activeComments.length) {
+      commentsHTML = `<div class="comments-section"><div class="comments-title">Comments (${activeComments.length})</div>`;
+      activeComments.forEach(c => {
+        commentsHTML += `
+          <div class="comment-item" data-comment-id="${c.comment_id}">
+            <div class="comment-header">
+              <span class="comment-author">${escapeHtml(c.users?.full_name || c.author || 'Anonymous')}</span>
+              <span class="comment-date">${new Date(c.created_at).toLocaleDateString()}</span>
+            </div>
+            <div class="comment-content">${escapeHtml(c.content)}</div>
+            <div class="comment-actions">
+              <button class="btn btn-outline btn-sm" onclick="deleteComment('${post.post_id}', '${c.comment_id}', this)">Delete Comment</button>
+            </div>
+          </div>
+        `;
+      });
+      commentsHTML += `</div>`;
+    } else {
+      commentsHTML = `<div class="comments-section"><div class="comments-title">Comments</div><p class="text-muted">No comments yet</p></div>`;
+    }
+    
+    detailBody.innerHTML = `
+      <div class="detail-row"><div class="detail-label">Title</div><div class="detail-value"><strong>${escapeHtml(post.post_title || post.title)}</strong></div></div>
+      <div class="detail-row"><div class="detail-label">Type</div><div class="detail-value">${escapeHtml(post.post_type)}</div></div>
+      <div class="detail-row"><div class="detail-label">Net Votes</div><div class="detail-value"><span class="badge-netvotes ${voteClass}">${netVotes}</span></div></div>
+      <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value" id="post-status-value">${post.status}</div></div>
+      <div class="detail-row"><div class="detail-label">Created At</div><div class="detail-value">${new Date(post.created_at).toLocaleDateString()}</div></div>
+      <div class="content-section"><div class="detail-label" style="margin-bottom:8px">Content</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.6">${escapeHtml(post.content)}</div></div>
+      ${commentsHTML}
+    `;
+    
+    detailFooter.innerHTML = `<button class="btn-delete-post" onclick="deletePost('${post.post_id}')">Delete Post</button>`;
+    detailSection.classList.add('visible');
+    detailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch(e) { showToast('Failed to load post details', 'error'); }
+}
+
+function closePostDetail() {
+  document.getElementById('post-detail-section').classList.remove('visible');
+  currentPostId = null;
+}
+
+async function deletePost(postId) {
+  if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) return;
+  try {
+    const token = localStorage.getItem('gr_token');
+    await fetch(`${API_BASE}/admin/community/posts/${postId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    showToast('Post deleted successfully', 'success');
+    closePostDetail();
+    loadStats();
+    loadPosts();
+  } catch(e) { showToast('Failed to delete post', 'error'); }
+}
+
+async function deleteComment(postId, commentId, btn) {
+  if (!confirm('Delete this comment?')) return;
+  try {
+    const token = localStorage.getItem('gr_token');
+    await fetch(`${API_BASE}/admin/community/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const commentItem = btn.closest('.comment-item');
+    if (commentItem) commentItem.remove();
+    showToast('Comment deleted successfully', 'success');
+    loadStats();
+  } catch(e) { showToast('Failed to delete comment', 'error'); }
+}
+
+function filterPosts() {
+  const searchTerm = document.getElementById('search-posts')?.value.toLowerCase() || '';
+  const typeFilter = document.getElementById('post-type-filter')?.value || '';
+  
+  let filtered = [...allPosts];
+  if (searchTerm) filtered = filtered.filter(p => (p.post_title || p.title).toLowerCase().includes(searchTerm));
+  if (typeFilter) filtered = filtered.filter(p => p.post_type === typeFilter);
+  
+  renderPostsTable(filtered);
+}
+
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+function showToast(msg, type) { const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#f85149':'#3fb950')+';color:white;padding:12px 24px;border-radius:8px;z-index:9999'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const user = auth.getUser();
+  if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
+  requireAdmin();
+  renderSidebar('admin-community.html', true);
+  document.getElementById('page-title').textContent = 'Community';
+  loadStats();
+  loadPosts();
+});
 </script>
-</body></html>
+</body>
+</html>
