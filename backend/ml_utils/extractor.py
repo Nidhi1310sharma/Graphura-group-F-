@@ -40,11 +40,8 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
                 matrix=fitz.Matrix(4, 4),  # higher resolution
                 alpha=False
             )
-
-            np_img = Image.fromarray(
-                np.frombuffer(pix.samples, dtype=np.uint8).reshape( pix.height, pix.width, pix.n)
-            )
-            gray = cv2.cvtColor(np_img, cv2.COLOR_RGB2GRAY)
+            img = np.frombuffer(pix.samples,dtype=np.uint8).reshape(pix.height,pix.width,pix.n)
+            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
             gray = cv2.GaussianBlur(gray, (3, 3), 0)
             thresh = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,31,11)
             ocr_text = pytesseract.image_to_string(thresh, lang="eng", config="--oem 3 --psm 6")

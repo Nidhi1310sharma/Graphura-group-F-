@@ -12,23 +12,20 @@ load_dotenv(dotenv_path=env_path)
 # print("URL:", os.getenv("SUPABASE_URL"))
 # print("KEY:", os.getenv("SUPABASE_ANON_KEY"))
 
-SUPABASE_ANON_KEY=os.getenv("SUPABASE_ANON_KEY")
+
+
+# Environment variables fetching
 SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-# print("Current dir:", current_dir)
-# print("Env path:", env_path)
-# print("Env exists:", os.path.exists(env_path))
 
-if not SUPABASE_URL or not SUPABASE_ANON_KEY or not SUPABASE_SERVICE_KEY:
-    raise ValueError("Missing Supabase credentials in environment variables.")
+# checikng variable match
+if not SUPABASE_URL:
+    raise ValueError("SUPABASE_URL is missing in environment variables!")
+if not SUPABASE_ANON_KEY:
+    raise ValueError("SUPABASE_ANON_KEY is missing in environment variables!")
+if not SUPABASE_SERVICE_KEY:
+    raise ValueError("SUPABASE_SERVICE_KEY is missing in environment variables!")
 
-supabase =create_client(SUPABASE_URL,SUPABASE_SERVICE_KEY)
-# supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-def ping():
-    """Check if Supabase is reachable."""
-    try:
-        supabase.table("admin_users").select("id").limit(1).execute()
-        return True
-    except Exception:
-        return False
+# Client initialization
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
