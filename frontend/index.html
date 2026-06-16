@@ -75,6 +75,16 @@
     .drop-zone-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
     .drop-zone-hint { font-size: 12px; color: var(--text-muted); }
 
+    /*buffer spinner*/ 
+    .spinner{width:60px; height:60px; margin:auto; border:5px solid rgba(255,255,255,0.1); 
+      border-top:5px solid var(--accent-blue);
+        border-radius:50%;
+        animation:spin 1s linear infinite;
+      }
+      @keyframes spin{
+        from{transform:rotate(0deg);}
+        to{transform:rotate(360deg);}
+      }
     /* ── Live Feed ── */
     .live-feed-wrapper { overflow: hidden; position: relative; border-radius: var(--radius); }
     .live-feed-track { display: flex; flex-direction: column; gap: 0; transition: none; }
@@ -334,6 +344,7 @@
               <div style="display:flex;gap:12px;margin-top:15px;">
 
   <button
+      id="analyzeBtn"
       class="btn btn-primary"
       style="flex:1"
       onclick="handleAnalysis()">
@@ -404,7 +415,7 @@
 const API_BASE = "/api";
 let currentMode = "url";
 
-<!-- toggle enable-->
+//<!-- toggle enable-->
 let compareEnabled = false;
 
 function toggleCompare(){
@@ -489,123 +500,143 @@ async function handleAnalysis(){
 
 //{% comment %} Single Analysis {% endcomment %}
 async function analyzeSingle(){
+    try{
+        showAnalysisLoader(false);
+        const fd = new FormData();
+        //fd.append("source_type", currentMode);
 
-    const fd = new FormData();
-
-    if(currentMode === "url"){
-
-        fd.append("source_type","URL");
-
-        fd.append(
-            "url",
-            document.getElementById("url-input").value
-        );
-    }
-
-    else if(currentMode === "text"){
-
-        fd.append("source_type","TEXT");
-
-        fd.append(
-            "content",
-            document.getElementById("text-input").value
-        );
-    }
-
-    else if(currentMode === "screenshot"){
-
-        fd.append("source_type","IMAGE");
-
-        fd.append(
-            "file",
-            document.getElementById("file-ss").files[0]
-        );
-    }
-
-    else if(currentMode === "offer"){
-
-        fd.append("source_type","PDF");
-
-        fd.append(
-            "file",
-            document.getElementById("file-offer").files[0]
-        );
-    }
-
-    const res = await fetch(
-        `${API_BASE}/analyze/`,
-        {
-            method:"POST",
-            body:fd
-        }
-    );
-s
-    const data = await res.json();
-
-    renderSingleTrustCard(data.data);
+        if(currentMode === "url"){
+          fd.append("source_type", "URL");
+          fd.append("url", document.getElementById("url-input").value);
 }
 
+else if(currentMode === "text"){
+  fd.append("source_type", "TEXT");
+    fd.append("content",document.getElementById("text-input").value);
+}
+
+else if(currentMode === "screenshot"){
+  fd.append("source_type", "IMAGE");
+    const file =document.getElementById("file-ss").files[0];
+    if(file)
+        fd.append("file", file);
+}
+
+else if(currentMode === "offer"){
+  fd.append("source_type", "PDF");
+    const file = document.getElementById("file-offer").files[0];
+    if(file)
+        fd.append("file", file);
+}
+
+        // existing code...
+        const res = await fetch(
+            `${API_BASE}/analyze/`, { method:"POST", body:fd});
+        const data = await res.json();
+        renderSingleTrustCard(data.data);
+    }catch(err){
+        console.error(err);
+        document.getElementById(
+          "resultsContainer"
+        ).innerHTML =
+        `<div class="card">
+            Analysis failed.
+         </div>`;
+    }finally{
+        hideAnalysisLoader();
+    }
+}
 //{% comment %} Compare function {% endcomment %}
 async function compareJobs(){
+    try{
+        showAnalysisLoader(true);
+        const fd = new FormData();
+        //fd.append("source_type", currentMode);
 
-    const fd = new FormData();
-
-    if(currentMode === "url"){
-
-        fd.append("source_type","URL");
-
-        fd.append("url_a",
-            document.getElementById("url-input").value);
-
-        fd.append("url_b",
-            document.getElementById("url-input-b").value);
-    }
-
-    else if(currentMode === "text"){
-
-        fd.append("source_type","TEXT");
-
-        fd.append("content_a",
-            document.getElementById("text-input").value);
-
-        fd.append("content_b",
-            document.getElementById("text-input-b").value);
-    }
-
-    else if(currentMode === "screenshot"){
-
-        fd.append("source_type","IMAGE");
-
-        fd.append("file_a",
-            document.getElementById("file-ss").files[0]);
-
-        fd.append("file_b",
-            document.getElementById("file-ss-b").files[0]);
-    }
-
-    else if(currentMode === "offer"){
-
-        fd.append("source_type","PDF");
-
-        fd.append("file_a",
-            document.getElementById("file-offer").files[0]);
-
-        fd.append("file_b",
-            document.getElementById("file-offer-b").files[0]);
-    }
-
-    const res = await fetch(
-      `${API_BASE}/analyze/compare`,
-      {
-        method:"POST",
-        body:fd
-      }
-    );
-
-    const data = await res.json();
-
-    renderCompareCards(data);
+        if(currentMode === "url"){
+    fd.append("source_type", "URL");
+    fd.append( "url_a",document.getElementById("url-input").value);
+    fd.append("url_b",document.getElementById("url-input-b").value);
 }
+
+else if(currentMode === "text"){
+  fd.append("source_type", "TEXT");
+    fd.append("content_a",document.getElementById("text-input").value);
+    fd.append("content_b",document.getElementById("text-input-b").value);
+}
+else if(currentMode === "screenshot"){
+  fd.append("source_type", "IMAGE");
+    const a =document.getElementById("file-ss").files[0];
+    const b =document.getElementById("file-ss-b").files[0];
+    if(a) fd.append("file_a", a);
+    if(b) fd.append("file_b", b);
+}
+else if(currentMode === "offer"){
+  fd.append("source_type", "PDF");
+    const a =document.getElementById("file-offer").files[0];
+    const b =document.getElementById("file-offer-b").files[0];
+    if(a) fd.append("file_a", a);
+    if(b) fd.append("file_b", b);
+}
+        // existing compare code...
+        const res = await fetch(
+          `${API_BASE}/analyze/compare`,{method:"POST",body:fd});
+        const data = await res.json();
+        renderCompareCards(data);
+    }catch(err){
+        console.error(err);
+        document.getElementById(
+          "resultsContainer"
+        ).innerHTML =
+        `<div class="card">
+            Comparison failed.
+         </div>`;
+    }finally{
+        hideAnalysisLoader();
+    }
+}
+let loaderInterval;
+
+//loading analysis buffer
+function showAnalysisLoader(isCompare=false){
+    document.getElementById("analyzeBtn").disabled = true;
+    document.getElementById("analysisLoader").style.display = "flex";
+
+    const messages = isCompare
+      ? [
+          "Extracting content from both jobs...",
+          "Running fraud detection...",
+          "Comparing trust scores...",
+          "Evaluating scam indicators...",
+          "Generating comparison results..."
+        ]
+      : [
+          "Checking domain reputation...",
+          "Analyzing company legitimacy...",
+          "Scanning for scam patterns...",
+          "Evaluating trust signals...",
+          "Generating risk assessment..."
+        ];
+
+    let i = 0;
+
+    document.getElementById("loaderMessage").textContent = messages[0];
+
+    loaderInterval = setInterval(() => {
+        i = (i + 1) % messages.length;
+        document.getElementById(
+          "loaderMessage"
+        ).textContent = messages[i];
+    }, 1800);
+}
+// Disable Analysis when analysing result
+function hideAnalysisLoader(){
+    document.getElementById("analyzeBtn").disabled = false;
+    document.getElementById("analysisLoader").style.display = "none";
+
+    clearInterval(loaderInterval);
+}
+
 
 //{% comment %} Trust Cards {% endcomment %}
 function renderSingleTrustCard(result){
@@ -615,7 +646,7 @@ function renderSingleTrustCard(result){
   ).innerHTML = buildTrustCard(result);
 }
 
-//{% comment %} SIngle Trust Card {% endcomment %}
+//{% comment %} Single Trust Card {% endcomment %}
 function buildTrustCard(result){
 return `
 <div class="trust-card">
@@ -790,4 +821,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 5000);
 });
 </script>
+<!-- Analysis Loading Overlay -->
+<div id="analysisLoader" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.75);
+backdrop-filter:blur(4px);
+z-index:99999;
+justify-content:center;
+align-items:center;
+">
+  <div style="
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px;
+  width:420px;
+  max-width:90%;
+  text-align:center;
+  ">
+    
+    <div class="spinner"></div>
+
+    <h3 style="margin-top:18px">
+      Analyzing Job Posting
+    </h3>
+
+    <p id="loaderMessage"
+       style="color:var(--text-secondary);margin-top:10px">
+       Checking domain reputation...
+    </p>
+
+  </div>
+</div>
 </body></html>
