@@ -37,6 +37,7 @@ async def analyze(
             url=url,
             file_bytes=file_bytes
         )
+        print("CURRENT USER:", current_user)
         return {"success": True, "data": result}
     except ValueError as e:
         raise HTTPException(status_code=400,detail=str(e))

@@ -648,28 +648,210 @@ function renderSingleTrustCard(result){
 
 //{% comment %} Single Trust Card {% endcomment %}
 function buildTrustCard(result){
+
+const metrics = result.card_metrics || {};
+
+const badgeColor =
+    result.risk_level === "HIGH"
+    ? "#ef4444"
+    : result.risk_level === "MEDIUM"
+    ? "#f59e0b"
+    : "#22c55e";
+
+const metricBars = Object.entries(metrics)
+.map(([name,value]) => {
+
+    let color =
+        value >= 70
+        ? "#22c55e"
+        : value >= 40
+        ? "#f59e0b"
+        : "#ef4444";
+
+    return `
+    <div class="dim-bar-row">
+
+        <div class="dim-bar-label">
+            ${name}
+        </div>
+
+        <div class="dim-bar-track">
+
+            <div
+                class="dim-bar-fill"
+                style="
+                    width:${value}%;
+                    background:${color};
+                ">
+            </div>
+
+        </div>
+
+        <div class="dim-bar-val">
+            ${Math.round(value)}
+        </div>
+
+    </div>
+    `;
+})
+.join("");
+
 return `
-<div class="trust-card">
-  <div class="score-ring-wrap">
-      <div>
-        <h2>${result.risk_score}</h2>
-        <small>Risk Score</small>
-      </div>
-      <div>
-        <h3>${result.risk_level}</h3>
-        <p>Trust Score:
-           ${result.trust_score}</p>
-      </div>
-  </div>
-  <div class="trust-flags">
-      ${
-        result.fraud_reasons
-        .map(r =>
-           `<div class="trust-flag bad">✖ ${r}</div>`
-        )
-        .join("")
-      }
-  </div>
+<div class="trust-card" id="trustCard">
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:20px;
+    ">
+
+        <div style="
+            font-size:13px;
+            font-weight:700;
+        ">
+            ScamShield Analysis
+        </div>
+
+        <div style="
+            background:${badgeColor}20;
+            color:${badgeColor};
+            padding:6px 12px;
+            border-radius:999px;
+            font-size:12px;
+            font-weight:700;
+        ">
+            ${result.risk_level} RISK
+        </div>
+
+    </div>
+
+    <div style="
+        display:flex;
+        gap:20px;
+        align-items:center;
+        margin-bottom:20px;
+    ">
+
+        <div style="
+            width:90px;
+            height:90px;
+            border-radius:50%;
+            border:8px solid ${badgeColor};
+
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+        ">
+
+            <div style="
+                font-size:28px;
+                font-weight:800;
+                color:${badgeColor};
+            ">
+                ${result.risk_score}
+            </div>
+
+            <div style="font-size:10px">
+                /100
+            </div>
+
+        </div>
+
+        <div>
+
+            <div style="
+                font-size:14px;
+                color:var(--text-muted);
+            ">
+                Trust Score
+            </div>
+
+            <div style="
+                font-size:30px;
+                font-weight:800;
+            ">
+                ${result.trust_score}
+            </div>
+
+            <div style="
+                font-size:12px;
+                color:var(--text-secondary);
+            ">
+                ${result.trust_level}
+            </div>
+
+        </div>
+
+    </div>
+
+    ${metricBars}
+
+    <div style="
+        margin-top:18px;
+        padding:12px;
+        background:var(--bg-secondary);
+        border-radius:10px;
+    ">
+
+        <div style="
+            font-weight:700;
+            margin-bottom:6px;
+        ">
+            Recommendation
+        </div>
+
+        <div style="
+            color:var(--text-secondary);
+            font-size:13px;
+            line-height:1.5;
+        ">
+            ${result.recommended_action}
+            <hr style="margin:12px 0">
+
+<div style="
+font-size:13px;
+font-weight:700;
+margin-bottom:8px;
+">
+Detected Issues
+</div>
+
+${
+(result.fraud_reasons || [])
+.map(reason => `
+<div class="trust-flag bad">
+✖ ${reason}
+</div>
+`)
+.join("")
+}
+        </div>
+
+    </div>
+
+    <div class="trust-actions">
+
+        <button
+            class="btn btn-outline"
+            onclick="saveTrustCard()">
+            ⬇ Save
+        </button>
+
+        <button
+            class="btn btn-outline"
+            onclick="shareTrustCard()">
+            ⇪ Share
+        </button>
+
+        <button
+            class="btn btn-danger"
+            onclick="location.href='report.html'">
+            ⚑ Report
+        </button>
+
+    </div>
+
 </div>
 `;
 }
@@ -701,6 +883,46 @@ Winner:
 ${data.winner}
 </div>
 `;
+}
+// save trust card
+function saveTrustCard(){
+
+    html2canvas(
+        document.getElementById("trustCard")
+    ).then(canvas => {
+
+        const link =
+            document.createElement("a");
+
+        link.download =
+            "trust-card.png";
+
+        link.href =
+            canvas.toDataURL();
+
+        link.click();
+    });
+}
+//share trust card
+function shareTrustCard(){
+
+    const url = window.location.href;
+
+    if(navigator.share){
+
+        navigator.share({
+            title:"ScamShield Analysis",
+            text:"Check this job analysis",
+            url:url
+        });
+
+        return;
+    }
+
+    window.open(
+        `https://wa.me/?text=${encodeURIComponent(url)}`,
+        "_blank"
+    );
 }
 
 function renderFeed() {
@@ -858,4 +1080,5 @@ align-items:center;
 
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </body></html>

@@ -54,7 +54,13 @@ def analyze_job(raw_text: str) -> dict:
     # ── 7. Recommendation ─────────────────────────────────────
     recommendation = rec.get_recommendation(risk_level, final_risk)
 
-    # ── 8. Assemble Response ──────────────────────────────────
+    # ── 8. Trust Card Metrics ──────────────────────────────────
+    try:
+        card_metrics = build_trust_card_metrics(raw_text)
+    except Exception as e:
+        print("CARD METRICS ERROR:", e)
+        card_metrics = {}
+    # ── 9. Assemble Response ──────────────────────────────────
     return {
         "risk_score"        : final_risk,
         "risk_level"        : risk_level,
@@ -65,4 +71,20 @@ def analyze_job(raw_text: str) -> dict:
         "rule_score"        : rule_result["rule_score"],
         "fraud_reasons"     : reasons,
         "recommended_action": recommendation,
+        "card_metrics"      : card_metrics
+    }
+
+def build_trust_card_metrics(raw_text: str) -> dict:
+    """
+    Build UI metrics for trust card display.
+    Does not affect ML prediction.
+    """
+    fe_features = fe.generate_engineered_features(raw_text)
+    nlp_features = nlp.generate_nlp_features(raw_text)
+    return {
+        "Fraud Phrases": min(fe_features["fraud_phrase_score"] * 10, 100),
+        "Urgency":min(fe_features["urgency_score"] * 15, 100),
+        "Contact Risk":min(fe_features["contact_risk_score"] * 20, 100),
+        "Readability":max(0,min(int(nlp_features["readability_score"]),100)),
+        "Language Quality":min(int(nlp_features["lexical_diversity"] * 100),100)
     }

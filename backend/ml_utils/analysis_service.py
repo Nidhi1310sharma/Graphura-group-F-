@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from backend.ml_utils.extractor import extract_text_from_pdf, extract_text_from_image
 
 from backend.ml.detection_engine import analyze_job
@@ -23,6 +25,11 @@ async def analyze_content(
     elif source_type == "PDF":
 
         text = extract_text_from_pdf(file_bytes)
+        if not text or not text.strip():
+            raise HTTPException(
+        status_code=400,
+        detail="Could not extract text from PDF. The PDF may contain only images."
+    )
         result = analyze_job(text)
 
     elif source_type == "IMAGE":
