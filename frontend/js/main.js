@@ -2,15 +2,16 @@
 // main.js – ScamShield Core Utilities
 // ============================================================
 
-const BASE_URL = "URL https://graphura-group-f-1.onrender.com";
+const BASE_URL = "https://graphura-group-f-1.onrender.com";
 
 // ── API Client ──
 const api = {
   async request(method, path, body = null) {
+  const token = localStorage.getItem('gr_token'); // Yahan token store se nikal rahe hain
    const opts = { method, headers: {} };
-    if (token) opts.headers["Authorization"] = "Bearer " + token;
+   if (token) opts.headers["Authorization"] = "Bearer " + token;
 
-    if (body) {
+   if (body) {
         if (body instanceof FormData) {
             opts.body = body;
         } else {
