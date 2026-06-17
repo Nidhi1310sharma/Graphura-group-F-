@@ -4,9 +4,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pytesseract
+import shutil
 import os
-if os.path.exists('/usr/bin/tesseract'):
-    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+tesseract_path = shutil.which("tesseract")
+
+    if tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+else:
+    print("Warning: Tesseract executable not found!")
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
