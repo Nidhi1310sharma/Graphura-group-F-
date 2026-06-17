@@ -18,11 +18,12 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://graphura-group-f.vercel.app",  # VERCEL URL
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-        "*"  # Allow all for development
+        "*"  
     ],
     allow_credentials=True,
     allow_methods=["*"],
