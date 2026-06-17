@@ -7,12 +7,19 @@ const BASE_URL = "https://graphura-group-f.onrender.com";
 // ── API Client ──
 const api = {
   async request(method, path, body = null) {
-    const token = localStorage.getItem('gr_token');
-    const opts = { method, headers: { "Content-Type": "application/json" } };
+   const opts = { method, headers: {} };
     if (token) opts.headers["Authorization"] = "Bearer " + token;
-    if (body) opts.body = JSON.stringify(body);
+
+    if (body) {
+        if (body instanceof FormData) {
+            opts.body = body;
+        } else {
+            opts.headers["Content-Type"] = "application/json";
+            opts.body = JSON.stringify(body);
+        }
+    }
     try {
-      const res = await fetch(BASE_URL + path, opts);
+        const res = await fetch(BASE_URL + path, opts);
       if (!res.ok) { const err = await res.json().catch(() => ({ detail: "Server error" })); throw new Error(err.detail || `HTTP ${res.status}`); }
       return await res.json();
     } catch (e) {
