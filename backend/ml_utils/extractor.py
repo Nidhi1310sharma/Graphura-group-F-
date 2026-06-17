@@ -6,8 +6,13 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
-pytesseract.pytesseract.tesseract_cmd = (r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+import pytesseract
 
+try:
+    print("Tesseract Version:", pytesseract.get_tesseract_version())
+except Exception as e:
+    print("Tesseract not found:", e)
+    
 #pdf extractor
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """
