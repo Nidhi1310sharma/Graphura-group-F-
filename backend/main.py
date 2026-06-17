@@ -3,6 +3,11 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import pytesseract
+import os
+if os.path.exists('/usr/bin/tesseract'):
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
