@@ -25,15 +25,13 @@ app = FastAPI(title="ScamShield API")
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
 # ── CORS (allow all for local dev) ──────────────────────────
+# ── CORS (allow all for local dev) ──────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://graphura-group-f.vercel.app",  # VERCEL URL
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "*"  
+        "graphura-group-p3ks3jo2y-nidhi1310sharmas-projects.vercel.app",  
+        "http://localhost:3000",                
+        "http://127.0.0.1:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
