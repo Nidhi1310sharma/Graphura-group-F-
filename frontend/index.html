@@ -554,7 +554,10 @@ function renderSingleTrustCard(result) {
 }
 
 function buildTrustCard(result) {
-  let metrics = result.card_metrics || {};
+  
+const responseData = result.data || result;
+let metrics = responseData.card_metrics || {};
+result = responseData; 
   if (Object.keys(metrics).length === 0 && result.raw_url_analysis) {
     metrics = {
       "Domain":     100 - (result.raw_url_analysis.domain_risk_score || 0),
