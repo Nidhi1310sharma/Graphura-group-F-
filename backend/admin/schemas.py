@@ -59,3 +59,9 @@ class AnalyticsFilterParams(BaseModel):
     end_date: Optional[str] = None
     scam_type: Optional[str] = None
     severity: Optional[str] = None
+
+# add admin
+class CreateAdminRequest(BaseModel):
+    name: str
+    email: str
+    password: str

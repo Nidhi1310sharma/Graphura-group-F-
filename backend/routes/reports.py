@@ -49,7 +49,7 @@ def cleanup_report_upload(
 
 """create a report of a scam company, which will be stored in the user_reports table. 
 The report will be associated with the user who created it, and it will include details about the company, 
-the job title (if applicable), a description of the scam, and any relevant metadata such as the type of scam and its severity. 
+the job title (if applicable), a description of the scam, and any relevant metadata such as the type of scam. 
 The report will initially be marked as "pending" for review by moderators."""
 
 @router.post("/")
@@ -59,9 +59,8 @@ async def create_report(
     job_title: Optional[str] = Form(None),
     description: str = Form(...),
     scam_type: str = Form(...),
-    severity: str = Form(...),
-    files: Optional[List[UploadFile]] = File(None),
-    urls: Optional[List[str]] = Form(None),
+    files: List[UploadFile] = File(default=[]),
+    urls: Optional[str] = Form(None),
 ):
     # basic content validation
     COMPANY_MAX_LEN = 200
@@ -103,7 +102,6 @@ async def create_report(
             "job_title": job_title,
             "description": description,
             "scam_type": scam_type,
-            "severity": severity,
             "status": "pending",
             "created_at": created_at
         })
@@ -178,7 +176,9 @@ async def create_report(
                     )
 
                 try:
-                    bucket.upload(file_path, file_bytes)
+                    bucket.upload(file_path, file_bytes, {"content-type": upload.content_type})
+                    print("FILENAME:", upload.filename)
+                    print("CONTENT TYPE:", upload.content_type)
                 except Exception as e:
                     raise HTTPException(
                         status_code=500,
@@ -254,7 +254,7 @@ async def get_my_reports(current_user: dict = Depends(get_current_user)):
 
     response = (
         supabase.table("user_reports")
-        .select("report_id, company_name, job_title, scam_type, severity, status, created_at")
+        .select("report_id, company_name, job_title, scam_type, status, created_at")
         .eq("user_id", str(user_id))
         .order("created_at", desc=True)
         .execute()
@@ -270,3 +270,43 @@ async def get_my_reports(current_user: dict = Depends(get_current_user)):
 # has been removed. Evidence should be supplied when creating a report
 # via `POST /reports` to ensure atomic creation and consistent privacy
 # handling of uploaded files.
+
+# Alias: /reports/my → /reports/my-reports (frontend calls both)
+@router.get("/my")
+async def get_my_reports_alias(current_user: dict = Depends(get_current_user)):
+    return await get_my_reports(current_user)
+
+
+# GET /reports – public list of recent/approved reports (used by report.html sidebar)
+@router.get("/")
+async def list_reports(limit: int = 10, status: str = "approved"):
+    try:
+        query = (
+            supabase.table("user_reports")
+            .select("report_id, company_name, job_title, scam_type, status, created_at")
+            .order("created_at", desc=True)
+            .limit(limit)
+        )
+        if status:
+            query = query.eq("status", status)
+        response = query.execute()
+        return response.data or []
+    except Exception:
+        return []
+
+
+# /reports/live - returns recent reports for the live feed ticker
+@router.get("/live")
+async def live_reports(limit: int = 50):
+    try:
+        response = (
+            supabase.table("user_reports")
+            .select("report_id, company_name, job_title, scam_type, status, created_at")
+            .in_("status", ["approved", "pending"])
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return response.data or []
+    except Exception:
+        return []

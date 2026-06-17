@@ -180,56 +180,114 @@ Features:
 
 ```text
 scamshield/
+Team-F_Fake-Internship-Job-Scam-Detection-System/
+├── .gitignore
+├── README.md
+├── requirements.txt
 ├── backend/
+│   ├── .env.example
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── main.py
+│   ├── seed.py
+│   ├── supabase_client.py
+│   ├── __pycache__/
+│   │   └── main.cpython-311.pyc
 │   ├── admin/
+│   │   ├── __init__.py
 │   │   ├── auth.py
 │   │   ├── routes.py
 │   │   ├── schemas.py
 │   │   └── services.py
-│   │
+│   ├── ml/
+│   │   ├── __init__.py
+│   │   ├── detection_engine.py
+│   │   ├── domain_check.py
+│   │   ├── feature_engineering.py
+│   │   ├── nlp_analyzer.py
+│   │   └── url_engine.py
+│   ├── ml_utils/
+│   │   ├── __init__.py
+│   │   ├── analysis_service.py
+│   │   ├── explain.py
+│   │   ├── extractor.py
+│   │   ├── helpers.py
+│   │   ├── recommendation.py
+│   │   ├── scraper.py
+│   │   ├── url_computation.py
+│   │   └── validator.py
+│   ├── models/
+│   │   ├── best_scam_detector.pkl
+│   │   └── feature_names.pkl
 │   ├── routes/
+│   │   ├── __init__.py
 │   │   ├── analyze.py
 │   │   ├── auth.py
 │   │   ├── community.py
-│   │   └── reports.py
-│   │
-│   ├── schemas/
-│   │   ├── auth.py
-│   │   ├── community.py
-│   │   └── reports.py
-│   │
-│   ├── auth.py
-│   ├── main.py
-│   ├── supabase_client.py
-│   └── .env.example
-│
+│   │   ├── domains.py
+│   │   ├── live_feed.py
+│   │   ├── reports.py
+│   │   └── user.py
+│   └── schemas/
+│       ├── __init__.py
+│       ├── auth.py
+│       ├── community.py
+│       └── reports.py
+├── data/
+│   ├── cleaned_data.csv
+│   ├── explainable_jobs.csv
+│   ├── final_model_dataset.csv
+│   ├── lexical_diversity_distribution.png
+│   ├── model_ready_dataset.csv
+│   ├── ngram_analysis.png
+│   ├── nlp_feature_dataset.csv
+│   ├── processed_cleaned_data.csv
+│   ├── readability_distribution.png
+│   ├── scam_phrase_frequency.png
+│   ├── tfidf_features.csv
+│   └── tfidf_top_terms.png
 ├── frontend/
-│   ├── css/
-│   ├── js/
-│   ├── index.html
-│   ├── login.html
-│   ├── register.html
-│   ├── checker.html
-│   ├── compare.html
+│   ├── admin-community.html
+│   ├── admin-companies.html
+│   ├── admin-domains.html
+│   ├── admin-listings.html
+│   ├── admin-reports.html
+│   ├── admin-users.html
+│   ├── admin.html
 │   ├── community.html
 │   ├── dashboard.html
+│   ├── index.html
 │   ├── live-feed.html
+│   ├── login.html
+│   ├── my-reports.html
 │   ├── profile.html
+│   ├── register.html
 │   ├── report.html
 │   ├── settings.html
-│   │
-│   ├── admin.html
-│   ├── admin-users.html
-│   ├── admin-reports.html
-│   ├── admin-jobs.html
-│   ├── admin-domains.html
-│   ├── admin-community.html
-│   ├── admin-analytics.html
-│   └── admin-ml.html
-│
-├── requirements.txt
-├── README.md
-└── .gitignore
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       ├── chatbot.js
+│       ├── main.js
+│       ├── nav.js
+│       ├── sidebar.js
+│       └── supabase-client.js
+├── models/
+│   ├── best_scam_detector.pkl
+│   └── feature_names.pkl
+└── notebooks/
+    ├── 1_data_understanding.ipynb
+    ├── 2_data_cleaning.ipynb
+    ├── 3A_advanced_nlp.ipynb
+    ├── 3_NLP_features_generation.ipynb
+    ├── 4_ML_MODEL.ipynb
+    ├── 5_Production_Detection_Engine.ipynb
+    ├── 6_url_analysis_engine.ipynb
+    ├── 7_Community_Search_Engine.ipynb
+    ├── 8_Semantic_Intelligence_Engine.ipynb
+    ├── model_feature_importances.png
+    └── model_roc_curve.png
+
 ```
 
 ---
@@ -291,7 +349,7 @@ SECRET_KEY=
 Run backend:
 
 ```bash
-uvicorn main:app --reload --port 8000
+python -m uvicorn backend.main:app --reload
 ```
 
 Backend API:
@@ -314,13 +372,13 @@ Option 2: Use local server
 
 ```bash
 cd frontend
-python -m http.server 5500
+python -m http.server 3000
 ```
 
 Visit:
 
 ```text
-http://localhost:5500
+http://localhost:3000
 ```
 
 ---

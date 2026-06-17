@@ -2,87 +2,156 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Overview – ScamShield Admin</title>
+  <title>Admin Dashboard – ScamShield</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    .admin-sidebar { background: #0a0d12 !important; }
+    .admin-sidebar .sidebar-brand { border-bottom-color: rgba(255,255,255,.06); }
+    .admin-sidebar .sidebar-section-label { color: #444c56; }
+    .admin-sidebar .sidebar-nav a { color: #8b949e; }
+    .admin-sidebar .sidebar-nav a:hover { background: rgba(255,255,255,.05); color: #e6edf3; }
+    .admin-sidebar .sidebar-nav a.active { background: rgba(88,166,255,.1); color: #58a6ff; }
+    .admin-kpi { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; position: relative; overflow: hidden; }
+    .admin-kpi::after { content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: var(--kpi-color, var(--accent-blue)); border-radius: 0 var(--radius) var(--radius) 0; }
+    .admin-kpi-val { font-size: 28px; font-weight: 800; font-family: var(--font-mono); }
+    .admin-kpi-lbl { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .admin-kpi-delta { font-size: 11.5px; margin-top: 6px; }
+    .kpis-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media(max-width:1100px){.kpis-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:700px){.kpis-grid{grid-template-columns:repeat(1,1fr)}}
+    .action-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: var(--transition); text-decoration: none; color: var(--text-primary); }
+    .action-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+    .action-card-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .action-card-text { flex: 1; }
+    .action-card-title { font-weight: 700; font-size: 14px; }
+    .action-card-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    
+    .admin-profile-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .admin-profile-modal.open { opacity: 1; visibility: visible; }
+    .admin-profile-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); }
+    .admin-profile-card { position: relative; background: var(--bg-card); border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3); transform: scale(0.9); transition: transform 0.3s ease; border: 1px solid var(--border); }
+    .admin-profile-modal.open .admin-profile-card { transform: scale(1); }
+    .admin-profile-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .admin-profile-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #58a6ff, #bc8cff); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: white; }
+    .admin-profile-close { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; }
+    .admin-profile-close:hover { background: rgba(220,38,38,0.2); color: var(--accent-red); }
+    .admin-profile-body { padding: 20px; }
+    .admin-profile-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; color: var(--text-primary); }
+    .admin-profile-email { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+    .admin-profile-role-badge { display: inline-block; padding: 4px 12px; background: rgba(88,166,255,0.15); color: #58a6ff; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 20px; }
+    .admin-profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; padding: 12px; background: var(--bg-input); border-radius: 12px; }
+    .admin-profile-stat { text-align: center; }
+    .admin-profile-stat .stat-value { font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: var(--text-primary); }
+    .admin-profile-stat .stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .admin-profile-actions { display: flex; flex-direction: column; gap: 10px; }
+    .admin-profile-actions .btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  </style>
 </head>
 <body>
-
-<div class="admin-layout">
-  <!-- Sidebar -->
-  <aside class="admin-sidebar">
-    <a href="admin.html" class="sidebar-brand">
-      <span class="sidebar-logo">🛡️</span>
-      <div><span class="brand-name">ScamShield</span><span class="brand-sub">Admin Panel</span></div>
-    </a>
-    <nav class="admin-nav">
-      <a href="admin.html" class="active"><span>📊</span> Overview</a>
-      <a href="admin-reports.html"><span>🚩</span> Reports <span class="nav-badge" id="sb-pending">—</span></a>
-      <a href="admin-community.html"><span>👥</span> Community</a>
-      <a href="admin-listings.html"><span>💼</span> Listings</a>
-      <div class="admin-nav-group">Knowledge Base</div>
-      <a href="admin-companies.html"><span>🏢</span> Companies</a>
-      <a href="admin-domains.html"><span>🌐</span> Domains</a>
-      <a href="admin-indicators.html"><span>⚡</span> Scam Indicators</a>
-      <div class="admin-nav-group">System</div>
-      <a href="admin-users.html"><span>👤</span> Admins & Logs</a>
-    </nav>
-    <div class="admin-sidebar-footer">
-      <div class="admin-sidebar-user">
-        <div class="admin-sidebar-avatar" id="sb-avatar">A</div>
-        <div>
-          <div style="font-weight:600;font-size:13px" id="sb-name">Admin</div>
-          <div style="font-size:11px;color:var(--text-muted)">Administrator</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button class="theme-toggle" onclick="toggleTheme()" style="flex:1;font-size:12px"><span class="theme-toggle-icon">☀️</span> <span class="theme-toggle-text">Light</span></button>
-        <button class="btn btn-ghost btn-sm" onclick="auth.logout()">Sign out</button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <div class="admin-main">
-    <div class="admin-page">
+<div class="app-shell" id="app-shell">
+  <div class="main-content">
+    <div class="page-inner">
+      <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='index.html'" title="Go back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </button>
       <div class="page-header">
-        <h1>📊 Overview</h1>
-        <p>Platform snapshot — reports, community, listings, domains</p>
+        <h1>Admin Dashboard</h1>
+        <p>Manage reports, users, and community posts</p>
       </div>
 
-      <!-- KPIs from Supabase -->
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px" id="kpi-grid">
-        <div class="admin-kpi" style="--kpi-color:var(--accent-red)"><div class="admin-kpi-val" id="kpi-pending">—</div><div class="admin-kpi-lbl">Pending Reports</div></div>
-        <div class="admin-kpi" style="--kpi-color:var(--accent-orange)"><div class="admin-kpi-val" id="kpi-confirmed">—</div><div class="admin-kpi-lbl">Confirmed Scams</div></div>
-        <div class="admin-kpi" style="--kpi-color:var(--accent-blue)"><div class="admin-kpi-val" id="kpi-posts">—</div><div class="admin-kpi-lbl">Community Posts</div></div>
-        <div class="admin-kpi" style="--kpi-color:var(--accent-yellow)"><div class="admin-kpi-val" id="kpi-high">—</div><div class="admin-kpi-lbl">High Risk Listings</div></div>
-        <div class="admin-kpi" style="--kpi-color:var(--accent-red)"><div class="admin-kpi-val" id="kpi-blacklisted">—</div><div class="admin-kpi-lbl">Blacklisted Domains</div></div>
-        <div class="admin-kpi" style="--kpi-color:var(--accent-orange)"><div class="admin-kpi-val" id="kpi-suspicious">—</div><div class="admin-kpi-lbl">Suspicious Domains</div></div>
+      <!-- KPIs -->
+      <div class="kpis-grid mb-4">
+        <div class="admin-kpi" style="--kpi-color:var(--accent-blue)">
+          <div class="admin-kpi-val" id="kpi-users">--</div>
+          <div class="admin-kpi-lbl">Total Users</div>
+          <div class="admin-kpi-delta" id="kpi-users-delta" style="color:var(--accent-green)">Loading...</div>
+        </div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-red)">
+          <div class="admin-kpi-val" id="a-pending">--</div>
+          <div class="admin-kpi-lbl">Pending Reports</div>
+          <div class="admin-kpi-delta" style="color:var(--accent-red)">Needs review</div>
+        </div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-green)">
+          <div class="admin-kpi-val" id="kpi-confirmed">--</div>
+          <div class="admin-kpi-lbl">Confirmed Scams</div>
+          <div class="admin-kpi-delta" style="color:var(--text-muted)">All time</div>
+        </div>
+        <div class="admin-kpi" style="--kpi-color:var(--accent-orange)">
+          <div class="admin-kpi-val" id="kpi-posts">--</div>
+          <div class="admin-kpi-lbl">Community Posts</div>
+          <div class="admin-kpi-delta" id="kpi-posts-delta" style="color:var(--accent-green)">Loading...</div>
+        </div>
       </div>
 
       <!-- Charts -->
-      <div class="two-col mb-4">
-        <div class="card"><div class="card-title">📈 Weekly Activity</div><canvas id="chart-activity" style="max-height:180px"></canvas></div>
-        <div class="card"><div class="card-title">🥧 Scam Types</div><canvas id="chart-types" style="max-height:180px"></canvas></div>
-      </div>
-
-      <!-- Recent Activity Feed from audit_logs -->
-      <div class="card mb-4">
-        <div class="card-title flex-between"><span>📋 Recent Activity</span><button class="btn btn-outline btn-sm" onclick="loadAuditLogs()">↺ Refresh</button></div>
-        <div id="activity-feed">
-          <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading…</div>
+      <div class="two-col mt-0 mb-4" style="gap:18px">
+        <div class="card">
+          <div class="card-title">Weekly Activity</div>
+          <canvas id="admin-trend" style="max-height:200px"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">Scam Type Breakdown</div>
+          <canvas id="scam-type-chart" style="max-height:200px"></canvas>
         </div>
       </div>
 
-      <!-- Quick nav -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        <a href="admin-reports.html" class="action-card"><div class="action-card-icon" style="background:rgba(248,81,73,.1)">🚩</div><div class="action-card-text"><div class="action-card-title">Review Reports</div><div class="action-card-sub">Pending moderation</div></div></a>
-        <a href="admin-community.html" class="action-card"><div class="action-card-icon" style="background:rgba(88,166,255,.1)">👥</div><div class="action-card-text"><div class="action-card-title">Moderate Community</div><div class="action-card-sub">Posts & comments</div></div></a>
-        <a href="admin-listings.html" class="action-card"><div class="action-card-icon" style="background:rgba(188,140,255,.1)">💼</div><div class="action-card-text"><div class="action-card-title">Manage Listings</div><div class="action-card-sub">Analyzed jobs</div></div></a>
-        <a href="admin-companies.html" class="action-card"><div class="action-card-icon" style="background:rgba(227,112,42,.1)">🏢</div><div class="action-card-text"><div class="action-card-title">Companies</div><div class="action-card-sub">Knowledge base</div></div></a>
-        <a href="admin-domains.html" class="action-card"><div class="action-card-icon" style="background:rgba(210,153,34,.1)">🌐</div><div class="action-card-text"><div class="action-card-title">Domains</div><div class="action-card-sub">Blacklist management</div></div></a>
-        <a href="admin-indicators.html" class="action-card"><div class="action-card-icon" style="background:rgba(63,185,80,.1)">⚡</div><div class="action-card-text"><div class="action-card-title">Scam Indicators</div><div class="action-card-sub">Rule engine</div></div></a>
+      <!-- Quick Actions -->
+      <div class="card-title mb-2">Quick Actions</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
+        <a href="admin-reports.html" class="action-card">
+          <div class="action-card-icon" style="background:rgba(248,81,73,.1)">📋</div>
+          <div class="action-card-text"><div class="action-card-title">Review Reports <span class="nav-badge" id="pending-badge">--</span></div><div class="action-card-sub">Pending moderation</div></div>
+        </a>
+        <a href="admin-users.html" class="action-card">
+          <div class="action-card-icon" style="background:rgba(88,166,255,.1)">👤</div>
+          <div class="action-card-text"><div class="action-card-title">Manage Users</div><div class="action-card-sub" id="users-sub">-- registered</div></div>
+        </a>
+        <a href="admin-community.html" class="action-card">
+          <div class="action-card-icon" style="background:rgba(188,140,255,.1)">💬</div>
+          <div class="action-card-text"><div class="action-card-title">Community Posts</div><div class="action-card-sub" id="posts-sub">-- total</div></div>
+        </a>
+      </div>
+
+      <!-- Latest Reports -->
+      <div class="card mb-4">
+        <div class="card-title flex-between">
+          <span>Latest Pending Reports</span>
+          <a href="admin-reports.html" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Company</th><th>Type</th><th>Reporter</th><th>Date</th><th>Severity</th><th>Actions</th></tr></thead>
+            <tbody id="reports-tbody"><tr><td colspan="6" style="text-align:center;padding:30px">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Users -->
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>Recent Registrations</span>
+          <a href="admin-users.html" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>User</th><th>Email</th><th>Joined</th><th>Reports</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="6" style="text-align:center;padding:30px">Loading...</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -92,121 +161,221 @@
 <script src="js/sidebar.js"></script>
 <script src="js/chatbot.js"></script>
 <script>
-function approveReport(btn) {
-  const row = btn.closest('tr');
-  row.style.opacity = '0.5';
-  const p = document.getElementById('a-pending');
-  p.textContent = Math.max(0, parseInt(p.textContent) - 1);
-  showToast('Report approved and added to blacklist', 'success');
-  setTimeout(() => row.remove(), 600);
+const API_BASE = 'http://localhost:8000/api';
+
+async function loadDashboardData() {
+  try {
+    const token = localStorage.getItem('gr_token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+    
+    console.log('Loading dashboard data...');
+    
+    // Get stats from backend
+    const statsRes = await fetch(`${API_BASE}/admin/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (statsRes.ok) {
+      const stats = await statsRes.json();
+      console.log('Stats data:', stats);
+      
+      document.getElementById('kpi-users').textContent = stats.total_users || 0;
+      document.getElementById('a-pending').textContent = stats.pending_reports || 0;
+      document.getElementById('kpi-confirmed').textContent = stats.confirmed_scams || stats.confirmed_reports || 0;
+      document.getElementById('kpi-posts').textContent = stats.community_posts || 0;
+      document.getElementById('pending-badge').textContent = stats.pending_reports || 0;
+      document.getElementById('users-sub').textContent = (stats.total_users || 0) + ' registered';
+      document.getElementById('posts-sub').textContent = (stats.community_posts || 0) + ' total';
+      document.getElementById('kpi-users-delta').textContent = 'Active users';
+      document.getElementById('kpi-posts-delta').textContent = 'Community posts';
+    } else {
+      console.error('Failed to load stats:', await statsRes.text());
+    }
+    
+    // Get pending reports
+    const reportsRes = await fetch(`${API_BASE}/admin/reports?status=pending&limit=5`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (reportsRes.ok) {
+      const reports = await reportsRes.json();
+      console.log('Pending reports:', reports);
+      const tbody = document.getElementById('reports-tbody');
+      if (reports && reports.length) {
+        tbody.innerHTML = reports.map(r => `
+          <tr>
+            <td><strong>${escapeHtml(r.company_name || 'Unknown')}</strong></td>
+            <td><span class="badge badge-red">${escapeHtml(r.scam_type || 'Scam')}</span></td>
+            <td>${escapeHtml(r.reporter_name || 'Anonymous')}</td>
+            <td>${new Date(r.created_at).toLocaleDateString()}</td>
+            <td><span class="badge badge-red">${escapeHtml(r.severity || 'High')}</span></td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="approveReport(this, '${r.report_id}')">Approve</button>
+              <button class="btn btn-outline btn-sm" onclick="rejectReport(this, '${r.report_id}')">Reject</button>
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No pending reports</td></tr>';
+      }
+    } else {
+      console.error('Failed to load reports:', await reportsRes.text());
+    }
+    
+    // Get recent users
+    const usersRes = await fetch(`${API_BASE}/admin/users?limit=5`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (usersRes.ok) {
+      const users = await usersRes.json();
+      console.log('Recent users:', users);
+      const tbody = document.getElementById('users-tbody');
+      if (users && users.length) {
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td><strong>${escapeHtml(u.name || u.full_name || 'Unknown')}</strong></td>
+            <td class="text-secondary mono">${escapeHtml(u.email)}</td>
+            <td class="text-secondary mono">${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
+            <td class="text-secondary mono">${u.reports_count || 0}</td>
+            <td><span class="badge badge-green">Active</span></td>
+            <td><button class="btn btn-outline btn-sm" onclick="showToast('View user details','info')">View</button></td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No users found</td></tr>';
+      }
+    } else {
+      console.error('Failed to load users:', await usersRes.text());
+    }
+  } catch(e) { 
+    console.error('Error loading dashboard:', e); 
+  }
 }
-function rejectReport(btn) {
+
+async function approveReport(btn, reportId) {
   const row = btn.closest('tr');
   row.style.opacity = '0.5';
-  showToast('Report rejected', 'info');
-  setTimeout(() => row.remove(), 600);
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ status: 'confirmed' })
+    });
+    if (res.ok) {
+      const p = document.getElementById('a-pending');
+      p.textContent = Math.max(0, parseInt(p.textContent) - 1);
+      showToast('Report approved', 'success');
+      setTimeout(() => row.remove(), 600);
+      loadDashboardData();
+    } else {
+      showToast('Failed to approve report', 'error');
+      row.style.opacity = '1';
+    }
+  } catch(e) { showToast('Failed to approve', 'error'); row.style.opacity = '1'; }
+}
+
+async function rejectReport(btn, reportId) {
+  const row = btn.closest('tr');
+  row.style.opacity = '0.5';
+  try {
+    const token = localStorage.getItem('gr_token');
+    const res = await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ status: 'rejected' })
+    });
+    if (res.ok) {
+      showToast('Report rejected', 'info');
+      setTimeout(() => row.remove(), 600);
+      loadDashboardData();
+    } else {
+      showToast('Failed to reject report', 'error');
+      row.style.opacity = '1';
+    }
+  } catch(e) { showToast('Failed to reject', 'error'); row.style.opacity = '1'; }
+}
+
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+function showToast(msg, type) { 
+  const t=document.createElement('div'); 
+  t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:'+(type==='error'?'#f85149':'#3fb950')+';color:white;padding:12px 24px;border-radius:8px;z-index:9999'; 
+  t.textContent=msg; 
+  document.body.appendChild(t); 
+  setTimeout(()=>t.remove(),3000); 
+}
+
+function openAdminProfileModal() {
+  const user = _getUser();
+  if (!user) return;
+  document.getElementById('admin-profile-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'admin-profile-modal';
+  modal.className = 'admin-profile-modal';
+  modal.innerHTML = `<div class="admin-profile-overlay" onclick="closeAdminProfileModal()"></div><div class="admin-profile-card"><div class="admin-profile-header"><div class="admin-profile-avatar">${(user.full_name || 'A')[0].toUpperCase()}</div><button class="admin-profile-close" onclick="closeAdminProfileModal()">✕</button></div><div class="admin-profile-body"><h3 class="admin-profile-name">${user.full_name || 'Administrator'}</h3><p class="admin-profile-email">${user.email || 'admin@scamshield.com'}</p><div class="admin-profile-role-badge">Administrator</div><div class="admin-profile-stats"><div class="admin-profile-stat"><div class="stat-value" id="modal-users">--</div><div class="stat-label">Total Users</div></div><div class="admin-profile-stat"><div class="stat-value" id="modal-pending">--</div><div class="stat-label">Pending Reports</div></div><div class="admin-profile-stat"><div class="stat-value" id="modal-posts">--</div><div class="stat-label">Community Posts</div></div></div><div class="admin-profile-actions"><button class="btn btn-outline btn-full" onclick="window.location.href='admin.html'">Dashboard</button><button class="btn btn-primary btn-full" onclick="window.location.href='admin-reports.html'">Review Reports</button><button class="btn btn-danger btn-full" onclick="handleAdminLogout()">Sign Out</button></div></div></div>`;
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('open'), 10);
+  // Load stats for modal
+  const token = localStorage.getItem('gr_token');
+  fetch(`${API_BASE}/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(r=>r.json())
+    .then(s=>{
+      document.getElementById('modal-users').textContent = s.total_users || 0;
+      document.getElementById('modal-pending').textContent = s.pending_reports || 0;
+      document.getElementById('modal-posts').textContent = s.community_posts || 0;
+    })
+    .catch(e=>{});
+}
+
+function closeAdminProfileModal() { 
+  const modal = document.getElementById('admin-profile-modal'); 
+  if(modal){ modal.classList.remove('open'); setTimeout(()=>modal.remove(),300); } 
+}
+
+function handleAdminLogout() { 
+  localStorage.clear(); 
+  window.location.href = 'login.html'; 
+}
+
+function initCharts() {
+  new Chart(document.getElementById('admin-trend').getContext('2d'), {
+    type: 'bar',
+    data: { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets: [{ label: 'Reports', data: [12,18,9,22,15,7,4], backgroundColor: 'rgba(248,81,73,0.7)', borderRadius: 4 }, { label: 'New Users', data: [5,8,3,11,6,2,1], backgroundColor: 'rgba(88,166,255,0.7)', borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(48,54,61,0.4)' } }, y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(48,54,61,0.4)' } } } }
+  });
+  new Chart(document.getElementById('scam-type-chart').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: ['Fee Demand','Fake Company','Phishing','Data Theft','Brand Impersonation'], datasets: [{ data: [34,24,18,13,11], backgroundColor: ['#f85149','#e3702a','#d29922','#58a6ff','#bc8cff'] }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 14 }, position: 'bottom' } } }
+  });
+}
+
+function _getUser() {
+  try {
+    const data = localStorage.getItem('gr_user');
+    return data ? JSON.parse(data) : null;
+  } catch(e) { return null; }
+}
+
+function requireAdmin() {
+  const user = _getUser();
+  if (!user || user.role !== 'admin') {
+    window.location.href = 'login.html';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   requireAdmin();
-  renderSidebar('admin.html', true);
+  if (typeof renderSidebar === 'function') {
+    renderSidebar('admin.html', true);
+  }
   document.getElementById('page-title').textContent = 'Admin Dashboard';
-
-  // Weekly activity chart
-  new Chart(document.getElementById('admin-trend').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
-      datasets: [
-        { label: 'Reports', data: [12,18,9,22,15,7,4], backgroundColor: 'rgba(248,81,73,0.7)', borderRadius: 4 },
-        { label: 'New Users', data: [5,8,3,11,6,2,1], backgroundColor: 'rgba(88,166,255,0.7)', borderRadius: 4 },
-      ]
-    },
-    options: { plugins: { legend: { labels: { color:'#8b949e' } } }, scales: { x: { ticks:{color:'#8b949e'}, grid:{color:'rgba(48,54,61,0.4)'} }, y: { ticks:{color:'#8b949e'}, grid:{color:'rgba(48,54,61,0.4)'} } } }
-  });
-
-  // Scam type doughnut
-  new Chart(document.getElementById('scam-type-chart').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Fee Demand','Fake Company','Phishing','Data Theft','Brand Impersonation'],
-      datasets: [{ data: [34,24,18,13,11], backgroundColor: ['#f85149','#e3702a','#d29922','#58a6ff','#bc8cff'] }]
-    },
-    options: { plugins: { legend: { labels:{ color:'#8b949e', font:{size:11}, boxWidth:14 }, position:'bottom' } } }
-=======
-
-<script src="js/main.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/chatbot.js"></script>
-<script>
-// Extra admin KPI card style
-document.head.insertAdjacentHTML('beforeend', `<style>
-.admin-kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
-.admin-kpi::after{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--kpi-color,var(--accent-blue));border-radius:0 var(--radius) var(--radius) 0}
-.admin-kpi-val{font-size:26px;font-weight:800;font-family:var(--font-mono)}
-.admin-kpi-lbl{font-size:11px;color:var(--text-muted);margin-top:2px}
-@media(max-width:1000px){#kpi-grid{grid-template-columns:repeat(3,1fr)!important}}
-</style>`);
-
-async function loadKPIs() {
-  try {
-    const kpis = await DB.getKPIs();
-    document.getElementById('kpi-pending').textContent = kpis.pendingReports;
-    document.getElementById('kpi-confirmed').textContent = kpis.confirmedScams;
-    document.getElementById('kpi-posts').textContent = kpis.communityPosts;
-    document.getElementById('kpi-high').textContent = kpis.highRiskListings;
-    document.getElementById('kpi-blacklisted').textContent = kpis.blacklistedDomains;
-    document.getElementById('kpi-suspicious').textContent = kpis.suspiciousDomains;
-    document.getElementById('sb-pending').textContent = kpis.pendingReports;
-  } catch(e) { console.error('KPI load:', e); }
-}
-
-async function loadAuditLogs() {
-  try {
-    const logs = await DB.getAuditLogs(15);
-    const icons = { CONFIRM_REPORT:'✅', REJECT_REPORT:'❌', BLACKLIST_DOMAIN:'🚫', VERIFY_COMPANY:'✔️', MARK_SUSPICIOUS:'⚠️', HIDE_POST:'🙈', DELETE_POST:'🗑️' };
-    document.getElementById('activity-feed').innerHTML = logs.length
-      ? logs.map(l => `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">
-          <span style="font-size:16px">${icons[l.action]||'📝'}</span>
-          <span style="color:var(--text-primary);font-weight:600">${l.admin_users?.full_name||'Admin'}</span>
-          <span style="color:var(--text-secondary)">${l.action.replace(/_/g,' ')}</span>
-          <span class="badge badge-gray" style="font-size:10px">${l.target_type}</span>
-          <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">${new Date(l.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
-        </div>`).join('')
-      : '<div style="text-align:center;padding:20px;color:var(--text-muted)">No recent activity</div>';
-  } catch(e) {
-    document.getElementById('activity-feed').innerHTML = DEMO_DATA.auditLogs.map(l =>
-      `<div style="padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary)">📝 Admin — ${l.action} on ${l.target_type} ${l.target_id}</div>`).join('');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  initTheme();
-  if (!requireAdmin()) return;
-  const user = auth.getUser();
-  if (user) {
-    document.getElementById('sb-avatar').textContent = (user.full_name||'A')[0].toUpperCase();
-    document.getElementById('sb-name').textContent = user.full_name || 'Admin';
-  }
-
-  await loadKPIs();
-  await loadAuditLogs();
-
-  // Charts
-  new Chart(document.getElementById('chart-activity').getContext('2d'), {
-    type:'bar',
-    data:{ labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets:[
-      {label:'Reports',data:[12,18,9,22,15,7,4],backgroundColor:'rgba(248,81,73,.7)',borderRadius:4},
-      {label:'New Users',data:[5,8,3,11,6,2,1],backgroundColor:'rgba(88,166,255,.7)',borderRadius:4}
-    ]},
-    options:{plugins:{legend:{labels:{color:'#8b949e'}}},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'rgba(48,54,61,.4)'}},y:{ticks:{color:'#8b949e'},grid:{color:'rgba(48,54,61,.4)'}}}}
-  });
-  new Chart(document.getElementById('chart-types').getContext('2d'), {
-    type:'doughnut',
-    data:{labels:['Fee Demand','Fake Company','Phishing','Impersonation','Other'],datasets:[{data:[34,24,18,13,11],backgroundColor:['#f85149','#e3702a','#d29922','#bc8cff','#58a6ff']}]},
-    options:{plugins:{legend:{labels:{color:'#8b949e',font:{size:11},boxWidth:14},position:'bottom'}}}
-
-  });
+  initCharts();
+  loadDashboardData();
 });
 </script>
-</body></html>
+</body>
+</html>
