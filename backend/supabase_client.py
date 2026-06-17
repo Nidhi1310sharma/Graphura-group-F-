@@ -17,7 +17,9 @@ load_dotenv(dotenv_path=env_path)
 # Environment variables fetching
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+#SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_KEY")
 
 # checikng variable match
 if not SUPABASE_URL:
