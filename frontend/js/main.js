@@ -2,7 +2,7 @@
 // main.js – ScamShield Core Utilities
 // ============================================================
 
-const BASE_URL = "https://graphura-group-f-1.onrender.com";
+const API_BASE = "https://graphura-group-f-1.onrender.com/api";
 
 // ── API Client ──
 const api = {
