@@ -18,7 +18,7 @@ const API_BASE = "https://graphura-group-f-1.onrender.com";
 const SUPABASE_ANON = 'sb_publishable_MSBO7epuj1hxvXO7_iUWtA_dm33CqUx';
 
 // Create the Supabase client (available globally as `supabase`)
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 if (!supabase) {
   console.warn('[ScamShield] Supabase client not loaded — using static demo data. Add the Supabase CDN script before supabase-client.js');
