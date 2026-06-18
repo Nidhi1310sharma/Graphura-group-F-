@@ -2,15 +2,15 @@ import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
-# Local development ke liye
+# Local development 
 load_dotenv()
 
-# Render ke environment se values uthao
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY") # Secret Key
-#SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY") # Anon Key
 
-# Priority: Agar Secret Key (SUPABASE_KEY) hai toh wo use karo, warna Anon Key
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") 
+#SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+
+# Priority
 key_to_use = SUPABASE_KEY if SUPABASE_KEY else SUPABASE_ANON_KEY
 
 # Error check
