@@ -7,7 +7,7 @@ const API_BASE = "https://graphura-group-f-1.onrender.com/api";
 // ── API Client ──
 const api = {
   async request(method, path, body = null) {
-  const token = localStorage.getItem('gr_token'); // Yahan token store se nikal rahe hain
+  const token = localStorage.getItem('gr_token'); 
    const opts = { method, headers: {} };
    if (token) opts.headers["Authorization"] = "Bearer " + token;
 
@@ -20,7 +20,7 @@ const api = {
         }
     }
     try {
-        const res = await fetch(BASE_URL + path, opts);
+        const res = await fetch(API_BASE + path, opts);
       if (!res.ok) { const err = await res.json().catch(() => ({ detail: "Server error" })); throw new Error(err.detail || `HTTP ${res.status}`); }
       return await res.json();
     } catch (e) {
