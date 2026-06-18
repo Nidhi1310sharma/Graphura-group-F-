@@ -245,7 +245,7 @@ async function fetchPosts(filter = 'recent', search = '') {
         if (search) {
             params.append('search', search);
         }
-        const url = `/api/community/posts${params.toString() ? `?${params.toString()}` : ''}`;
+        const url = `/community/posts${params.toString() ? `?${params.toString()}` : ''}`;
         const data = await api.get(url);
         allPosts = (Array.isArray(data) ? data : (data.data || [])).map(normalizePost);
 
@@ -261,7 +261,7 @@ async function fetchPosts(filter = 'recent', search = '') {
 }
 async function fetchPostComments(postId) {
     try {
-        const data = await api.get(`/api/community/posts/${postId}/comments`);
+        const data = await api.get(`/community/posts/${postId}/comments`);
         return Array.isArray(data) ? data : [];
     } catch (error) {
         console.error('Error fetching comments:', error);
@@ -276,7 +276,7 @@ async function submitPostToAPI(postData) {
     }
 
     try {
-        await api.post('/api/community/posts', withUserId(postData));
+        await api.post('/community/posts', withUserId(postData));
         showToast('Post created successfully!', 'success');
         await fetchPosts(currentFilter, currentSearch);
         return true;
@@ -294,7 +294,7 @@ async function submitComment(postId, content) {
     }
 
     try {
-        await api.post(`/api/community/posts/${postId}/comments`, withUserId({ content }));
+        await api.post(`/community/posts/${postId}/comments`, withUserId({ content }));
         showToast('Comment added!', 'success');
         return true;
     } catch (error) {
@@ -311,7 +311,7 @@ async function votePost(postId, voteType) {
     }
 
     try {
-        await api.post(`/api/community/posts/${postId}/vote`, withUserId({ vote_type: voteType }));
+        await api.post(`/community/posts/${postId}/vote`, withUserId({ vote_type: voteType }));
         await fetchPosts(currentFilter, currentSearch);
         return true;
     } catch (error) {
