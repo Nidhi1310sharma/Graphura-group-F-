@@ -8,7 +8,7 @@ load_dotenv()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY") 
-#SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
 
 # Priority
 key_to_use = SUPABASE_KEY if SUPABASE_KEY else SUPABASE_ANON_KEY
