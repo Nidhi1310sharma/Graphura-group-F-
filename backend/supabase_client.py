@@ -1,33 +1,21 @@
-from supabase import create_client
-from dotenv import load_dotenv
 import os
+from supabase import create_client, Client
+from dotenv import load_dotenv
 
-# Get the absolute path of the directory where THIS file lives (the backend folder)
-current_dir = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(current_dir, ".env")
+# For Local development 
+load_dotenv()
 
-# Load the .env file using its absolute path
-load_dotenv(dotenv_path=env_path)
+# Enviroment variable values of render 
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_KEY")
+# priority check
+key_to_use = SUPABASE_SERVICE_KEY if SUPABASE_SERVICE_KEY else SUPABASE_ANON_KEY
 
-# print("URL:", os.getenv("SUPABASE_URL"))
-# print("KEY:", os.getenv("SUPABASE_ANON_KEY"))
-
-
-
-# Environment variables fetching
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-#SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_KEY")
-
-# checikng variable match
-if not SUPABASE_URL:
-    raise ValueError("SUPABASE_URL is missing in environment variables!")
-if not SUPABASE_ANON_KEY:
-    raise ValueError("SUPABASE_ANON_KEY is missing in environment variables!")
-if not SUPABASE_SERVICE_KEY:
-    raise ValueError("SUPABASE_SERVICE_KEY is missing in environment variables!")
-
-# Client initialization
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+# Error check 
+if not SUPABASE_URL or not key_to_use:
+    print("CRITICAL ERROR: SUPABASE_URL or SUPABASE_KEY/ANON_KEY is missing!")
+    supabase = None
+else:
+    # Client initialize
+    supabase: Client = create_client(SUPABASE_URL, key_to_use)
