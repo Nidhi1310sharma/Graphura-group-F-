@@ -611,7 +611,15 @@ function buildTrustCard(result) {
     <div><strong>HTTPS:</strong> ${result.raw_url_analysis.https_enabled ? "Yes" : "No"}</div>
     <div><strong>Domain Age:</strong> ${formatDomainAge(result.raw_url_analysis.domain_age_days)}</div>
     <div><strong>Status:</strong> ${result.raw_url_analysis.website_reachable ? "Reachable" : "Unreachable"}</div>
-  </div>` : ""}
+  </div>` : `
+  <div style="margin-top:16px;padding:12px;background:var(--bg-secondary);border-radius:10px;font-size:13px;">
+    <div><strong>Company Name:</strong> ${trustField(result.company_name)}</div>
+    <div><strong>Job Title:</strong> ${trustField(result.job_title)}</div>
+    <div><strong>Recruiter Email:</strong> ${trustField(result.company_email)}</div>
+    <div><strong>Company Domain:</strong> ${trustField(result.company_domain)}</div>
+    <div><strong>Phone Number:</strong> ${trustField(result.phone_number)}</div>
+    <div><strong>Source Type:</strong> ${trustField(result.source_type)}</div>
+  </div>`}
   <div style="margin-top:18px;padding:12px;background:var(--bg-secondary);border-radius:10px;">
     <div style="font-weight:700;margin-bottom:6px;">Recommendation</div>
     <div style="color:var(--text-secondary);font-size:13px;line-height:1.5;">
@@ -622,8 +630,8 @@ function buildTrustCard(result) {
     </div>
   </div>
   <div class="trust-actions">
-    <button class="btn btn-outline" onclick="saveTrustCard()">⬇ Save</button>
-    <button class="btn btn-outline" onclick="shareTrustCard()">⇪ Share</button>
+    <button class="btn btn-outline" onclick="saveTrustCard(this)">⬇ Save</button>
+    <button class="btn btn-outline" onclick="shareTrustCard(this)">⇪ Share</button>
     <button class="btn btn-danger"  onclick="location.href='report.html'">⚑ Report</button>
   </div>
 </div>`;
@@ -640,6 +648,7 @@ function renderCompareCards(data) {
     </div>`;
 }
 
+// before
 function saveTrustCard() {
   html2canvas(document.getElementById("trustCard")).then(canvas => {
     const link = document.createElement("a");
@@ -658,6 +667,33 @@ function shareTrustCard() {
   window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank");
 }
 
+// after
+function saveTrustCard(btn) {
+  const card = btn.closest(".trust-card");
+  html2canvas(card).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "trust-card.png";
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+}
+
+function shareTrustCard(btn) {
+  const card = btn.closest(".trust-card");
+  html2canvas(card).then(canvas => {
+    canvas.toBlob(blob => {
+      const file = new File([blob], "trust-card.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ title: "ScamShield Analysis", text: "Check this job analysis", files: [file] });
+      } else {
+        const link = document.createElement("a");
+        link.download = "trust-card.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      }
+    });
+  });
+}
 // ── Live Feed ──
 function renderFeed() {
   const track = document.getElementById('live-feed-track');
