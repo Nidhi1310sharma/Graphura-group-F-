@@ -15,7 +15,7 @@ key_to_use = SUPABASE_KEY if SUPABASE_KEY else SUPABASE_ANON_KEY
 
 # Error check
 if not SUPABASE_URL or not key_to_use:
-    print("CRITICAL ERROR: SUPABASE_URL ya SUPABASE_KEY missing hai!")
+    print("CRITICAL ERROR: SUPABASE_URL ya SUPABASE_KEY missing ")
     supabase = None
 else:
     # Client initialize
