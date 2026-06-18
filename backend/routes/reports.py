@@ -46,6 +46,8 @@ def cleanup_report_upload(
             supabase.table("user_reports").delete().eq("report_id", report_id).execute()
         except Exception:
             pass
+        
+
 
 """create a report of a scam company, which will be stored in the user_reports table. 
 The report will be associated with the user who created it, and it will include details about the company, 

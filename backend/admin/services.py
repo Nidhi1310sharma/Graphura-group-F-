@@ -39,34 +39,56 @@ def get_report(report_id: str):
     except Exception:
         return None
 
-def get_report_evidence(report_id: str):
-    try:
-        resp = (
-            supabase.table("report_evidence")
-            .select("*")
-            .eq("report_id", report_id)
-            .execute()
-        )
-        evidence_list = resp.data or []
-        for evidence in evidence_list:
-            if evidence.get("file_type") == "url":
-                evidence["view_url"] = evidence["file_url"]
-            else:
-                try:
-                    signed = (
-                        supabase.storage
-                        .from_("evidence")
-                        .create_signed_url(
-                            evidence["file_url"],
-                            3600
-                        )
-                    )
-                    evidence["view_url"] = signed.get("signedURL")
-                except Exception:
-                    evidence["view_url"] = None
-        return evidence_list
-    except Exception:
-        return []
+# def get_report_evidence(report_id: str):
+#     try:
+#         resp = (
+#             supabase.table("report_evidence")
+#             .select("*")
+#             .eq("report_id", report_id)
+#             .execute()
+#         )
+#         evidence_list = resp.data or []
+#         for evidence in evidence_list:
+#             if evidence.get("file_type") == "url":
+#                 evidence["view_url"] = evidence["file_url"]
+#             else:
+#                 try:
+#                     signed = (
+#                         supabase.storage
+#                         .from_("evidence")
+#                         .create_signed_url(
+#                             evidence["file_url"],
+#                             3600
+#                         )
+#                     )
+#                     evidence["view_url"] = signed.get("signedURL")
+#                 except Exception:
+#                     evidence["view_url"] = None
+#         return evidence_list
+#     except Exception:
+#         return []
+
+def get_report_evidence(report_id):
+    response = (
+        supabase.table("report_evidence")
+        .select("*")
+        .eq("report_id", report_id)
+        .execute()
+    )
+
+    evidence = response.data or []
+
+    for item in evidence:
+
+        if item.get("file_type") == "url":
+            item["view_url"] = item["file_url"]
+
+        else:
+            item["view_url"] = generate_evidence_url(
+                item["file_url"]
+            )
+
+    return evidence
 
 def get_evidence(evidence_id: str):
     try:
@@ -161,6 +183,19 @@ def export_reports_csv():
         return output.getvalue()
     except Exception as e:
         print(f"[ERROR] Export CSV: {e}")
+        return None
+    
+def generate_evidence_url(file_path: str):
+    try:
+        result = (
+            supabase.storage
+            .from_("evidence")
+            .create_signed_url(file_path, 3600)
+        )
+
+        return result.get("signedURL")
+    except Exception as e:
+        print(f"Failed generating signed URL: {e}")
         return None
 
 # ===== USERS =====

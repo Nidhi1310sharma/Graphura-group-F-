@@ -5,6 +5,40 @@
   <title>Manage Reports – ScamShield Admin</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
+    .evidence-btn.view-btn::before {
+  content: "👁";
+}
+ .evidence-btn.view-btn {
+  margin-left: auto;
+
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #fff;
+  border: none;
+
+  font-weight: 700;
+  font-size: 12px;
+
+  padding: 8px 18px;
+  border-radius: 8px;
+
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.evidence-btn.view-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #fff;
+
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.55);
+}
+
+.evidence-btn.view-btn:active {
+  transform: translateY(0);
+}
     .report-drawer {
       position: fixed;
       top: 0;
@@ -342,12 +376,22 @@ async function openReportDrawer(reportId) {
               <span class="evidence-type ${typeClass}">${ev.file_type || 'URL'}</span>
               <span class="evidence-status ${statusClass}">${statusText}</span>
             </div>
-            <div class="evidence-value">${escapeHtml(ev.file_url || ev.value || '—')}</div>
+            <div class="evidence-value">
+    ${
+      ev.file_type === 'url'
+      ? escapeHtml(ev.file_url)
+      : escapeHtml(
+          (ev.file_url || '')
+            .split('/')
+            .pop()
+        )
+    }
+</div>
             <div class="evidence-actions">
               <button class="evidence-btn verify" onclick="updateEvidenceStatus('${report.report_id}', '${ev.evidence_id || ev.id}', 'verified', this)">Verify</button>
               <button class="evidence-btn fake" onclick="updateEvidenceStatus('${report.report_id}', '${ev.evidence_id || ev.id}', 'fake', this)">Fake Report</button>
               <button class="evidence-btn neutral" onclick="updateEvidenceStatus('${report.report_id}', '${ev.evidence_id || ev.id}', 'neutral', this)">Neutral</button>
-              ${ev.view_url ? `<button class="evidence-btn" onclick="window.open('${ev.view_url}', '_blank')">View</button>` : ''}
+              ${ev.view_url ? `<button class="evidence-btn view-btn" onclick="window.open('${ev.view_url}', '_blank')">View</button>` : ''}
             </div>
           </div>
         `;
