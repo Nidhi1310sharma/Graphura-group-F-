@@ -20,7 +20,7 @@ const api = {
         }
     }
     try {
-        const res = await fetch(BASE_URL + path, opts);
+        const res = await fetch(API_BASE + path, opts);
       if (!res.ok) { const err = await res.json().catch(() => ({ detail: "Server error" })); throw new Error(err.detail || `HTTP ${res.status}`); }
       return await res.json();
     } catch (e) {
