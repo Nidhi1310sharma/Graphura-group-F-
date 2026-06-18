@@ -517,7 +517,7 @@ async function compareJobs() {
       if (a) fd.append("file_a", a);
       if (b) fd.append("file_b", b);
     }
-    const res = await fetch(`${API_BASE}/api/analyze/compare`, { method: "POST", body: fd });
+    const res = await fetch(`${API_BASE}/analyze/compare`, { method: "POST", body: fd });
     const data = await res.json();
     renderCompareCards(data);
   } catch (err) {
