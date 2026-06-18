@@ -214,9 +214,13 @@ def analyze_url(url: str,
         scrape_data = {
             'page_title': '', 'meta_description': '', 'body_text': '',
             'all_links': [], 'emails': [], 'phone_numbers': [],
-            'scrape_success': False
+            'scrape_success': False,
+            'json_ld_jobposting': None, 'og_title': '', 'og_site_name': '', 'h1_text': ''
         }
         clean_text = ''
+
+    # ── Step 9b: Hiring-company / job-title / email / domain resolution ──
+    job_meta = scraper.extract_job_metadata(scrape_data, url)
 
     # ── Step 10: Detection Engine ─────────────────────────────
     if verbose: print("  [6/7] Running Detection Engine...")
@@ -276,6 +280,12 @@ def analyze_url(url: str,
         'emails_found'           : scrape_data['emails'],
         'phone_numbers_found'    : scrape_data['phone_numbers'],
         'links_found'            : len(scrape_data['all_links']),
+        # Hiring-company metadata (URL trust card)
+        'company_name'           : job_meta['company_name'],
+        'job_title'              : job_meta['job_title'],
+        'company_email'          : job_meta['company_email'],
+        'company_domain'         : job_meta['company_domain'],
+        'platform_domain'        : job_meta['platform_domain'],
         # Scores
         'fraud_phrase_score'     : engine_result['fraud_phrase_score'],
         'urgency_score'          : engine_result['urgency_score'],
