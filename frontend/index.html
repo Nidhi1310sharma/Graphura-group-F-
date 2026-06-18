@@ -549,6 +549,19 @@ function hideAnalysisLoader() {
 }
 
 // ── Trust Cards ──
+
+// Display-formatting helpers for the URL trust card (never show
+// null/undefined/None/-1 to the user — show "Unknown" instead).
+function trustField(value) {
+  if (value === null || value === undefined || value === "") return "Unknown";
+  return value;
+}
+
+function formatDomainAge(days) {
+  if (days === null || days === undefined || days === -1) return "Unknown";
+  return `${days} days`;
+}
+
 function renderSingleTrustCard(result) {
   document.getElementById("resultsContainer").innerHTML = buildTrustCard(result);
 }
@@ -592,9 +605,14 @@ result = responseData;
   ${metricBars}
   ${result.raw_url_analysis ? `
   <div style="margin-top:16px;padding:12px;background:var(--bg-secondary);border-radius:10px;font-size:13px;">
-    <div><strong>Domain:</strong> ${result.raw_url_analysis.full_domain || "Unknown"}</div>
+    <div><strong>Company Name:</strong> ${trustField(result.raw_url_analysis.company_name)}</div>
+    <div><strong>Job Title:</strong> ${trustField(result.raw_url_analysis.job_title)}</div>
+    <div><strong>Company Email:</strong> ${trustField(result.raw_url_analysis.company_email)}</div>
+    <div><strong>Company Domain:</strong> ${trustField(result.raw_url_analysis.company_domain)}</div>
+    <div><strong>Platform Domain:</strong> ${trustField(result.raw_url_analysis.platform_domain)}</div>
+    <div><strong>Domain:</strong> ${trustField(result.raw_url_analysis.full_domain)}</div>
     <div><strong>HTTPS:</strong> ${result.raw_url_analysis.https_enabled ? "Yes" : "No"}</div>
-    <div><strong>Domain Age:</strong> ${result.raw_url_analysis.domain_age_days || "Unknown"} days</div>
+    <div><strong>Domain Age:</strong> ${formatDomainAge(result.raw_url_analysis.domain_age_days)}</div>
     <div><strong>Status:</strong> ${result.raw_url_analysis.website_reachable ? "Reachable" : "Unreachable"}</div>
   </div>` : ""}
   <div style="margin-top:18px;padding:12px;background:var(--bg-secondary);border-radius:10px;">
