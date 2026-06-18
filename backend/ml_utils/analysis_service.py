@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from backend.ml_utils.extractor import extract_text_from_pdf, extract_text_from_image
+from backend.ml_utils.extractor import extract_text_from_pdf, extract_text_from_image, extract_metadata
 
 from backend.ml.detection_engine import analyze_job
 from backend.ml.url_engine import analyze_url
@@ -20,7 +20,9 @@ async def analyze_content(
 ):
     if source_type == "TEXT":
 
+        metadata = extract_metadata(content, source_type="Text")
         result = analyze_job(content)
+        result.update(metadata)
 
     elif source_type == "PDF":
 
@@ -30,12 +32,16 @@ async def analyze_content(
         status_code=400,
         detail="Could not extract text from PDF. The PDF may contain only images."
     )
+        metadata = extract_metadata(text, source_type="PDF")
         result = analyze_job(text)
+        result.update(metadata)
 
     elif source_type == "IMAGE":
 
         text = extract_text_from_image(file_bytes)
+        metadata = extract_metadata(text, source_type="Image")
         result = analyze_job(text)
+        result.update(metadata)
 
     elif source_type == "URL":
 
