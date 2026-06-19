@@ -2,7 +2,7 @@
 // main.js – ScamShield Core Utilities
 // ============================================================
 
-const API_BASE = "https://graphura-group-f-1.onrender.com/api";
+const API_BASE = "https://graphura-group-f-1.onrender.com/api";           // Render connection
 
 // ── API Client ──
 const api = {
@@ -20,7 +20,7 @@ const api = {
         }
     }
     try {
-        const res = await fetch(API_BASE + path, opts);
+        const res = await fetch(API_BASE + path, opts);      
       if (!res.ok) { const err = await res.json().catch(() => ({ detail: "Server error" })); throw new Error(err.detail || `HTTP ${res.status}`); }
       return await res.json();
     } catch (e) {
