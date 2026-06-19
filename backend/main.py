@@ -28,10 +28,11 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 # ── CORS (allow all for local dev) ──────────────────────────
 app.add_middleware(
     CORSMiddleware,
-  
-allow_origins=["https://graphura-group-f.vercel.app"],
 
-#allow_origins=["*"],
+        
+allow_origins=["https://graphura-group-f.vercel.app"],          #vercel connection
+
+#allow_origins=["*"],                                           #we can allow any sercive
     
     allow_credentials=True,
     allow_methods=["*"],
