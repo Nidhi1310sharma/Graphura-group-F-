@@ -54,12 +54,35 @@ def extract_text_from_image(image_path_or_obj) -> str:
 
 # --- 2. OCR Cleanup ---
 
-def clean_ocr_text(text: str) -> str:
-    replacements = {"Go0gle": "Google", "Micr0soft": "Microsoft", "lnternship": "Internship"}
-    for k, v in replacements.items():
-        text = text.replace(k, v)
-    text = re.sub(r'[^\w\s@\.\-]', '', text)
-    return text
+# --- Helper functions for entity extraction ---
+
+def extract_company_name(text: str) -> str:
+    
+    return "Unknown" 
+
+def extract_job_title(text: str) -> str:
+   
+    return "Unknown"
+
+def extract_job_description(text: str) -> str:
+   
+    return text[:200] if len(text) > 200 else "Description unavailable"
+
+def extract_emails(text: str) -> list:
+    email_pattern = r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}'
+    return re.findall(email_pattern, text)
+
+def extract_domains(text: str) -> list:
+    domain_pattern = r'(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,6}'
+    return re.findall(domain_pattern, text)
+
+def extract_phone(text: str) -> str:
+    phone_pattern = r'(?:\+91[\-\s]?)?[6-9]\d{9}'
+    match = re.search(phone_pattern, text)
+    return match.group(0) if match else None
+
+def pick_company_email(emails: list) -> str:
+    return emails[0] if emails else None
 
 # --- 3. Unified Entity Extractor & Validation ---
 
