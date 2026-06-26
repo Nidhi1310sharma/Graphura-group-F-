@@ -81,7 +81,7 @@ def extract_metadata(raw_text: str, source_type: str = "Text") -> dict:
         "completeness_score": 0
     }
     return metadata
-    def calculate_internal_completeness(meta: dict) -> int:
+def calculate_internal_completeness(meta: dict) -> int:
 
     weights = {
         "company_name": 25, 
@@ -93,9 +93,10 @@ def extract_metadata(raw_text: str, source_type: str = "Text") -> dict:
         "extraction_confidence": 5
     }
     
+   
     total_score = 0
     for field, weight in weights.items():
-        if meta.get(field): 
+        if meta.get(field):
             total_score += weight
             
     return total_score
