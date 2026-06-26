@@ -1,3 +1,4 @@
+import io
 from fastapi import HTTPException
 
 from backend.ml_utils.extractor import extract_text_from_pdf, extract_text_from_image, extract_metadata
@@ -278,7 +279,6 @@ async def analyze_content(
 
     elif source_type == "IMAGE":
         
-        import io 
         image_stream = io.BytesIO(file_bytes)
         
         text = extract_text_from_image(image_stream) 
