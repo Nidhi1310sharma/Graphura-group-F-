@@ -11,7 +11,7 @@ import tldextract
 import whois
 from bs4 import BeautifulSoup
 #import backend.ml_utils.scraper as scraper
-import extractor
+from backend.ml_utils import extractor
 import backend.ml_utils.validator as validator  
 import backend.ml_utils.url_computation as url_comp
 
