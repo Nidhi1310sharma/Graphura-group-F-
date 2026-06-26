@@ -81,9 +81,23 @@ def extract_metadata(raw_text: str, source_type: str = "Text") -> dict:
         "completeness_score": 0
     }
     return metadata
+    def calculate_internal_completeness(meta: dict) -> int:
 
-def calculate_internal_completeness(meta: dict) -> int:
-    # Per Section 7 of Spec: weights for each field
-    weights = {"company_name": 25, "job_title": 20, "job_description": 20, "company_email": 10, ...}
-    # Calculate total based on present fields
+    weights = {
+        "company_name": 25, 
+        "job_title": 20, 
+        "job_description": 20, 
+        "company_email": 10, 
+        "company_domain": 10, 
+        "phone_number": 10,
+        "extraction_confidence": 5
+    }
+    
+    total_score = 0
+    for field, weight in weights.items():
+        if meta.get(field): 
+            total_score += weight
+            
     return total_score
+
+
