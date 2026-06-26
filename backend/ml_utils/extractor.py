@@ -74,10 +74,11 @@ def extract_metadata(raw_text: str, source_type: str = "Text") -> dict:
         "company_email": pick_company_email(extract_emails(text)),
         "company_website": None, # Extract using domain logic
         "company_domain": extract_domains(text)[0] if extract_domains(text) else None,
+        "platform_domain": None,
         "phone_number": extract_phone(text),
         "job_description": job_description,
         "extraction_confidence": 0.8, # Placeholder for your model confidence
-        "completeness_score": calculate_internal_completeness(metadata_dict_here)
+        "completeness_score": 0
     }
     return metadata
 
