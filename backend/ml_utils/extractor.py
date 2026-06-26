@@ -41,13 +41,13 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     lines = list(dict.fromkeys(combined.splitlines()))
     return "\n".join(lines)
 
-def extract_text_from_image(image_input) -> str:
-    """Extract text from an image file path or PIL Image object."""
+def extract_text_from_image(image_path_or_obj) -> str:
     try:
-        if isinstance(image_input, (bytes, bytearray)):
-            img = Image.open(io.BytesIO(image_input))
+       
+        if not isinstance(image_path_or_obj, str):
+            img = Image.open(image_path_or_obj) 
         else:
-            img = Image.open(image_input)
+            img = Image.open(image_path_or_obj)
         return pytesseract.image_to_string(img)
     except Exception as e:
         print(f"Error extracting text from image: {e}")
