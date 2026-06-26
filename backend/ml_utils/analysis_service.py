@@ -278,7 +278,7 @@ async def analyze_content(
         result   = _normalize_job_result(raw, metadata, source_type)
 
     elif source_type == "IMAGE":
-        
+        import io
         image_stream = io.BytesIO(file_bytes)
         
         text = extract_text_from_image(image_stream) 
