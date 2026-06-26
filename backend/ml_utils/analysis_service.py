@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from backend.ml_utils.extractor import extract_text_from_pdf, extract_metadata
+from backend.ml_utils.extractor import extract_text_from_pdf, extract_text_from_image, extract_metadata
 
 from backend.ml.detection_engine import analyze_job
 from backend.ml.url_engine import analyze_url
