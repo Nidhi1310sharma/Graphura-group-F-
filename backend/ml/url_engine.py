@@ -10,7 +10,8 @@ import requests
 import tldextract
 import whois
 from bs4 import BeautifulSoup
-import backend.ml_utils.scraper as scraper
+#import backend.ml_utils.scraper as scraper
+import extractor
 import backend.ml_utils.validator as validator  
 import backend.ml_utils.url_computation as url_comp
 
@@ -205,11 +206,20 @@ def analyze_url(url: str,
     if verbose: print("  [4/7] Checking website availability...")
     avail_info = validator.check_website_availability(url)
 
-    # ── Steps 8 & 9: Scrape + Clean ───────────────────────────
+  # ── Steps 8 & 9: Scrape + Clean ───────────────────────────
     if verbose: print("  [5/7] Scraping page content...")
-    if avail_info['website_reachable']:
+    
+    # NEW LOGIC: Check if it's a PDF
+    if url.lower().endswith('.pdf'):
+        # Assuming you download the content first
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        clean_text = extractor.extract_text_from_pdf(response.content)
+        scrape_data = {'page_title': 'PDF Document', 'emails': [], 'phone_numbers': []}
+    
+    elif avail_info['website_reachable']:
         scrape_data = scraper.scrape_url(url)
         clean_text  = scraper.clean_scraped_text(scrape_data['body_text'])
+    
     else:
         scrape_data = {
             'page_title': '', 'meta_description': '', 'body_text': '',
@@ -220,7 +230,7 @@ def analyze_url(url: str,
         clean_text = ''
 
     # ── Step 9b: Hiring-company / job-title / email / domain resolution ──
-    job_meta = scraper.extract_job_metadata(scrape_data, url)
+    job_meta = extractor.extract_metadata(clean_text)
 
     # ── Step 10: Detection Engine ─────────────────────────────
     if verbose: print("  [6/7] Running Detection Engine...")
