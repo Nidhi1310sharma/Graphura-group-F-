@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import pytesseract
 from PIL import Image
+import io
 import os
 import shutil
 import re
@@ -40,13 +41,13 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     lines = list(dict.fromkeys(combined.splitlines()))
     return "\n".join(lines)
 
-def extract_text_from_image(image_path_or_obj) -> str:
+def extract_text_from_image(image_input) -> str:
     """Extract text from an image file path or PIL Image object."""
     try:
-        if isinstance(image_path_or_obj, str):
-            img = Image.open(image_path_or_obj)
+        if isinstance(image_input, (bytes, bytearray)):
+            img = Image.open(io.BytesIO(image_input))
         else:
-            img = image_path_or_obj
+            img = Image.open(image_input)
         return pytesseract.image_to_string(img)
     except Exception as e:
         print(f"Error extracting text from image: {e}")
